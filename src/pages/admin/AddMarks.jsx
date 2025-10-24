@@ -1,4 +1,6 @@
+// src/components/AddMarks.jsx
 import React, { useState, useEffect } from "react";
+import { endpoints } from "../../config/api";
 
 const AddMarks = () => {
   const [students, setStudents] = useState([]);
@@ -6,88 +8,134 @@ const AddMarks = () => {
   const [marks, setMarks] = useState({});
   const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
+  const [loadingStudents, setLoadingStudents] = useState(true);
+  const [loadingMarks, setLoadingMarks] = useState(false);
 
-  // 🧠 Fetch teacher's students
+  // 📥 Fetch teacher's assigned students on mount
   useEffect(() => {
-    fetch("https://school-api-gd9l.onrender.com/api/students/my-students", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Fetched students:", data); // 👈 Debug
+    const fetchStudents = async () => {
+      try {
+        const res = await fetch(endpoints.students.myStudents, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        if (!res.ok) throw new Error("Failed to load students");
+        const data = await res.json();
         setStudents(Array.isArray(data) ? data : []);
         if (Array.isArray(data) && data.length === 0) {
-          setMessage("⚠️ No students found. Maybe you have no assigned classes.");
+          setMessage("⚠️ No students found. You may not have any assigned classes.");
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error fetching students:", err);
-        setStudents([]);
         setMessage(`❌ Failed to load students: ${err.message}`);
-      });
+      } finally {
+        setLoadingStudents(false);
+      }
+    };
+
+    fetchStudents();
   }, []);
 
-  // 🔁 Update subjects & marks when student changes
+  // 📥 Fetch existing marks when student is selected
   useEffect(() => {
     if (!selectedStudent) {
-      setSubjects([]);
       setMarks({});
+      setSubjects([]);
       return;
     }
 
-    // ✅ Safely find student (string comparison)
-    const student = students.find(stu => String(stu._id) === String(selectedStudent));
-    if (!student) {
-      setSubjects([]);
-      setMarks({});
-      return;
-    }
+    const loadMarksForStudent = async () => {
+      setLoadingMarks(true);
+      setMessage("");
 
-    // ✅ Set subjects based on class
-    let classSubjects = ["Math", "English", "Science", "Hindi", "Social Science"];
-    const cls = String(student.class).trim().toLowerCase();
-    if (cls.includes("nursery") || cls === "lkg" || cls === "ukg" || cls === "play") {
-      classSubjects = ["English", "Hindi", "Math", "EVS"];
-    }
+      const student = students.find(stu => String(stu._id) === String(selectedStudent));
+      if (!student) {
+        setLoadingMarks(false);
+        return;
+      }
 
-    setSubjects(classSubjects);
+      // Determine subjects based on class
+      const cls = String(student.class).trim().toLowerCase();
+      const classSubjects = 
+        cls.includes("nursery") || cls === "lkg" || cls === "ukg" || cls === "play"
+          ? ["English", "Hindi", "Math", "EVS"]
+          : ["Math", "English", "Science", "Hindi", "Social Science"];
 
-    // ✅ Initialize empty marks structure
-    const initialMarks = {};
-    ["pa1", "pa2", "halfYear", "pa3", "pa4", "final"].forEach((exam) => {
-      initialMarks[exam] = {};
-      classSubjects.forEach((sub) => {
-        initialMarks[exam][sub] = "";
+      setSubjects(classSubjects);
+
+      // Initialize all marks as empty
+      const initialMarks = {};
+      ["pa1", "pa2", "halfYear", "pa3", "pa4", "final"].forEach((exam) => {
+        initialMarks[exam] = {};
+        classSubjects.forEach((sub) => {
+          initialMarks[exam][sub] = "";
+        });
       });
-    });
-    setMarks(initialMarks);
+
+      try {
+        // Fetch existing marks from backend
+        const res = await fetch(endpoints.marks.getStudent(selectedStudent), {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.exams) {
+            // Merge saved marks into initial structure
+            Object.keys(initialMarks).forEach((exam) => {
+              if (data.exams[exam]) {
+                classSubjects.forEach((sub) => {
+                  const savedValue = data.exams[exam][sub];
+                  if (savedValue !== undefined && savedValue !== null) {
+                    initialMarks[exam][sub] = savedValue;
+                  }
+                });
+              }
+            });
+          }
+        }
+
+        setMarks(initialMarks);
+      } catch (err) {
+        console.error("Error loading existing marks:", err);
+        setMessage("⚠️ Could not load saved marks. You can still enter new ones.");
+        setMarks(initialMarks); // fallback to empty
+      } finally {
+        setLoadingMarks(false);
+      }
+    };
+
+    loadMarksForStudent();
   }, [selectedStudent, students]);
 
-  // 🔄 Handle input change with validation
+  // 🔤 Handle input change (only allow 0–100 numbers)
   const handleChange = (exam, subject, value) => {
-    const numValue = value === "" ? "" : Number(value);
-    if (numValue !== "" && (isNaN(numValue) || numValue < 0 || numValue > 100)) return;
+    if (value === "" || value === null) {
+      setMarks((prev) => ({
+        ...prev,
+        [exam]: { ...prev[exam], [subject]: "" },
+      }));
+      return;
+    }
+
+    const num = Number(value);
+    if (isNaN(num) || num < 0 || num > 100) return;
 
     setMarks((prev) => ({
       ...prev,
-      [exam]: {
-        ...prev[exam],
-        [subject]: numValue,
-      },
+      [exam]: { ...prev[exam], [subject]: num },
     }));
   };
 
-  // 📝 Submit marks
+  // 💾 Submit marks
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+
     if (!selectedStudent) return setMessage("⚠️ Please select a student");
-    if (subjects.length === 0) return setMessage("⚠️ No subjects available for this student");
+    if (subjects.length === 0) return setMessage("⚠️ No subjects available");
 
     try {
-      const res = await fetch(`https://school-api-gd9l.onrender.com/api/marks/${selectedStudent}`, {
+      const res = await fetch(endpoints.marks.save(selectedStudent), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -97,10 +145,14 @@ const AddMarks = () => {
       });
 
       const data = await res.json();
-      setMessage(res.ok ? "✅ Marks saved successfully!" : data.message || "❌ Failed to save marks");
+      setMessage(
+        res.ok
+          ? "✅ Marks saved successfully!"
+          : data.message || "❌ Failed to save marks"
+      );
     } catch (err) {
-      console.error("Submit error:", err);
-      setMessage("⚠️ Network or server error");
+      console.error("Submission error:", err);
+      setMessage("⚠️ Network or server error. Please try again.");
     }
   };
 
@@ -154,6 +206,10 @@ const AddMarks = () => {
         button:hover {
           background: #219653;
         }
+        button:disabled {
+          background: #bdc3c7;
+          cursor: not-allowed;
+        }
         .message {
           text-align: center;
           margin-top: 15px;
@@ -199,62 +255,81 @@ const AddMarks = () => {
           font-size: 14px;
           color: #2980b9;
         }
+        .loading {
+          text-align: center;
+          color: #7f8c8d;
+          font-style: italic;
+        }
       `}</style>
 
       <div className="container">
-        <h2>Add Student Marks</h2>
-        <form onSubmit={handleSubmit}>
-          <label>Select Student:</label>
-          <select
-            value={selectedStudent}
-            onChange={(e) => setSelectedStudent(e.target.value)}
-          >
-            <option value="">-- Choose a student --</option>
-            {students.map((stu) => (
-              <option key={stu._id} value={stu._id}>
-                {stu.name} (Class: {stu.class}, Roll: {stu.rollNo})
-              </option>
-            ))}
-          </select>
+        <h2>Add / Update Student Marks</h2>
 
-          {/* Show selected student info */}
-          {selectedStudent && (
-            <div className="student-info">
-              {(() => {
-                const stu = students.find(s => String(s._id) === String(selectedStudent));
-                return stu ? `✅ Selected: ${stu.name} | Class: ${stu.class} | Section: ${stu.section || 'A'}` : "";
-              })()}
-            </div>
-          )}
+        {loadingStudents ? (
+          <p className="loading">Loading students...</p>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <label>Select Student:</label>
+            <select
+              value={selectedStudent}
+              onChange={(e) => setSelectedStudent(e.target.value)}
+              disabled={loadingMarks}
+            >
+              <option value="">-- Choose a student --</option>
+              {students.map((stu) => (
+                <option key={stu._id} value={stu._id}>
+                  {stu.name} (Class: {stu.class}, Roll: {stu.rollNo})
+                </option>
+              ))}
+            </select>
 
-          {/* Render exam sections only when subjects & marks are ready */}
-          {subjects.length > 0 && Object.keys(marks).length > 0 && (
-            ["pa1", "pa2", "halfYear", "pa3", "pa4", "final"].map((exam) => (
-              <div className="exam-section" key={exam}>
-                <div className="exam-title">
-                  {exam
-                    .replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, str => str.toUpperCase())}
-                </div>
-                {subjects.map((subject) => (
-                  <div className="subject-row" key={subject}>
-                    <span className="subject-label">{subject}:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={marks[exam]?.[subject] !== undefined ? marks[exam][subject] : ""}
-                      onChange={(e) => handleChange(exam, subject, e.target.value)}
-                      placeholder="0–100"
-                    />
-                  </div>
-                ))}
+            {selectedStudent && (
+              <div className="student-info">
+                {(() => {
+                  const stu = students.find(s => String(s._id) === String(selectedStudent));
+                  return stu ? `✅ Selected: ${stu.name} | Class: ${stu.class} | Section: ${stu.section || 'A'}` : "";
+                })()}
               </div>
-            ))
-          )}
+            )}
 
-          <button type="submit">💾 Save Marks</button>
-        </form>
+            {loadingMarks && selectedStudent && (
+              <p className="loading">Loading existing marks...</p>
+            )}
+
+            {!loadingMarks && subjects.length > 0 && Object.keys(marks).length > 0 && (
+              ["pa1", "pa2", "halfYear", "pa3", "pa4", "final"].map((exam) => (
+                <div className="exam-section" key={exam}>
+                  <div className="exam-title">
+                    {exam
+                      .replace(/([A-Z])/g, ' $1')
+                      .replace(/^./, str => str.toUpperCase())}
+                  </div>
+                  {subjects.map((subject) => (
+                    <div className="subject-row" key={subject}>
+                      <span className="subject-label">{subject}:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={marks[exam]?.[subject] !== undefined ? marks[exam][subject] : ""}
+                        onChange={(e) => handleChange(exam, subject, e.target.value)}
+                        placeholder="0–100"
+                        disabled={loadingMarks}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ))
+            )}
+
+            <button 
+              type="submit" 
+              disabled={!selectedStudent || loadingMarks}
+            >
+              💾 Save Marks
+            </button>
+          </form>
+        )}
 
         <div
           className="message"

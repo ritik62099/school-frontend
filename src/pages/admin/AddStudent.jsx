@@ -1,6 +1,7 @@
-// src/pages/AddStudent.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { endpoints } from '../../config/api';
 
 const AddStudent = () => {
   const [formData, setFormData] = useState({
@@ -13,7 +14,7 @@ const AddStudent = () => {
     mobile: '',
     address: '',
     aadhar: '',
-    photo: '' // base64 string (optional)
+    photo: ''
   });
 
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -21,6 +22,13 @@ const AddStudent = () => {
   const [messageType, setMessageType] = useState('');
   const [assignedClasses, setAssignedClasses] = useState([]);
   const navigate = useNavigate();
+
+  const classOptions = [
+    "Nursery", "LKG", "UKG",
+    "1st", "2nd", "3rd", "4th", "5th",
+    "6th", "7th", "8th", "9th", "10th",
+    "11th", "12th"
+  ];
 
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -45,14 +53,14 @@ const AddStudent = () => {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setPhotoPreview(URL.createObjectURL(file)); // preview
-      setFormData(prev => ({ ...prev, photo: file })); // send file object, not base64
+      setPhotoPreview(URL.createObjectURL(file));
+      setFormData(prev => ({ ...prev, photo: file }));
     } else {
       setPhotoPreview(null);
       setFormData(prev => ({ ...prev, photo: '' }));
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -80,51 +88,52 @@ const AddStudent = () => {
       return;
     }
 
-    
-      const uploadData = new FormData();
-      for (let key in formData) {
+    const uploadData = new FormData();
+    for (let key in formData) {
+      if (formData[key]) {
         uploadData.append(key, formData[key]);
       }
-    
-      try {
-        const res = await fetch('https://school-api-gd9l.onrender.com/api/students', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: uploadData
+    }
+
+    try {
+      const res = await fetch(endpoints.students.create, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: uploadData
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        setMessage('✅ Student added and photo uploaded successfully!');
+        setMessageType('success');
+        setFormData({
+          name: '',
+          fatherName: '',
+          motherName: '',
+          class: assignedClasses.length > 0 ? assignedClasses[0] : '',
+          section: 'A',
+          rollNo: '',
+          mobile: '',
+          address: '',
+          aadhar: '',
+          photo: ''
         });
-    
-        const result = await res.json();
-    
-        if (res.ok) {
-          setMessage('✅ Student added and photo uploaded successfully!');
-          setMessageType('success');
-          setFormData({
-            name: '',
-            fatherName: '',
-            motherName: '',
-            class: assignedClasses.length > 0 ? assignedClasses[0] : '',
-            section: 'A',
-            rollNo: '',
-            mobile: '',
-            address: '',
-            aadhar: '',
-            photo: ''
-          });
-          setPhotoPreview(null);
-          setTimeout(() => navigate('/dashboard'), 1800);
-        } else {
-          setMessage(result.message || '❌ Failed to add student.');
-          setMessageType('error');
-        }
-      } catch (err) {
-        console.error(err);
-        setMessage('❌ Network/server error.');
+        setPhotoPreview(null);
+        setTimeout(() => navigate('/dashboard'), 1800);
+      } else {
+        setMessage(result.message || '❌ Failed to add student.');
         setMessageType('error');
       }
-    };
-    
+    } catch (err) {
+      console.error('Submission error:', err);
+      setMessage('❌ Network or server error.');
+      setMessageType('error');
+    }
+  };
+
   return (
     <div style={styles.pageContainer}>
       <div style={styles.card}>
@@ -142,6 +151,8 @@ const AddStudent = () => {
         )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
+
+          {/* Name */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Full Name</label>
             <input
@@ -155,9 +166,10 @@ const AddStudent = () => {
             />
           </div>
 
+          {/* Class */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>
-              {assignedClasses.length > 0 ? 'Select Class' : 'Class'}
+              {assignedClasses.length > 0 ? 'Select Class (Your Assigned)' : 'Select Class'}
             </label>
             {assignedClasses.length > 0 ? (
               <select
@@ -169,24 +181,26 @@ const AddStudent = () => {
               >
                 <option value="">-- Choose a class --</option>
                 {assignedClasses.map(cls => (
-                  <option key={cls} value={cls}>
-                    {cls}
-                  </option>
+                  <option key={cls} value={cls}>{cls}</option>
                 ))}
               </select>
             ) : (
-              <input
+              <select
                 name="class"
-                type="text"
                 value={formData.class}
                 onChange={handleChange}
                 required
                 style={styles.input}
-                placeholder="e.g., 10, XI-A"
-              />
+              >
+                <option value="">-- Select Class --</option>
+                {classOptions.map(cls => (
+                  <option key={cls} value={cls}>{cls}</option>
+                ))}
+              </select>
             )}
           </div>
 
+          {/* Section */}
           <div style={styles.inputGroup}>
             <label htmlFor="section" style={styles.label}>Section</label>
             <select
@@ -203,6 +217,7 @@ const AddStudent = () => {
             </select>
           </div>
 
+          {/* Roll Number */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Roll Number</label>
             <input
@@ -217,6 +232,7 @@ const AddStudent = () => {
             />
           </div>
 
+          {/* Father’s Name */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Father's Name</label>
             <input
@@ -230,6 +246,7 @@ const AddStudent = () => {
             />
           </div>
 
+          {/* Mother’s Name */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Mother's Name</label>
             <input
@@ -243,6 +260,7 @@ const AddStudent = () => {
             />
           </div>
 
+          {/* Mobile */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Mobile Number</label>
             <input
@@ -257,6 +275,7 @@ const AddStudent = () => {
             />
           </div>
 
+          {/* Address */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Address</label>
             <textarea
@@ -269,6 +288,7 @@ const AddStudent = () => {
             />
           </div>
 
+          {/* Aadhaar */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Aadhaar Number</label>
             <input
@@ -283,7 +303,7 @@ const AddStudent = () => {
             />
           </div>
 
-          {/* ✅ Photo Upload Field */}
+          {/* Photo */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Student Photo (Optional)</label>
             <input
@@ -301,6 +321,7 @@ const AddStudent = () => {
             )}
           </div>
 
+          {/* Buttons */}
           <div style={styles.buttonGroup}>
             <button type="submit" style={styles.submitButton}>
               Add Student
@@ -319,6 +340,7 @@ const AddStudent = () => {
   );
 };
 
+// ✅ Styles (same as before)
 const styles = {
   pageContainer: {
     display: 'flex',

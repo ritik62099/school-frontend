@@ -1,6 +1,7 @@
 // src/pages/TeachersList.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { endpoints } from '../../config/api';
 
 const TeachersList = () => {
   const [teachers, setTeachers] = useState([]);
@@ -11,7 +12,7 @@ const TeachersList = () => {
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const res = await fetch('https://school-api-gd9l.onrender.com/api/teachers', {
+        const res = await fetch(endpoints.teachers.list, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -35,7 +36,7 @@ const TeachersList = () => {
 
   const handleApprove = async (id) => {
     try {
-      const res = await fetch(`https://school-api-gd9l.onrender.com/api/teachers/approve/${id}`, {
+      const res = await fetch(endpoints.teachers.approve(id), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -49,6 +50,30 @@ const TeachersList = () => {
       } else {
         const data = await res.json();
         alert(data.message || 'Failed to approve teacher');
+      }
+    } catch (err) {
+      alert('Server error');
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete teacher "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(endpoints.teachers.delete(id), {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (res.ok) {
+        setTeachers(teachers.filter(t => t._id !== id));
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to delete teacher');
       }
     } catch (err) {
       alert('Server error');
@@ -81,10 +106,10 @@ const TeachersList = () => {
                 <tr>
                   <th style={styles.th}>Name</th>
                   <th style={styles.th}>Email</th>
-                  {/* ✅ Only show Subject if you added it to User model */}
                   {teachers.some(t => t.subject) && <th style={styles.th}>Subject</th>}
                   <th style={styles.th}>Joining Date</th>
                   <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,7 +117,6 @@ const TeachersList = () => {
                   <tr key={teacher._id} style={styles.tr}>
                     <td style={styles.td}>{teacher.name}</td>
                     <td style={styles.td}>{teacher.email}</td>
-                    {/* ✅ Conditionally render subject */}
                     {teacher.subject !== undefined && (
                       <td style={styles.td}>{teacher.subject}</td>
                     )}
@@ -110,6 +134,14 @@ const TeachersList = () => {
                           Approve
                         </button>
                       )}
+                    </td>
+                    <td style={styles.td}>
+                      <button
+                        onClick={() => handleDelete(teacher._id, teacher.name)}
+                        style={styles.deleteBtn}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -194,8 +226,18 @@ const styles = {
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
-    fontWeight: 'bold'
-  }
+    fontWeight: 'bold',
+  },
+  deleteBtn: {
+    padding: '0.4rem 0.8rem',
+    backgroundColor: '#e74c3c',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    marginLeft: '0.5rem',
+  },
 };
 
 export default TeachersList;

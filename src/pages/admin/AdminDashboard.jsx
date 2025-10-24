@@ -1,239 +1,9 @@
-// // src/pages/admin/AdminDashboard.jsx
-// import React, { useState, useEffect } from 'react';
-// import { useAuth } from '../../context/AuthContext';
-// import { useNavigate } from 'react-router-dom';
-
-// const AdminDashboard = () => {
-//     const [teacherCount, setTeacherCount] = useState(0);
-//     const { currentUser, logout, setCurrentUser } = useAuth();
-//     const navigate = useNavigate();
-
-//     useEffect(() => {
-//         const refreshUserData = async () => {
-//             try {
-//                 const res = await fetch('http://localhost:5000/api/auth/me', {
-//                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-//                 });
-
-//                 if (res.ok) {
-//                     const userData = await res.json();
-//                     localStorage.setItem('user', JSON.stringify(userData));
-//                     setCurrentUser(userData);
-//                 }
-//             } catch (err) {
-//                 console.error('Failed to refresh user data');
-//             }
-//         };
-
-//         if (currentUser?.role === 'teacher') {
-//             refreshUserData();
-//         }
-
-//         const fetchTeacherCount = async () => {
-//             try {
-//                 const res = await fetch('http://localhost:5000/api/teachers/count', {
-//                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-//                 });
-//                 const data = await res.json();
-//                 setTeacherCount(data.count);
-//             } catch (err) {
-//                 console.error('Failed to load teacher count');
-//             }
-//         };
-
-//         fetchTeacherCount();
-//     }, [currentUser?.role]);
-
-//     const handleLogout = () => {
-//         logout();
-//         navigate('/login');
-//     };
-
-//     return (
-//         <div style={styles.container}>
-//             <h1 style={styles.title}>
-//                 {currentUser?.role === 'admin' ? 'Admin' : 'Teacher'} Dashboard
-//             </h1>
-
-//             {/* ✅ Teacher Assignment Info */}
-//             {currentUser?.role === 'teacher' && (
-//                 <div style={styles.assignmentInfo}>
-//                     <p><strong>Assigned Classes:</strong> {currentUser.assignedClasses?.length ? currentUser.assignedClasses.join(', ') : 'Not assigned'}</p>
-//                     <p><strong>Subjects:</strong> {currentUser.assignedSubjects?.length ? currentUser.assignedSubjects.join(', ') : 'Not assigned'}</p>
-//                     <p><strong>Attendance Access:</strong> {currentUser.canMarkAttendance ? '✅ Enabled' : '❌ Disabled'}</p>
-//                     {!currentUser.assignedClasses?.length && (
-//                         <p style={{ color: 'red', marginTop: '0.5rem' }}>
-//                             ⚠️ Contact admin to get assigned to a class.
-//                         </p>
-//                     )}
-//                 </div>
-//             )}
-
-//             <div style={styles.stats}>
-//                 <div style={styles.card}>
-//                     <h3>Total Teachers</h3>
-//                     <p style={styles.count}>{teacherCount}</p>
-//                 </div>
-//             </div>
-
-//             {/* ✅ Role-based actions */}
-//             <div style={styles.actions}>
-//                 <button 
-//                     onClick={() => navigate('/add-student')}
-//                     style={styles.button}
-//                 >
-//                     Add Student
-//                 </button>
-                
-//                 {/* Attendance button */}
-//                 {(currentUser?.role === 'admin' || 
-//                   (currentUser?.role === 'teacher' && currentUser.canMarkAttendance)) && (
-//                     <button 
-//                         onClick={() => navigate('/attendance')}
-//                         style={{ ...styles.button, backgroundColor: '#9b59b6' }}
-//                     >
-//                         Mark Attendance
-//                     </button>
-//                 )}
-
-//                {/* Admin-only actions */}
-// {currentUser?.role === 'admin' && (
-//   <>
-//     <button 
-//       onClick={() => navigate('/teachers')}
-//       style={{ ...styles.button, backgroundColor: '#2ecc71' }}
-//     >
-//       Manage Teachers
-//     </button>
-//     <button 
-//       onClick={() => navigate('/assign-teacher')}
-//       style={{ ...styles.button, backgroundColor: '#e67e22' }}
-//     >
-//       Assign Teachers
-//     </button>
-//     <button 
-//       onClick={() => navigate('/students')}
-//       style={{ ...styles.button, backgroundColor: '#1abc9c' }}
-//     >
-//       View All Students
-//     </button>
-//     {/* ✅ NEW: Admit & ID Card buttons */}
-//     <button 
-//       onClick={() => navigate('/admit-cards')}
-//       style={{ ...styles.button, backgroundColor: '#9b59b6' }}
-//     >
-//       Admit Cards
-//     </button>
-//     <button 
-//       onClick={() => navigate('/id-cards')}
-//       style={{ ...styles.button, backgroundColor: '#16a085' }}
-//     >
-//       ID Cards
-//     </button>
-//   </>
-// )}
-
-//                 {/* ✅ Teacher: View ONLY their students */}
-//                 {currentUser?.role === 'teacher' && (
-//                     <button 
-//                         onClick={() => navigate('/my-students')}
-//                         style={{ ...styles.button, backgroundColor: '#3498db' }}
-//                     >
-//                         View My Students
-//                     </button>
-//                 )}
-//             </div>
-
-//             {/* Marks & Results */}
-//             {(currentUser?.role === 'admin' || 
-//               (currentUser?.role === 'teacher' && currentUser.canMarkAttendance)) && (
-//                 <>
-//                     <button 
-//                         onClick={() => navigate('/add-marks')}
-//                         style={{ ...styles.button, backgroundColor: '#e74c3c' }}
-//                     >
-//                         Add Marks
-//                     </button>
-//                     <button 
-//                         onClick={() => navigate('/view-result')}
-//                         style={{ ...styles.button, backgroundColor: '#f39c12' }}
-//                     >
-//                         View Result
-//                     </button>
-//                 </>
-//             )}
-
-            
-
-//             <button onClick={handleLogout} style={styles.logoutBtn}>
-//                 Logout
-//             </button>
-//         </div>
-//     );
-// };
-
-// const styles = {
-//     container: {
-//         padding: '2rem',
-//         fontFamily: 'Arial, sans-serif',
-//     },
-//     title: {
-//         color: '#2c3e50',
-//         marginBottom: '1.5rem'
-//     },
-//     assignmentInfo: {
-//         backgroundColor: '#e8f4fc',
-//         padding: '1rem',
-//         borderRadius: '4px',
-//         marginBottom: '1.5rem',
-//         borderLeft: '4px solid #3498db'
-//     },
-//     stats: {
-//         display: 'flex',
-//         gap: '1.5rem',
-//         marginBottom: '2rem'
-//     },
-//     card: {
-//         backgroundColor: '#ecf0f1',
-//         padding: '1.5rem',
-//         borderRadius: '8px',
-//         minWidth: '200px',
-//         textAlign: 'center'
-//     },
-//     count: {
-//         fontSize: '2rem',
-//         fontWeight: 'bold',
-//         color: '#e74c3c'
-//     },
-//     actions: {
-//         marginBottom: '2rem'
-//     },
-//     button: {
-//         padding: '0.75rem 1.5rem',
-//         margin: '0.5rem',
-//         backgroundColor: '#3498db',
-//         color: 'white',
-//         border: 'none',
-//         borderRadius: '4px',
-//         cursor: 'pointer'
-//     },
-//     logoutBtn: {
-//         padding: '0.5rem 1rem',
-//         backgroundColor: '#e74c3c',
-//         color: 'white',
-//         border: 'none',
-//         borderRadius: '4px',
-//         cursor: 'pointer'
-//     }
-// };
-
-// export default AdminDashboard;
-
-
 // src/pages/admin/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { endpoints } from '../../config/api';
+import Logo from '../../assets/logo.png';
 
 const AdminDashboard = () => {
     const [teacherCount, setTeacherCount] = useState(0);
@@ -243,16 +13,18 @@ const AdminDashboard = () => {
     const { currentUser, logout, setCurrentUser } = useAuth();
     const navigate = useNavigate();
 
-    // Fetch all dashboard data
     useEffect(() => {
         const fetchData = async () => {
             const token = localStorage.getItem('token');
-            if (!token) return;
+            if (!token) {
+                setLoading(false);
+                return;
+            }
 
             try {
                 // Refresh user if teacher
                 if (currentUser?.role === 'teacher') {
-                    const userRes = await fetch('https://school-api-gd9l.onrender.com/api/auth/me', {
+                    const userRes = await fetch(endpoints.auth.me, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     if (userRes.ok) {
@@ -262,23 +34,23 @@ const AdminDashboard = () => {
                     }
                 }
 
-                // Fetch counts
-                const [teacherRes, studentRes, classRes] = await Promise.all([
-                    fetch('https://school-api-gd9l.onrender.com/api/teachers/count', { headers: { Authorization: `Bearer ${token}` } }),
-                    fetch('https://school-api-gd9l.onrender.com/api/students/count', { headers: { Authorization: `Bearer ${token}` } }),
-                    currentUser?.role === 'admin' 
-                        ? fetch('https://school-api-gd9l.onrender.com/api/students/by-class', { headers: { Authorization: `Bearer ${token}` } })
-                        : Promise.resolve(null)
-                ]);
+                // Only admin needs counts & class data
+                if (currentUser?.role === 'admin') {
+                    const [teacherRes, studentRes, classRes] = await Promise.all([
+                        fetch(endpoints.teachers.count, { headers: { Authorization: `Bearer ${token}` } }),
+                        fetch(endpoints.students.count, { headers: { Authorization: `Bearer ${token}` } }),
+                        fetch(endpoints.students.byClass, { headers: { Authorization: `Bearer ${token}` } })
+                    ]);
 
-                const teacherData = await teacherRes.json();
-                const studentData = await studentRes.json();
-                setTeacherCount(teacherData.count || 0);
-                setStudentCount(studentData.count || 0);
+                    const teacherData = await teacherRes.json();
+                    const studentData = await studentRes.json();
+                    setTeacherCount(teacherData.count || 0);
+                    setStudentCount(studentData.count || 0);
 
-                if (classRes && classRes.ok) {
-                    const classData = await classRes.json();
-                    setStudentsByClass(classData);
+                    if (classRes.ok) {
+                        const classData = await classRes.json();
+                        setStudentsByClass(classData);
+                    }
                 }
             } catch (err) {
                 console.error('Dashboard data fetch failed:', err);
@@ -288,14 +60,13 @@ const AdminDashboard = () => {
         };
 
         fetchData();
-    }, [currentUser?.role]);
+    }, [currentUser?.role, setCurrentUser]);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
-    // Button definitions (clean & maintainable)
     const adminButtons = [
         { label: 'Add Student', path: '/add-student', color: '#3498db' },
         { label: 'Manage Teachers', path: '/teachers', color: '#2ecc71' },
@@ -321,18 +92,22 @@ const AdminDashboard = () => {
 
     const buttons = currentUser?.role === 'admin' ? adminButtons : teacherButtons;
 
+    // ✅ Loading screen: logo ke saath
     if (loading) {
         return (
             <div style={styles.loadingContainer}>
-                <div style={styles.spinner}></div>
-                <p>Loading dashboard...</p>
+                <img 
+                    src={Logo}
+                    alt="School Logo" 
+                    style={styles.logo}
+                />
+                <p style={{ marginTop: '1rem', color: '#64748b' }}>Loading dashboard...</p>
             </div>
         );
     }
 
     return (
         <div style={styles.container}>
-            {/* Header */}
             <header style={styles.header}>
                 <div>
                     <h1 style={styles.title}>
@@ -349,7 +124,6 @@ const AdminDashboard = () => {
                 </button>
             </header>
 
-            {/* Teacher Assignment Info */}
             {currentUser?.role === 'teacher' && (
                 <section style={styles.assignmentCard}>
                     <h2 style={styles.sectionTitle}>Your Assignment</h2>
@@ -364,37 +138,37 @@ const AdminDashboard = () => {
                 </section>
             )}
 
-            {/* Stats Section */}
-            <section style={styles.statsSection}>
-                <h2 style={styles.sectionTitle}>Overview</h2>
-                <div style={styles.statsGrid}>
-                    <div style={styles.statCard}>
-                        <h3>Teachers</h3>
-                        <p style={styles.statNumber}>{teacherCount}</p>
-                    </div>
-                    <div style={styles.statCard}>
-                        <h3>Students</h3>
-                        <p style={styles.statNumber}>{studentCount}</p>
-                    </div>
-                </div>
-
-                {/* Class-wise Student Count (Admin Only) */}
-                {currentUser?.role === 'admin' && Object.keys(studentsByClass).length > 0 && (
-                    <div style={styles.classStats}>
-                        <h3 style={{ marginBottom: '1rem' }}>Students by Class</h3>
-                        <div style={styles.classGrid}>
-                            {Object.entries(studentsByClass).map(([className, count]) => (
-                                <div key={className} style={styles.classCard}>
-                                    <span style={styles.className}>{className}</span>
-                                    <span style={styles.classCount}>{count}</span>
-                                </div>
-                            ))}
+            {/* ✅ Overview section sirf ADMIN ke liye */}
+            {currentUser?.role === 'admin' && (
+                <section style={styles.statsSection}>
+                    <h2 style={styles.sectionTitle}>Overview</h2>
+                    <div style={styles.statsGrid}>
+                        <div style={styles.statCard}>
+                            <h3>Teachers</h3>
+                            <p style={styles.statNumber}>{teacherCount}</p>
+                        </div>
+                        <div style={styles.statCard}>
+                            <h3>Students</h3>
+                            <p style={styles.statNumber}>{studentCount}</p>
                         </div>
                     </div>
-                )}
-            </section>
 
-            {/* Actions */}
+                    {Object.keys(studentsByClass).length > 0 && (
+                        <div style={styles.classStats}>
+                            <h3 style={{ marginBottom: '1rem' }}>Students by Class</h3>
+                            <div style={styles.classGrid}>
+                                {Object.entries(studentsByClass).map(([className, count]) => (
+                                    <div key={className} style={styles.classCard}>
+                                        <span style={styles.className}>{className}</span>
+                                        <span style={styles.classCount}>{count}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </section>
+            )}
+
             <section style={styles.actionsSection}>
                 <h2 style={styles.sectionTitle}>Quick Actions</h2>
                 <div style={styles.actionsGrid}>
@@ -414,7 +188,6 @@ const AdminDashboard = () => {
     );
 };
 
-// ✅ Internal CSS (No external files, as per your preference)
 const styles = {
     container: {
         padding: '1.5rem',
@@ -553,20 +326,13 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         height: '100vh',
-        color: '#475569',
+        backgroundColor: '#f8fafc',
     },
-    spinner: {
-        width: '40px',
-        height: '40px',
-        border: '4px solid #e2e8f0',
-        borderTop: '4px solid #3b82f6',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
+    logo: {
+        width: '120px',
+        height: 'auto',
+        marginBottom: '1rem',
     },
 };
-
-// Add keyframes for spinner (via style tag if needed, but inline animation name is safe)
-// In real app, you might inject this once in index.html or use a small <style> tag
-// For now, it will work if your app supports CSS keyframes globally
 
 export default AdminDashboard;

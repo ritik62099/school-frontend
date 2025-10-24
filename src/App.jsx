@@ -18,6 +18,7 @@ import StudentsList from './pages/admin/StudentsList';
 import MyStudents from './pages/admin/MyStudents';
 import AdmitCards from './pages/admin/AdmitCards';
 import IDCards from './pages/admin/IDCards';
+import EditStudent from './pages/admin/EditStudent';
 
 const App = () => {
   return (
@@ -56,6 +57,15 @@ const App = () => {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/admin/students/edit/:id" 
+              element={
+                <ProtectedRoute>
+                  <EditStudent />
+                </ProtectedRoute>
+              } 
+            />
+
             <Route 
               path="/my-students" 
               element={

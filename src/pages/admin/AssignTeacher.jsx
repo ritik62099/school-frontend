@@ -1,221 +1,7 @@
-// // src/pages/admin/AssignTeacher.jsx
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
-
-// const AssignTeacher = () => {
-//   const [teachers, setTeachers] = useState([]);
-//   const [classes] = useState([
-//     'Nursery', 'LKG', 'UKG',
-//     '1st', '2nd', '3rd', '4th', '5th', '6th',
-//     '7th', '8th', '9th', '10th', '11th', '12th'
-//   ]);
-//   const [subjects] = useState([
-//     'Mathematics', 'Science', 'English', 'Hindi', 
-//     'Social Studies', 'Physics', 'Chemistry', 'Biology'
-//   ]);
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     fetchTeachers();
-//   }, []);
-
-//   const fetchTeachers = async () => {
-//     try {
-//       const res = await fetch('http://localhost:5000/api/teachers', {
-//         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-//       });
-//       const data = await res.json();
-//       setTeachers(data.filter(t => t.role === 'teacher' && t.isApproved));
-//     } catch (err) {
-//       alert('Failed to load teachers');
-//     }
-//   };
-
-//   const handleAttendanceToggle = async (teacherId, canMark) => {
-//     try {
-//       const res = await fetch(`http://localhost:5000/api/teachers/attendance-access/${teacherId}`, {
-//         method: 'PATCH',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'Authorization': `Bearer ${localStorage.getItem('token')}`
-//         },
-//         body: JSON.stringify({ canMarkAttendance: canMark })
-//       });
-
-//       if (res.ok) {
-//         setTeachers(teachers.map(t => 
-//           t._id === teacherId ? { ...t, canMarkAttendance: canMark } : t
-//         ));
-//       } else {
-//         alert('Failed to update attendance access');
-//       }
-//     } catch (err) {
-//       alert('Server error');
-//     }
-//   };
-
-//   const handleAssign = async (teacherId, field, selectedValues) => {
-//     try {
-//       const teacher = teachers.find(t => t._id === teacherId);
-//       const updateData = {
-//         assignedClasses: field === 'classes' ? selectedValues : teacher?.assignedClasses || [],
-//         assignedSubjects: field === 'subjects' ? selectedValues : teacher?.assignedSubjects || []
-//       };
-
-//       const res = await fetch(`http://localhost:5000/api/teachers/assign/${teacherId}`, {
-//         method: 'PATCH',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'Authorization': `Bearer ${localStorage.getItem('token')}`
-//         },
-//         body: JSON.stringify(updateData)
-//       });
-
-//       if (res.ok) {
-//         setTeachers(teachers.map(t => 
-//           t._id === teacherId ? { ...t, ...updateData } : t
-//         ));
-//       } else {
-//         const err = await res.json();
-//         alert('Failed: ' + (err.message || 'Unknown error'));
-//       }
-//     } catch (err) {
-//       alert('Server error');
-//     }
-//   };
-
-//   const MultiSelect = ({ options, selected, onChange }) => (
-//     <div style={styles.multiSelect}>
-//       {options.map(option => (
-//         <label key={option} style={styles.checkboxLabel}>
-//           <input
-//             type="checkbox"
-//             checked={selected.includes(option)}
-//             onChange={(e) => {
-//               const newSelected = e.target.checked
-//                 ? [...selected, option]
-//                 : selected.filter(item => item !== option);
-//               onChange(newSelected);
-//             }}
-//           />
-//           {option}
-//         </label>
-//       ))}
-//     </div>
-//   );
-
-//   return (
-//     <div style={styles.container}>
-//       <h2 style={styles.title}>Assign Classes & Subjects to Teachers</h2>
-      
-//       <div style={styles.tableContainer}>
-//         <table style={styles.table}>
-//           <thead>
-//             <tr>
-//               <th>Name</th>
-//               <th>Email</th>
-//               <th>Assigned Classes</th>
-//               <th>Assigned Subjects</th>
-//               <th>Attendance</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {teachers.map(teacher => (
-//               <tr key={teacher._id}>
-//                 <td>{teacher.name}</td>
-//                 <td>{teacher.email}</td>
-//                 <td>
-//                   <MultiSelect
-//                     options={classes}
-//                     selected={teacher.assignedClasses || []}
-//                     onChange={(selected) => handleAssign(teacher._id, 'classes', selected)}
-//                   />
-//                 </td>
-//                 <td>
-//                   <MultiSelect
-//                     options={subjects}
-//                     selected={teacher.assignedSubjects || []}
-//                     onChange={(selected) => handleAssign(teacher._id, 'subjects', selected)}
-//                   />
-//                 </td>
-//                 <td>
-//                   <label style={styles.switch}>
-//                     <input
-//                       type="checkbox"
-//                       checked={teacher.canMarkAttendance || false}
-//                       onChange={(e) => handleAttendanceToggle(teacher._id, e.target.checked)}
-//                     />
-//                     <span style={styles.slider}></span>
-//                   </label>
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   );
-// };
-
-// const styles = {
-//   container: { padding: '2rem', fontFamily: 'Arial' },
-//   title: { color: '#2c3e50', marginBottom: '1.5rem' },
-//   tableContainer: { 
-//     backgroundColor: 'white', 
-//     borderRadius: '8px',
-//     overflow: 'auto'
-//   },
-//   table: { 
-//     width: '100%', 
-//     borderCollapse: 'collapse',
-//     minWidth: '900px'
-//   },
-//   multiSelect: {
-//     display: 'flex',
-//     flexWrap: 'wrap',
-//     gap: '0.5rem',
-//     maxWidth: '200px'
-//   },
-//   checkboxLabel: {
-//     display: 'flex',
-//     alignItems: 'center',
-//     gap: '0.25rem',
-//     fontSize: '0.85rem'
-//   },
-//   switch: {
-//     position: 'relative',
-//     display: 'inline-block',
-//     width: '40px',
-//     height: '20px'
-//   },
-//   slider: {
-//     position: 'absolute',
-//     cursor: 'pointer',
-//     top: 0,
-//     left: 0,
-//     right: 0,
-//     bottom: 0,
-//     backgroundColor: '#ccc',
-//     transition: '.4s',
-//     borderRadius: '20px',
-//     ':before': {
-//       position: 'absolute',
-//       content: '""',
-//       height: '16px',
-//       width: '16px',
-//       left: '2px',
-//       bottom: '2px',
-//       backgroundColor: 'white',
-//       transition: '.4s',
-//       borderRadius: '50%'
-//     }
-//   }
-// };
-
-// export default AssignTeacher;
 // src/pages/admin/AssignTeacher.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { endpoints } from '../../config/api'; // ✅ Import centralized API config
 
 const AssignTeacher = () => {
   const [teachers, setTeachers] = useState([]);
@@ -235,7 +21,8 @@ const AssignTeacher = () => {
 
   const fetchTeachers = async () => {
     try {
-      const res = await fetch("https://school-api-gd9l.onrender.com/api/teachers", {
+      // ✅ Use centralized endpoint
+      const res = await fetch(endpoints.teachers.list, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const data = await res.json();
@@ -255,17 +42,15 @@ const AssignTeacher = () => {
           field === "subjects" ? selectedValues : teacher?.assignedSubjects || [],
       };
 
-      const res = await fetch(
-        `https://school-api-gd9l.onrender.com/api/teachers/assign/${teacherId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify(updateData),
-        }
-      );
+      // ✅ Use dynamic endpoint
+      const res = await fetch(endpoints.teachers.assign(teacherId), {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(updateData),
+      });
 
       if (res.ok) {
         setTeachers(
@@ -284,17 +69,15 @@ const AssignTeacher = () => {
 
   const handleAttendanceToggle = async (teacherId, canMark) => {
     try {
-      const res = await fetch(
-        `https://school-api-gd9l.onrender.com/api/teachers/attendance-access/${teacherId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ canMarkAttendance: canMark }),
-        }
-      );
+      // ✅ Use dynamic endpoint
+      const res = await fetch(endpoints.teachers.attendanceAccess(teacherId), {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ canMarkAttendance: canMark }),
+      });
 
       if (res.ok) {
         setTeachers(

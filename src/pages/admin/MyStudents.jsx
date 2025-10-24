@@ -1,6 +1,9 @@
+
+
 // src/pages/teacher/MyStudents.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { endpoints } from '../../config/api'; // ✅ Import centralized API config
 
 const MyStudents = () => {
   const [students, setStudents] = useState([]);
@@ -12,7 +15,8 @@ const MyStudents = () => {
     const fetchMyStudents = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('https://school-api-gd9l.onrender.com/api/students/my-students', {
+        // ✅ Use centralized endpoint
+        const res = await fetch(endpoints.students.myStudents, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -73,6 +77,7 @@ const MyStudents = () => {
   );
 };
 
+// ✅ Styles unchanged (as per your preference for internal CSS)
 const styles = {
   container: {
     padding: '2rem',

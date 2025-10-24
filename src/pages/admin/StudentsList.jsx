@@ -1,11 +1,14 @@
+
+
 // src/pages/admin/StudentsList.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { endpoints } from '../../config/api';
 
 const StudentsList = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,7 +19,7 @@ const StudentsList = () => {
           throw new Error('No authentication token');
         }
 
-        const res = await fetch('https://school-api-gd9l.onrender.com/api/students', {
+        const res = await fetch(endpoints.students.list, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -29,7 +32,7 @@ const StudentsList = () => {
         setStudents(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Fetch students error:', err);
-        setError("Unable to load students. Please try again.");
+        setError('Unable to load students. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -61,6 +64,7 @@ const StudentsList = () => {
                 <th>Section</th>
                 <th>Roll No</th>
                 <th>Admission Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -73,11 +77,8 @@ const StudentsList = () => {
                         alt={student.name || 'Student'}
                         style={styles.photo}
                         loading="lazy"
-                        crossOrigin="anonymous" // ✅ Helps with CORS
                         onError={(e) => {
-                          console.warn('Failed to load image:', student.photo);
                           e.target.style.display = 'none';
-                          // Show fallback
                           const fallback = document.createElement('div');
                           fallback.textContent = '—';
                           fallback.style.cssText = styles.noPhotoFallback;
@@ -93,9 +94,17 @@ const StudentsList = () => {
                   <td>{student.section || '—'}</td>
                   <td>{student.rollNo || '—'}</td>
                   <td>
-                    {student.admissionDate 
-                      ? new Date(student.admissionDate).toLocaleDateString() 
+                    {student.admissionDate
+                      ? new Date(student.admissionDate).toLocaleDateString()
                       : '—'}
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => navigate(`/admin/students/edit/${student._id}`)}
+                      style={styles.editBtn}
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -107,6 +116,7 @@ const StudentsList = () => {
   );
 };
 
+// ✅ Internal CSS (professional, clean)
 const styles = {
   container: {
     padding: '2rem',
@@ -133,12 +143,13 @@ const styles = {
   tableContainer: {
     overflowX: 'auto',
     borderRadius: '8px',
-    border: '1px solid #e2e8f0'
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    minWidth: '600px'
+    minWidth: '700px'
   },
   photo: {
     width: '48px',
@@ -160,6 +171,7 @@ const styles = {
     fontSize: '18px',
     border: '1px solid #e2e8f0'
   },
+  // Inline CSS string for dynamic fallback
   noPhotoFallback: `
     width: 48px;
     height: 48px;
@@ -171,7 +183,18 @@ const styles = {
     color: #94a3b8;
     font-size: 18px;
     border: 1px solid #e2e8f0;
-  `
+  `,
+  editBtn: {
+    padding: '0.4rem 0.8rem',
+    backgroundColor: '#2980b9',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
+  }
 };
 
 export default StudentsList;

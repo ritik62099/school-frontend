@@ -1,10 +1,12 @@
+
 // src/pages/admin/IDCards.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Logo from "../../assets/logo.png"
+import Logo from "../../assets/logo.png";
+import { endpoints } from '../../config/api'; // ✅ Import centralized API config
 
-// ✅ Replace this with your actual logo URL or path
-const SCHOOL_LOGO_URL = Logo; // e.g., public/logo.png
+// ✅ Logo path remains same (local asset)
+const SCHOOL_LOGO_URL = Logo;
 
 const IDCards = () => {
   const [students, setStudents] = useState([]);
@@ -14,7 +16,8 @@ const IDCards = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const res = await fetch('https://school-api-gd9l.onrender.com/api/students', {
+        // ✅ Use centralized endpoint
+        const res = await fetch(endpoints.students.list, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         const data = await res.json();
@@ -66,7 +69,6 @@ const IDCards = () => {
               height: 36px;
               object-fit: contain;
               border-radius: 4px;
-               marginBottom : '20px',
             }
             .school-name {
               font-weight: bold;
@@ -116,15 +118,6 @@ const IDCards = () => {
               width: 51px;
               font-weight: bold;
               text-align: left;
-            }
-            .signature {
-              position: absolute;
-              left: 10px;
-              bottom: 10px;
-              font-size: 10px;
-              color: #7f8c8d;
-              transform: rotate(-90deg);
-              transform-origin: left bottom;
             }
           </style>
         </head>
@@ -234,7 +227,7 @@ const IDCards = () => {
   );
 };
 
-// Page-level styles
+// ✅ Styles unchanged (as per your preference for internal CSS)
 const pageStyles = {
   container: {
     padding: '2rem',
@@ -275,7 +268,6 @@ const pageStyles = {
   },
 };
 
-// ID Card Inline Styles
 const idCardStyles = {
   idCard: {
     width: '350px',
@@ -303,7 +295,6 @@ const idCardStyles = {
     height: '36px',
     objectFit: 'contain',
     borderRadius: '4px',
-    marginBottom : '20px',
   },
   schoolName: {
     margin: '0',
@@ -362,15 +353,6 @@ const idCardStyles = {
     width: '51px',
     fontWeight: 'bold',
     textAlign: 'left',
-  },
-  signature: {
-    position: 'absolute',
-    left: '10px',
-    bottom: '10px',
-    fontSize: '10px',
-    color: '#7f8c8d',
-    transform: 'rotate(-90deg)',
-    transformOrigin: 'left bottom',
   },
 };
 
