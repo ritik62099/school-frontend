@@ -45,247 +45,309 @@ const Signup = () => {
   };
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.container}>
-        {/* Illustration Side */}
-        <div style={styles.illustration}>
-          <img
-            src={Logins}
-            alt="Signup illustration"
-            style={styles.illustrationImg}
-          />
-          <h2 style={styles.illustrationTitle}>Join Us!</h2>
-          <p style={styles.illustrationText}>Create an account to get started.</p>
-        </div>
+    <>
+      <style>{`
+        .signup-page {
+          min-height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: #f0f2f5;
+          padding: 1rem;
+          font-family: "Segoe UI", system-ui, sans-serif;
+        }
+        .signup-container {
+          display: flex;
+          background-color: #fff;
+          border-radius: 16px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+          overflow: hidden;
+          max-width: 900px;
+          width: 100%;
+        }
+        .illustration-side {
+          flex: 1;
+          background-color: #2ecc71;
+          color: white;
+          padding: 2.5rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+          gap: 1.25rem;
+        }
+        .illustration-img {
+          width: 180px;
+          height: auto;
+        }
+        .illustration-title {
+          font-size: 1.75rem;
+          font-weight: 700;
+          margin: 0;
+        }
+        .illustration-text {
+          font-size: 1rem;
+          opacity: 0.9;
+          max-width: 300px;
+        }
+        .form-card {
+          flex: 1;
+          padding: 2.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+        .logo {
+          text-align: center;
+          margin-bottom: 0.5rem;
+        }
+        .logo-img {
+          width: 60px;
+          height: auto;
+        }
+        .form-title {
+          font-size: 1.8rem;
+          font-weight: 700;
+          color: #2c3e50;
+          text-align: center;
+          margin: 0;
+        }
+        .signup-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+        }
+        .input-group {
+          display: flex;
+          flex-direction: column;
+        }
+        .form-input {
+          padding: 0.875rem;
+          font-size: 1rem;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          transition: border-color 0.2s;
+        }
+        .form-input:focus {
+          outline: none;
+          border-color: #2ecc71;
+        }
+        .btn {
+          padding: 0.875rem;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        .btn-send {
+          background-color: #2ecc71;
+        }
+        .btn-send:hover:not(:disabled) {
+          background-color: #27ae60;
+        }
+        .btn-back {
+          background-color: #95a5a6;
+        }
+        .btn-back:hover {
+          background-color: #7f8c8d;
+        }
+        .btn:disabled {
+          opacity: 0.8;
+          cursor: not-allowed;
+        }
+        .alert-error {
+          background-color: #fee;
+          color: #c33;
+          padding: 0.75rem;
+          border-radius: 8px;
+          text-align: center;
+          border: 1px solid #fcc;
+        }
+        .otp-info {
+          text-align: center;
+          color: #2c3e50;
+          margin-bottom: 0.5rem;
+          font-size: 0.95rem;
+        }
+        .switch-text {
+          text-align: center;
+          font-size: 0.95rem;
+          color: #666;
+        }
+        .auth-link {
+          color: #3498db;
+          font-weight: 600;
+          text-decoration: none;
+        }
+        .auth-link:hover {
+          text-decoration: underline;
+        }
 
-        {/* Signup Form */}
-        <div style={styles.formCard}>
-          <div style={styles.logo}>
-            <img 
-              src={Logosignup}
-              alt="School Logo" 
-              style={styles.logoImg}
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .signup-container {
+            flex-direction: column;
+            border-radius: 12px;
+          }
+          .illustration-side {
+            padding: 1.5rem;
+          }
+          .illustration-img {
+            width: 140px;
+          }
+          .illustration-title {
+            font-size: 1.4rem;
+          }
+          .form-card {
+            padding: 2rem 1.5rem;
+          }
+          .form-title {
+            font-size: 1.6rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .illustration-side {
+            padding: 1.25rem;
+          }
+          .illustration-img {
+            width: 120px;
+          }
+          .illustration-title {
+            font-size: 1.25rem;
+          }
+          .illustration-text {
+            font-size: 0.9rem;
+          }
+          .form-card {
+            padding: 1.75rem 1.25rem;
+          }
+          .form-title {
+            font-size: 1.5rem;
+          }
+          .form-input, .btn {
+            font-size: 0.95rem;
+            padding: 0.75rem;
+          }
+          .otp-info {
+            font-size: 0.9rem;
+          }
+        }
+      `}</style>
+
+      <div className="signup-page">
+        <div className="signup-container">
+          {/* Illustration Side */}
+          <div className="illustration-side">
+            <img
+              src={Logins}
+              alt="Signup illustration"
+              className="illustration-img"
             />
+            <h2 className="illustration-title">Join Us!</h2>
+            <p className="illustration-text">Create an account to get started.</p>
           </div>
-          <h1 style={styles.title}>Sign Up</h1>
-          {error && <div style={styles.alertError}>{error}</div>}
 
-          {!otpSent ? (
-            <form onSubmit={handleSendOtp} style={styles.form}>
-              <div style={styles.inputGroup}>
-                <input
-                  type="text"
-                  placeholder="Full Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  style={styles.input}
-                />
-              </div>
-              <div style={styles.inputGroup}>
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  style={styles.input}
-                />
-              </div>
-              <div style={styles.inputGroup}>
-                <input
-                  type="password"
-                  placeholder="Password (min 6 chars)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  style={styles.input}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...styles.button,
-                  backgroundColor: '#2ecc71',
-                  opacity: loading ? 0.8 : 1,
-                  cursor: loading ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {loading ? 'Sending OTP...' : 'Send OTP'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleSignup} style={styles.form}>
-              <p style={styles.otpInfo}>
-                OTP sent to <strong>{email}</strong>
-              </p>
-              <div style={styles.inputGroup}>
-                <input
-                  type="text"
-                  placeholder="Enter 6-digit OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                  maxLength={6}
-                  inputMode="numeric"
-                  style={styles.input}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...styles.button,
-                  backgroundColor: '#2ecc71',
-                  opacity: loading ? 0.8 : 1,
-                  cursor: loading ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {loading ? 'Signing up...' : 'Complete Signup'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setOtpSent(false)}
-                style={{
-                  ...styles.button,
-                  backgroundColor: '#95a5a6',
-                  marginTop: '0.75rem',
-                }}
-              >
-                ← Edit Email
-              </button>
-            </form>
-          )}
+          {/* Signup Form */}
+          <div className="form-card">
+            <div className="logo">
+              <img 
+                src={Logosignup}
+                alt="User Icon" 
+                className="logo-img"
+              />
+            </div>
+            <h1 className="form-title">Sign Up</h1>
+            {error && <div className="alert-error">{error}</div>}
 
-          <p style={styles.switch}>
-            Already have an account?{' '}
-            <Link to="/login" style={styles.link}>Login</Link>
-          </p>
+            {!otpSent ? (
+              <form onSubmit={handleSendOtp} className="signup-form">
+                <div className="input-group">
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="form-input"
+                  />
+                </div>
+                <div className="input-group">
+                  <input
+                    type="email"
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="form-input"
+                  />
+                </div>
+                <div className="input-group">
+                  <input
+                    type="password"
+                    placeholder="Password (min 6 chars)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="form-input"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn btn-send"
+                >
+                  {loading ? 'Sending OTP...' : 'Send OTP'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleSignup} className="signup-form">
+                <p className="otp-info">
+                  OTP sent to <strong>{email}</strong>
+                </p>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    placeholder="Enter 6-digit OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    required
+                    maxLength={6}
+                    inputMode="numeric"
+                    className="form-input"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn btn-send"
+                >
+                  {loading ? 'Signing up...' : 'Complete Signup'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOtpSent(false)}
+                  className="btn btn-back"
+                >
+                  ← Edit Email
+                </button>
+              </form>
+            )}
+
+            <p className="switch-text">
+              Already have an account?{' '}
+              <Link to="/login" className="auth-link">Login</Link>
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
-};
-
-const styles = {
-  pageContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f2f5',
-    padding: '1rem',
-    fontFamily: '"Segoe UI", system-ui, sans-serif',
-  },
-  container: {
-    display: 'flex',
-    backgroundColor: '#fff',
-    borderRadius: '16px',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-    overflow: 'hidden',
-    maxWidth: '900px',
-    width: '100%',
-  },
-  illustration: {
-    flex: 1,
-    backgroundColor: '#2ecc71',
-    color: 'white',
-    padding: '2.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-    gap: '1.25rem',
-  },
-  illustrationImg: {
-    width: '180px',
-    height: 'auto',
-  },
-  illustrationTitle: {
-    fontSize: '1.75rem',
-    fontWeight: '700',
-    margin: 0,
-  },
-  illustrationText: {
-    fontSize: '1rem',
-    opacity: 0.9,
-    maxWidth: '300px',
-  },
-  formCard: {
-    flex: 1,
-    padding: '2.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem',
-  },
-  logo: {
-    textAlign: 'center',
-    marginBottom: '0.5rem',
-  },
-  logoImg: {
-    width: '60px',
-    height: 'auto',
-  },
-  title: {
-    fontSize: '1.8rem',
-    fontWeight: '700',
-    color: '#2c3e50',
-    textAlign: 'center',
-    margin: 0,
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem',
-  },
-  inputGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  input: {
-    padding: '0.875rem',
-    fontSize: '1rem',
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    transition: 'border-color 0.2s',
-  },
-  button: {
-    padding: '0.875rem',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
-  alertError: {
-    backgroundColor: '#fee',
-    color: '#c33',
-    padding: '0.75rem',
-    borderRadius: '8px',
-    textAlign: 'center',
-    border: '1px solid #fcc',
-  },
-  otpInfo: {
-    textAlign: 'center',
-    color: '#2c3e50',
-    marginBottom: '0.5rem',
-    fontSize: '0.95rem',
-  },
-  switch: {
-    textAlign: 'center',
-    fontSize: '0.95rem',
-    color: '#666',
-  },
-  link: {
-    color: '#3498db',
-    fontWeight: '600',
-    textDecoration: 'none',
-  },
 };
 
 export default Signup;
