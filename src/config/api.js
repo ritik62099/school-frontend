@@ -73,9 +73,37 @@ const api = (path) => {
   return path; // Vite dev server will proxy /api/... → backend
 };
 
+// export const endpoints = {
+//   auth: {
+//     login: api('/api/auth/login'),       // ✅ include /api here
+//     signup: api('/api/auth/signup'),
+//     requestOtp: api('/api/auth/request-otp'),
+//     me: api('/api/auth/me'),
+//   },
+//   teachers: {
+//     list: api('/api/teachers'),
+//     count: api('/api/teachers/count'),
+//     // ... etc
+//   },
+//   students: {
+//     list: api('/api/students'),
+//     // ...
+//   },
+//   attendance: {
+//     get: (date, className) => 
+//       api(`/api/attendance?date=${encodeURIComponent(date)}&class=${encodeURIComponent(className)}`),
+//     submit: api('/api/attendance'),
+//   },
+//   marks: {
+//     list: api('/api/marks'),
+//     save: (studentId) => api(`/api/marks/${studentId}`),
+//     getStudent: (studentId) => api(`/api/marks/${studentId}`),
+//   },
+// };
+
 export const endpoints = {
   auth: {
-    login: api('/api/auth/login'),       // ✅ include /api here
+    login: api('/api/auth/login'),
     signup: api('/api/auth/signup'),
     requestOtp: api('/api/auth/request-otp'),
     me: api('/api/auth/me'),
@@ -83,14 +111,15 @@ export const endpoints = {
   teachers: {
     list: api('/api/teachers'),
     count: api('/api/teachers/count'),
-    // ... etc
   },
   students: {
-    list: api('/api/students'),
-    // ...
-  },
+  list: api('/api/students'),
+  count: api('/api/students/count'),
+  byClass: api('/api/students/by-class'),
+  myStudents: api('/api/students/my-students'),
+},
   attendance: {
-    get: (date, className) => 
+    get: (date, className) =>
       api(`/api/attendance?date=${encodeURIComponent(date)}&class=${encodeURIComponent(className)}`),
     submit: api('/api/attendance'),
   },
