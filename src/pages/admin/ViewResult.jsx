@@ -314,140 +314,148 @@ const ViewResult = () => {
                 )}
 
                 {/* Annual */}
-                {selectedExamType === "final" && (
-                  <div id={`report-card-${r._id}-final`} className="report-card">
-                    <div className="header" style={{ display: "flex", alignItems: "center", borderBottom: "2px solid #000", marginBottom: "10px" }}>
-                      <img src={Logo} alt="Logo" style={{ width: "50px", marginRight: "10px" }} />
-                      <div>
-                        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>AMBIKA INTERNATIONAL SCHOOL</h1>
-                        <p style={{ margin: 0 }}>Saidpur, Dighwara (Saran), 841207</p>
-                      </div>
-                    </div>
+                {/* Annual */}
+{selectedExamType === "final" && (
+  <div id={`report-card-${r._id}-final`} className="report-card">
+    <div className="header" style={{ display: "flex", alignItems: "center", borderBottom: "2px solid #000", marginBottom: "10px" }}>
+      <img src={Logo} alt="Logo" style={{ width: "50px", marginRight: "10px" }} />
+      <div>
+        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>AMBIKA INTERNATIONAL SCHOOL</h1>
+        <p style={{ margin: 0 }}>Saidpur, Dighwara (Saran), 841207</p>
+      </div>
+    </div>
 
-                    <h3 style={{ textAlign: "center", margin: "10px 0" }}>ANNUAL REPORT CARD</h3>
+    <h3 style={{ textAlign: "center", margin: "10px 0" }}>ANNUAL REPORT CARD</h3>
 
-                    <div style={{ marginBottom: "10px" }}>
-                      <strong>CLASS:</strong> {r.class} &nbsp;&nbsp;&nbsp;
-                      <strong>SECTION:</strong> A &nbsp;&nbsp;&nbsp;
-                      <strong>SESSION:</strong> 2025-26
-                    </div>
+    <div style={{ marginBottom: "10px" }}>
+      <strong>CLASS:</strong> {r.class} &nbsp;&nbsp;&nbsp;
+      <strong>SECTION:</strong> A &nbsp;&nbsp;&nbsp;
+      <strong>SESSION:</strong> 2025-26
+    </div>
 
-                    <div style={{ marginBottom: "10px", border: "1px solid #ccc", padding: "5px" }}>
-                      <strong>STUDENT'S DETAIL</strong><br />
-                      <strong>Student's Name:</strong> {student.name} &nbsp;&nbsp;&nbsp;
-                      <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
-                      <strong>Mother's Name:</strong> {student.motherName || "N/A"} &nbsp;&nbsp;&nbsp;
-                      <strong>Contact No:</strong> {student.phone || "N/A"}<br />
-                      <strong>Father's Name:</strong> {student.fatherName || "N/A"} &nbsp;&nbsp;&nbsp;
-                      <strong>Attendance:</strong> {student.attendance || "0"} / 115<br />
-                      <strong>Address:</strong> {student.address || "N/A"}
-                    </div>
+    <div style={{ marginBottom: "10px", border: "1px solid #ccc", padding: "5px" }}>
+      <strong>STUDENT'S DETAIL</strong><br />
+      <strong>Student's Name:</strong> {student.name} &nbsp;&nbsp;&nbsp;
+      <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
+      <strong>Mother's Name:</strong> {student.motherName || "N/A"} &nbsp;&nbsp;&nbsp;
+      <strong>Contact No:</strong> {student.phone || "N/A"}<br />
+      <strong>Father's Name:</strong> {student.fatherName || "N/A"} &nbsp;&nbsp;&nbsp;
+      <strong>Attendance:</strong> {student.attendance || "0"} / 115<br />
+      <strong>Address:</strong> {student.address || "N/A"}
+    </div>
 
-                    <table className="marks-table" border="1" style={{ width: "100%", textAlign: "center", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr>
-                          <th>SUBJECT</th>
-                          <th>TERM I (100)</th>
-                          <th>TERM II (100)</th>
-                          <th>FINAL (100)</th>
-                          <th>GRADE POINT</th>
-                          <th>GRADE</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {subjectsArray.map((sub) => {
-                          const pa1 = Math.min(examData.pa1?.[sub] || 0, 20);
-                          const pa2 = Math.min(examData.pa2?.[sub] || 0, 20);
-                          const sa1 = Math.min(examData.halfYear?.[sub] || 0, 80);
-                          const pa3 = Math.min(examData.pa3?.[sub] || 0, 20);
-                          const pa4 = Math.min(examData.pa4?.[sub] || 0, 20);
-                          const sa2 = Math.min(examData.final?.[sub] || 0, 80);
+    <table className="marks-table" border="1" style={{ width: "100%", textAlign: "center", borderCollapse: "collapse" }}>
+      <thead>
+        <tr>
+          <th>SUBJECT</th>
+          <th>PA I (20)</th>
+          <th>PA II (20)</th>
+          <th>SA I (80)</th>
+          <th>PA III (20)</th>
+          <th>PA IV (20)</th>
+          <th>SA II (80)</th>
+          <th>FINAL (100)</th>
+          <th>GRADE POINT</th>
+          <th>GRADE</th>
+        </tr>
+      </thead>
+      <tbody>
+        {subjectsArray.map((sub) => {
+          const pa1 = Math.min(examData.pa1?.[sub] || 0, 20);
+          const pa2 = Math.min(examData.pa2?.[sub] || 0, 20);
+          const sa1 = Math.min(examData.halfYear?.[sub] || 0, 80);
+          const pa3 = Math.min(examData.pa3?.[sub] || 0, 20);
+          const pa4 = Math.min(examData.pa4?.[sub] || 0, 20);
+          const sa2 = Math.min(examData.final?.[sub] || 0, 80);
 
-                          const term1 = (pa1 / 2) + (pa2 / 2) + sa1; // out of 100
-                          const term2Component = pa3 + pa4 + sa2; // out of 120
-                          const finalTotal = (term1 / 2) + (term2Component / 2); // weighted average out of 100
+          const term1 = (pa1 / 2) + (pa2 / 2) + sa1; // out of 100
+          const term2Component = pa3 + pa4 + sa2; // out of 120
+          const finalTotal = (term1 / 2) + (term2Component / 2); // weighted average out of 100
 
-                          const grade = getGrade(finalTotal, r.class);
-                          const gradePoint = grade === "A1" ? 10 :
-                                            grade === "A2" ? 9 :
-                                            grade === "B1" ? 8 :
-                                            grade === "B2" ? 7 :
-                                            grade === "C1" ? 6 :
-                                            grade === "C2" ? 5 :
-                                            grade === "D" ? 4 : 0;
+          const grade = getGrade(finalTotal, r.class);
+          const gradePoint = grade === "A1" ? 10 :
+                            grade === "A2" ? 9 :
+                            grade === "B1" ? 8 :
+                            grade === "B2" ? 7 :
+                            grade === "C1" ? 6 :
+                            grade === "C2" ? 5 :
+                            grade === "D" ? 4 : 0;
 
-                          return (
-                            <tr key={sub}>
-                              <td>{sub}</td>
-                              <td>{term1.toFixed(1)}</td>
-                              <td>{term2Component.toFixed(1)}</td>
-                              <td>{finalTotal.toFixed(1)}</td>
-                              <td>{gradePoint}</td>
-                              <td>{grade}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td><strong>TOTAL</strong></td>
-                          <td><strong>{totalTerm1}</strong></td>
-                          <td><strong>{subjectsArray.reduce((sum, sub) => {
-                            const pa3 = Math.min(examData.pa3?.[sub] || 0, 20);
-                            const pa4 = Math.min(examData.pa4?.[sub] || 0, 20);
-                            const sa2 = Math.min(examData.final?.[sub] || 0, 80);
-                            return sum + (pa3 + pa4 + sa2);
-                          }, 0).toFixed(1)}</strong></td>
-                          <td><strong>{totalFinal}</strong></td>
-                          <td></td>
-                          <td></td>
-                        </tr>
-                      </tfoot>
-                    </table>
+          return (
+            <tr key={sub}>
+              <td>{sub}</td>
+              <td>{pa1}</td>
+              <td>{pa2}</td>
+              <td>{sa1}</td>
+              <td>{pa3}</td>
+              <td>{pa4}</td>
+              <td>{sa2}</td>
+              <td>{finalTotal.toFixed(1)}</td>
+              <td>{gradePoint}</td>
+              <td>{grade}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td><strong>TOTAL</strong></td>
+          <td><strong>{subjectsArray.reduce((sum, sub) => sum + Math.min(examData.pa1?.[sub] || 0, 20), 0).toFixed(1)}</strong></td>
+          <td><strong>{subjectsArray.reduce((sum, sub) => sum + Math.min(examData.pa2?.[sub] || 0, 20), 0).toFixed(1)}</strong></td>
+          <td><strong>{subjectsArray.reduce((sum, sub) => sum + Math.min(examData.halfYear?.[sub] || 0, 80), 0).toFixed(1)}</strong></td>
+          <td><strong>{subjectsArray.reduce((sum, sub) => sum + Math.min(examData.pa3?.[sub] || 0, 20), 0).toFixed(1)}</strong></td>
+          <td><strong>{subjectsArray.reduce((sum, sub) => sum + Math.min(examData.pa4?.[sub] || 0, 20), 0).toFixed(1)}</strong></td>
+          <td><strong>{subjectsArray.reduce((sum, sub) => sum + Math.min(examData.final?.[sub] || 0, 80), 0).toFixed(1)}</strong></td>
+          <td><strong>{totalFinal}</strong></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
 
-                    <div style={{ marginTop: "10px", display: "flex", justifyContent: "space-between" }}>
-                      <div>
-                        <strong>Total Obtain Marks:</strong> {totalFinal}<br />
-                        <strong>Percentage:</strong> {percentageFinal}%
-                      </div>
-                      <div>
-                        <strong>Class Teacher Sig:</strong> _______________<br />
-                        <strong>Principal Sig:</strong> _______________
-                      </div>
-                    </div>
+    <div style={{ marginTop: "10px", display: "flex", justifyContent: "space-between" }}>
+      <div>
+        <strong>Total Obtain Marks (Final):</strong> {totalFinal}<br />
+        <strong>Percentage:</strong> {percentageFinal}%
+      </div>
+      <div>
+        <strong>Class Teacher Sig:</strong> _______________<br />
+        <strong>Principal Sig:</strong> _______________
+      </div>
+    </div>
 
-                    <div style={{ marginTop: "10px", borderTop: "1px solid #000", paddingTop: "10px" }}>
-                      <strong>SCHOLASTIC AREAS (9 Point Scale)</strong><br />
-                      <table border="1" style={{ width: "100%", textAlign: "center", borderCollapse: "collapse" }}>
-                        <thead>
-                          <tr>
-                            <th>MARKS RANGE</th>
-                            <th>GRADE</th>
-                            <th>GRADE POINT</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr><td>91-100</td><td>A1</td><td>10.0</td></tr>
-                          <tr><td>81-90</td><td>A2</td><td>9.0</td></tr>
-                          <tr><td>71-80</td><td>B1</td><td>8.0</td></tr>
-                          <tr><td>61-70</td><td>B2</td><td>7.0</td></tr>
-                          <tr><td>51-60</td><td>C1</td><td>6.0</td></tr>
-                          <tr><td>41-50</td><td>C2</td><td>5.0</td></tr>
-                          <tr><td>33-40</td><td>D</td><td>4.0</td></tr>
-                          <tr><td>00-32</td><td>E</td><td>0.0</td></tr>
-                        </tbody>
-                      </table>
-                    </div>
+    <div style={{ marginTop: "10px", borderTop: "1px solid #000", paddingTop: "10px" }}>
+      <strong>SCHOLASTIC AREAS (9 Point Scale)</strong><br />
+      <table border="1" style={{ width: "100%", textAlign: "center", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th>MARKS RANGE</th>
+            <th>GRADE</th>
+            <th>GRADE POINT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>91-100</td><td>A1</td><td>10.0</td></tr>
+          <tr><td>81-90</td><td>A2</td><td>9.0</td></tr>
+          <tr><td>71-80</td><td>B1</td><td>8.0</td></tr>
+          <tr><td>61-70</td><td>B2</td><td>7.0</td></tr>
+          <tr><td>51-60</td><td>C1</td><td>6.0</td></tr>
+          <tr><td>41-50</td><td>C2</td><td>5.0</td></tr>
+          <tr><td>33-40</td><td>D</td><td>4.0</td></tr>
+          <tr><td>00-32</td><td>E</td><td>0.0</td></tr>
+        </tbody>
+      </table>
+    </div>
 
-                    <div style={{ marginTop: "10px", fontSize: "0.8rem" }}>
-                      <strong>Students are assessed according to the following:</strong><br />
-                      Promotion is based on the day-to-day work of the student throughout the year and also on the performance in the half yearly/summative examination.<br />
-                      <strong>First Term:</strong> PA I (10%) + PA II (10%) + SA I (80%) = 100%<br />
-                      <strong>Second Term:</strong> PA III (10%) + PA IV (10%) + SA II (80%) = 100%<br />
-                      <strong>Final Result:</strong> 50% of 1st Term + 50% of 2nd Term = 100%
-                    </div>
-                  </div>
-                )}
+    <div style={{ marginTop: "10px", fontSize: "0.8rem" }}>
+      <strong>Students are assessed according to the following:</strong><br />
+      Promotion is based on the day-to-day work of the student throughout the year and also on the performance in the half yearly/summative examination.<br />
+      <strong>First Term:</strong> PA I (10%) + PA II (10%) + SA I (80%) = 100%<br />
+      <strong>Second Term:</strong> PA III (10%) + PA IV (10%) + SA II (80%) = 100%<br />
+      <strong>Final Result:</strong> 50% of 1st Term + 50% of 2nd Term = 100%
+    </div>
+  </div>
+)}
 
                 <div style={{ textAlign: "center", marginTop: "10px" }}>
                   <button onClick={() => downloadReportCard(r._id, student.name, selectedExamType)} style={{ marginRight: "10px" }}>📥 Download PDF</button>
