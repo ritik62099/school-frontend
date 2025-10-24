@@ -7,8 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        // target: 'https://school-api-gd9l.onrender.com/', // ← no trailing spaces!
-        target: 'http://localhost:5000', // ← no trailing spaces!
+        target: 'https://school-api-gd9l.onrender.com/', // ← no trailing spaces!
+        // target: 'http://localhost:5000', // ← no trailing spaces!
         changeOrigin: true,
         secure: false,
       }
