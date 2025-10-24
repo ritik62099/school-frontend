@@ -1,9 +1,7 @@
-
-
 // src/pages/teacher/MyStudents.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { endpoints } from '../../config/api'; // ✅ Import centralized API config
+import { endpoints } from '../../config/api';
 
 const MyStudents = () => {
   const [students, setStudents] = useState([]);
@@ -15,14 +13,11 @@ const MyStudents = () => {
     const fetchMyStudents = async () => {
       try {
         const token = localStorage.getItem('token');
-        // ✅ Use centralized endpoint
         const res = await fetch(endpoints.students.myStudents, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!res.ok) {
-          throw new Error('Failed to fetch your students');
-        }
+        if (!res.ok) throw new Error('Failed to fetch your students');
 
         const data = await res.json();
         setStudents(Array.isArray(data) ? data : []);
@@ -42,66 +37,138 @@ const MyStudents = () => {
 
   return (
     <div style={styles.container}>
-      <h2>My Students</h2>
-      <button onClick={() => navigate(-1)} style={styles.backBtn}>
-        ← Back to Dashboard
-      </button>
+      <div style={styles.header}>
+        <h2 style={styles.title}>🎓 My Students</h2>
+        <button onClick={() => navigate(-1)} style={styles.backBtn}>
+          ← Back
+        </button>
+      </div>
 
       {students.length === 0 ? (
         <p style={styles.center}>No students assigned to your classes.</p>
       ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Class</th>
-              <th>Roll No</th>
-              <th>Admission Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.map((student) => (
-              <tr key={student._id}>
-                <td>{student.name}</td>
-                <td>{student.email}</td>
-                <td><strong>{student.class}</strong></td>
-                <td>{student.rollNo}</td>
-                <td>{new Date(student.admissionDate).toLocaleDateString()}</td>
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Class</th>
+                <th>Roll No</th>
+                <th>Admission Date</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {students.map((student) => (
+                <tr key={student._id}>
+                  <td data-label="Name">{student.name}</td>
+                  <td data-label="Class">{student.class}</td>
+                  <td data-label="Roll No">{student.rollNo}</td>
+                  <td data-label="Admission Date">
+                    {new Date(student.admissionDate).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
 };
 
-// ✅ Styles unchanged (as per your preference for internal CSS)
+// ✅ Improved styles for responsiveness & visual appeal
 const styles = {
   container: {
     padding: '2rem',
-    fontFamily: 'Arial, sans-serif',
+    fontFamily: 'Inter, Arial, sans-serif',
+    backgroundColor: '#f8fafc',
+    minHeight: '100vh'
   },
-  center: {
-    textAlign: 'center',
-    marginTop: '2rem',
-    fontSize: '1.1rem'
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: '1.5rem'
+  },
+  title: {
+    color: '#1e293b',
+    fontSize: '1.8rem',
+    fontWeight: '600'
   },
   backBtn: {
-    marginBottom: '1.5rem',
-    padding: '0.5rem 1rem',
-    backgroundColor: '#3498db',
+    backgroundColor: '#2563eb',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
+    padding: '0.6rem 1.2rem',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    transition: 'all 0.2s ease-in-out',
+  },
+  tableWrapper: {
+    overflowX: 'auto',
+    borderRadius: '8px',
+    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+    backgroundColor: 'white'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    marginTop: '1rem'
+    minWidth: '600px',
+  },
+  center: {
+    textAlign: 'center',
+    marginTop: '2rem',
+    fontSize: '1.1rem',
+    color: '#64748b'
   }
 };
+
+// ✅ Inline styles for responsive table (using CSS-in-JS)
+const styleTag = document.createElement("style");
+styleTag.innerHTML = `
+table th, table td {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+table thead {
+  background-color: #eff6ff;
+  color: #1e40af;
+}
+table tr:hover {
+  background-color: #f1f5f9;
+  transition: 0.2s;
+}
+@media (max-width: 768px) {
+  table thead {
+    display: none;
+  }
+  table, table tbody, table tr, table td {
+    display: block;
+    width: 100%;
+  }
+  table tr {
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+  table td {
+    padding: 0.8rem 1rem;
+    text-align: right;
+    position: relative;
+  }
+  table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 1rem;
+    font-weight: 600;
+    color: #334155;
+    text-transform: capitalize;
+  }
+}`;
+document.head.appendChild(styleTag);
 
 export default MyStudents;
