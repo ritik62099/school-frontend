@@ -131,6 +131,7 @@
 //     </AuthContext.Provider>
 //   );
 // };
+
 // src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as jwtDecode from 'jwt-decode';
@@ -221,23 +222,25 @@ export const AuthProvider = ({ children }) => {
     }
     return data.message;
   };
+// In AuthProvider
+const signup = async (name, email, password) => {
+  const res = await fetch(endpoints.auth.signup, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password }), // No OTP
+  });
 
-  const signup = async (name, email, password, otp) => {
-    const res = await fetch(endpoints.auth.signup, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, otp }),
-    });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Signup failed');
+  }
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || 'Signup failed');
-    }
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('user', JSON.stringify(data.user));
+  setCurrentUser(data.user);
+};
 
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setCurrentUser(data.user);
-  };
+// Remove requestOtp function entirely
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -250,7 +253,7 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser,
     login,
     signup,
-    requestOtp,
+    
     logout,
   };
 
