@@ -28,6 +28,8 @@ export const endpoints = {
   teachers: {
     list: api('/api/teachers'),
     count: api('/api/teachers/count'),
+     approve: (id) => api(`/api/teachers/${id}/approve`),   // ✅ Add this
+    delete: (id) => api(`/api/teachers/${id}`),
   },
   students: {
   list: api('/api/students'),
