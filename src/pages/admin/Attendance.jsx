@@ -44,9 +44,12 @@ const Attendance = () => {
 
     const fetchAttendanceData = async () => {
       try {
-        const studentsRes = await fetch(endpoints.students.byClassParam(selectedClass), {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
+        const studentsRes = await fetch(
+  `${endpoints.students.byClass}?class=${encodeURIComponent(selectedClass)}`,
+  {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  }
+);
 
         if (!studentsRes.ok) throw new Error('Failed to load students');
         const studentsData = await studentsRes.json();

@@ -74,9 +74,9 @@ const AdminDashboard = () => {
         { label: 'View All Students', path: '/students', color: '#1abc9c' },
         { label: 'Admit Cards', path: '/admit-cards', color: '#9b59b6' },
         { label: 'ID Cards', path: '/id-cards', color: '#16a085' },
-        { label: 'Add Marks', path: '/add-marks', color: '#e74c3c' },
+        // { label: 'Add Marks', path: '/add-marks', color: '#e74c3c' },
         { label: 'View Result', path: '/view-result', color: '#f39c12' },
-        { label: 'Mark Attendance', path: '/attendance', color: '#9b59b6' },
+        // { label: 'Mark Attendance', path: '/attendance', color: '#9b59b6' },
     ];
 
     const teacherButtons = [

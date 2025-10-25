@@ -30,12 +30,15 @@ export const endpoints = {
     count: api('/api/teachers/count'),
      approve: (id) => api(`/api/teachers/${id}/approve`),   // ✅ Add this
     delete: (id) => api(`/api/teachers/${id}`),
+    assign: (id) => api(`/api/teachers/${id}/assign`),
+    attendanceAccess: (id) => api(`/api/teachers/${id}/attendance-access`),
   },
   students: {
   list: api('/api/students'),
   count: api('/api/students/count'),
   byClass: api('/api/students/by-class'),
   myStudents: api('/api/students/my-students'),
+  create: api('/api/students'),
 },
   attendance: {
     get: (date, className) =>
