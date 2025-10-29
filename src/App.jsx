@@ -19,6 +19,7 @@ import MyStudents from './pages/admin/MyStudents';
 import AdmitCards from './pages/admin/AdmitCards';
 import IDCards from './pages/admin/IDCards';
 import EditStudent from './pages/admin/EditStudent';
+import MonthlyAttendanceReport from './pages/admin/MonthlyAttendanceReport';
 
 const App = () => {
   return (
@@ -93,6 +94,14 @@ const App = () => {
               } 
             />
             
+            <Route 
+  path="/attendance/monthly-report" 
+  element={
+    <ProtectedRoute>
+      <MonthlyAttendanceReport />
+    </ProtectedRoute>
+  } 
+/>
             {/* ✅ Use AdminRoute instead of inline check */}
             <Route 
               path="/assign-teacher" 

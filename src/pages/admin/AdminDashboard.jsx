@@ -85,7 +85,8 @@ const AdminDashboard = () => {
             ? [
                 { label: 'Mark Attendance', path: '/attendance', color: '#9b59b6' },
                 { label: 'Add Marks', path: '/add-marks', color: '#e74c3c' },
-                { label: 'View Result', path: '/view-result', color: '#f39c12' }
+                { label: 'View Result', path: '/view-result', color: '#f39c12' },
+                { label: 'Attendance Download', path: '/attendance/monthly-report', color: '#f39c12' }
               ] 
             : [])
     ];
@@ -153,7 +154,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
 
-                    {Object.keys(studentsByClass).length > 0 && (
+                    {/* {Object.keys(studentsByClass).length > 0 && (
                         <div style={styles.classStats}>
                             <h3 style={{ marginBottom: '1rem' }}>Students by Class</h3>
                             <div style={styles.classGrid}>
@@ -165,7 +166,7 @@ const AdminDashboard = () => {
                                 ))}
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </section>
             )}
 

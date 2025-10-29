@@ -209,19 +209,7 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(data.user);
   };
 
-  const requestOtp = async (email) => {
-    const res = await fetch(endpoints.auth.requestOtp, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || 'Failed to send OTP');
-    }
-    return data.message;
-  };
 // In AuthProvider
 const signup = async (name, email, password) => {
   const res = await fetch(endpoints.auth.signup, {

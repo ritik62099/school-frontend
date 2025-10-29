@@ -45,7 +45,7 @@ const Attendance = () => {
     const fetchAttendanceData = async () => {
       try {
         const studentsRes = await fetch(
-  `${endpoints.students.byClass}?class=${encodeURIComponent(selectedClass)}`,
+  `${endpoints.students.list}?class=${encodeURIComponent(selectedClass)}`,
   {
     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
   }

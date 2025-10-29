@@ -44,6 +44,11 @@ export const endpoints = {
     get: (date, className) =>
       api(`/api/attendance?date=${encodeURIComponent(date)}&class=${encodeURIComponent(className)}`),
     submit: api('/api/attendance'),
+     monthlyReport: (className, year, month) =>
+      api(`/api/attendance/monthly-report?class=${encodeURIComponent(className)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`),
+     studentMonthly: (studentId, year, month) =>
+    api(`/api/attendance/student-monthly?studentId=${encodeURIComponent(studentId)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`),
+     studentTotal: (studentId) => api(`/api/attendance/student-total/${studentId}`),
   },
   marks: {
     list: api('/api/marks'),
