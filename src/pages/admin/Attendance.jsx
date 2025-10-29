@@ -1,30 +1,44 @@
-
 // src/pages/Attendance.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { endpoints } from '../../config/api';
 
 const Attendance = () => {
+  const navigate = useNavigate();
+
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedClass, setSelectedClass] = useState('');
   const [assignedClasses, setAssignedClasses] = useState([]);
-  const navigate = useNavigate();
+  const [selectedClass, setSelectedClass] = useState('');
 
-  // Fetch user data
+  // Get today's date in local format (YYYY-MM-DD)
+  const getLocalDate = () => {
+    const today = new Date();
+    today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+    return today.toISOString().split('T')[0];
+  };
+
+  const [date, setDate] = useState(getLocalDate());
+
+  // ✅ Load teacher data & permissions
   useEffect(() => {
     const fetchUserData = async () => {
       const currentUser = JSON.parse(localStorage.getItem('user'));
 
-      if (currentUser?.role === 'teacher' && !currentUser.canMarkAttendance) {
+      if (!currentUser) {
+        setError('User not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      if (currentUser.role === 'teacher' && !currentUser.canMarkAttendance) {
         setError('You do not have permission to mark attendance. Contact admin.');
         setLoading(false);
         return;
       }
 
-      const classes = currentUser?.assignedClasses || [];
+      const classes = currentUser.assignedClasses || [];
       if (classes.length === 0) {
         setError('You are not assigned to any class. Please contact admin.');
         setLoading(false);
@@ -38,24 +52,25 @@ const Attendance = () => {
     fetchUserData();
   }, []);
 
-  // Fetch attendance data
+  // ✅ Load students & attendance data when class/date changes
   useEffect(() => {
     if (!selectedClass) return;
 
     const fetchAttendanceData = async () => {
       try {
+        setLoading(true);
+
+        const token = localStorage.getItem('token');
         const studentsRes = await fetch(
-  `${endpoints.students.list}?class=${encodeURIComponent(selectedClass)}`,
-  {
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-  }
-);
+          `${endpoints.students.list}?class=${encodeURIComponent(selectedClass)}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         if (!studentsRes.ok) throw new Error('Failed to load students');
         const studentsData = await studentsRes.json();
 
         const attendanceRes = await fetch(endpoints.attendance.get(date, selectedClass), {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         let existingRecords = [];
@@ -66,10 +81,7 @@ const Attendance = () => {
 
         const studentsWithStatus = studentsData.map(student => {
           const record = existingRecords.find(r => r.studentId.toString() === student._id.toString());
-          return {
-            ...student,
-            present: record ? record.present : true
-          };
+          return { ...student, present: record ? record.present : true };
         });
 
         setStudents(studentsWithStatus);
@@ -84,13 +96,12 @@ const Attendance = () => {
     fetchAttendanceData();
   }, [selectedClass, date]);
 
-  const handleClassChange = (e) => {
-    setSelectedClass(e.target.value);
-  };
+  // ✅ Handlers
+  const handleClassChange = (e) => setSelectedClass(e.target.value);
 
   const toggleAttendance = (id) => {
     setStudents(prev =>
-      prev.map(s => s._id === id ? { ...s, present: !s.present } : s)
+      prev.map(s => (s._id === id ? { ...s, present: !s.present } : s))
     );
   };
 
@@ -100,8 +111,8 @@ const Attendance = () => {
       class: selectedClass,
       records: students.map(s => ({
         studentId: s._id,
-        present: s.present
-      }))
+        present: s.present,
+      })),
     };
 
     try {
@@ -109,9 +120,9 @@ const Attendance = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify(attendanceData)
+        body: JSON.stringify(attendanceData),
       });
 
       if (res.ok) {
@@ -121,53 +132,60 @@ const Attendance = () => {
         const err = await res.json();
         alert('Failed: ' + (err.message || 'Unknown error'));
       }
-    } catch (err) {
+    } catch {
       alert('Network error');
     }
   };
 
-  // Helper: Custom checkbox style based on checked state
+  // ✅ Checkbox style (green tick)
   const getCheckboxStyle = (checked) => ({
-    width: '1.25rem',
-    height: '1.25rem',
-    border: checked ? '2px solid #27ae60' : '2px solid #ccc',
-    borderRadius: '4px',
+    width: '2rem',
+    height: '2rem',
+    borderRadius: '6px',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: '0.75rem',
-    backgroundColor: checked ? '#27ae60' : 'transparent',
+    backgroundColor: checked ? '#27ae60' : '#f8f9fa',
+    border: checked ? 'none' : '1px solid #ddd',
     color: '#fff',
-    fontSize: '0.8rem',
+    fontSize: '1rem',
     fontWeight: 'bold',
     transition: 'all 0.2s',
+    cursor: 'pointer',
     userSelect: 'none',
   });
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Mark Attendance</h1>
+    <div style={styles.pageContainer} className="page-container">
+      {/* ✅ Responsive CSS */}
+      <style>{responsiveCSS}</style>
 
-        {error && <div style={styles.alertError}>{error}</div>}
+      <div style={styles.card} className="card">
+        <h1 style={styles.title} className="title">Mark Attendance</h1>
 
-        {/* Date & Class Controls */}
-        <div style={styles.controls}>
-          <div style={styles.controlItem}>
+        {error && <div style={styles.alertError} className="alertError">{error}</div>}
+
+        {/* Filters */}
+        <div style={styles.controls} className="controls">
+          <div style={styles.controlItem} className="control-item">
             <label style={styles.label}>Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               style={styles.input}
+              className="input"
             />
           </div>
-          <div style={styles.controlItem}>
+
+          <div style={styles.controlItem} className="control-item">
             <label style={styles.label}>Class</label>
             <select
               value={selectedClass}
               onChange={handleClassChange}
               style={styles.select}
+              className="select"
               disabled={loading || assignedClasses.length === 0}
             >
               <option value="">Select Class</option>
@@ -178,7 +196,11 @@ const Attendance = () => {
           </div>
         </div>
 
-        {/* Loading / Empty / Table */}
+        {selectedClass && (
+          <div style={styles.classTag} className="class-tag">{selectedClass}</div>
+        )}
+
+        {/* Student List */}
         {loading ? (
           <div style={styles.loading}>Loading students...</div>
         ) : students.length === 0 ? (
@@ -186,24 +208,14 @@ const Attendance = () => {
             No students found in <strong>{selectedClass}</strong> class.
           </div>
         ) : (
-          <>
-            <div style={styles.classTag}>{selectedClass}</div>
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.tableHeader}>Name</th>
-                    <th style={styles.tableHeader}>Roll No</th>
-                    <th style={styles.tableHeader}>Present</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map(student => (
-                    <tr key={student._id} style={styles.tableRow}>
-                      <td style={styles.tableCell}>{student.name}</td>
-                      <td style={styles.tableCell}>{student.rollNo}</td>
-                      <td style={styles.tableCell}>
-                        <label style={styles.checkboxLabel}>
+          <div style={styles.tableWrapper} className="table-wrapper">
+            <table style={styles.table}>
+              <tbody>
+                {students.map(student => (
+                  <tr key={student._id} style={styles.tableRow}>
+                    <td style={styles.tableCell}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <label style={styles.checkboxLabel} className="checkbox-label">
                           <input
                             type="checkbox"
                             checked={student.present}
@@ -214,17 +226,23 @@ const Attendance = () => {
                             {student.present ? '✓' : ''}
                           </span>
                         </label>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+                        <div style={{ flex: 1, marginLeft: '0.5rem' }}>
+                          <div style={{ fontWeight: 600, fontSize: '1rem' }}>{student.name}</div>
+                          <div style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>
+                            Roll No: {student.rollNo}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Buttons */}
-        <div style={styles.buttonGroup}>
+        <div style={styles.buttonGroup} className="button-group">
           <button
             onClick={handleSubmit}
             disabled={loading || students.length === 0 || !selectedClass}
@@ -232,14 +250,16 @@ const Attendance = () => {
               ...styles.button,
               ...styles.buttonPrimary,
               opacity: loading || students.length === 0 || !selectedClass ? 0.6 : 1,
-              cursor: loading || students.length === 0 || !selectedClass ? 'not-allowed' : 'pointer'
+              cursor: loading || students.length === 0 || !selectedClass ? 'not-allowed' : 'pointer',
             }}
+            className="button"
           >
             Save Attendance
           </button>
           <button
             onClick={() => navigate('/dashboard')}
             style={{ ...styles.button, ...styles.buttonSecondary }}
+            className="button"
           >
             Cancel
           </button>
@@ -249,22 +269,28 @@ const Attendance = () => {
   );
 };
 
+export default Attendance;
+
+/* ---------------------------------- STYLES ---------------------------------- */
 const styles = {
   pageContainer: {
     padding: '1rem',
     maxWidth: '900px',
     margin: '0 auto',
-    fontFamily: '"Segoe UI", system-ui, sans-serif',
+    fontFamily: '"Poppins", "Segoe UI", system-ui, sans-serif',
+    backgroundColor: '#f8f9fa',
+    minHeight: '100vh',
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: '12px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
     padding: '1.5rem',
+    
   },
   title: {
     fontSize: '1.75rem',
-    fontWeight: '600',
+    fontWeight: 700,
     color: '#2c3e50',
     marginBottom: '1.25rem',
     textAlign: 'center',
@@ -282,16 +308,17 @@ const styles = {
     gap: '1rem',
     flexWrap: 'wrap',
     marginBottom: '1.5rem',
+   
   },
   controlItem: {
     display: 'flex',
     flexDirection: 'column',
-    flex: '1',
+    flex: 1,
     minWidth: '180px',
   },
   label: {
     fontSize: '0.875rem',
-    fontWeight: '600',
+    fontWeight: 600,
     marginBottom: '0.5rem',
     color: '#34495e',
   },
@@ -300,7 +327,6 @@ const styles = {
     fontSize: '1rem',
     border: '1px solid #ddd',
     borderRadius: '8px',
-    backgroundColor: '#fff',
   },
   select: {
     padding: '0.625rem',
@@ -308,12 +334,6 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '8px',
     backgroundColor: '#fff',
-    appearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath fill='%23666' d='M7 10l5 5 5-5z'/%3e%3c/svg%3e")`,
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'right 0.5rem center',
-    backgroundSize: '16px 12px',
-    paddingRight: '2rem',
   },
   loading: {
     textAlign: 'center',
@@ -325,7 +345,6 @@ const styles = {
     textAlign: 'center',
     padding: '1.5rem',
     color: '#7f8c8d',
-    fontStyle: 'italic',
     backgroundColor: '#f9f9f9',
     borderRadius: '8px',
     border: '1px dashed #e0e0e0',
@@ -336,9 +355,10 @@ const styles = {
     padding: '0.375rem 0.75rem',
     borderRadius: '20px',
     fontSize: '0.875rem',
-    fontWeight: '600',
+    fontWeight: 600,
     display: 'inline-block',
     marginBottom: '1rem',
+     
   },
   tableWrapper: {
     overflowX: 'auto',
@@ -348,17 +368,7 @@ const styles = {
   },
   table: {
     width: '100%',
-    minWidth: '500px',
     borderCollapse: 'collapse',
-  },
-  tableHeader: {
-    backgroundColor: '#f8f9fa',
-    padding: '0.75rem 1rem',
-    textAlign: 'left',
-    fontWeight: '600',
-    color: '#2c3e50',
-    fontSize: '0.9rem',
-    borderBottom: '2px solid #eaeaea',
   },
   tableRow: {
     borderBottom: '1px solid #eee',
@@ -367,20 +377,19 @@ const styles = {
     padding: '0.75rem 1rem',
     fontSize: '1rem',
     color: '#34495e',
+    width: '93%',
   },
   checkboxLabel: {
     display: 'flex',
     alignItems: 'center',
     cursor: 'pointer',
-    position: 'relative',
   },
   checkbox: {
     opacity: 0,
     position: 'absolute',
-    width: '1.25rem',
-    height: '1.25rem',
+    width: '2rem',
+    height: '2rem',
     margin: 0,
-    cursor: 'pointer',
   },
   buttonGroup: {
     display: 'flex',
@@ -392,10 +401,9 @@ const styles = {
   button: {
     padding: '0.75rem 1.5rem',
     fontSize: '1rem',
-    fontWeight: '600',
+    fontWeight: 600,
     borderRadius: '8px',
     border: 'none',
-    cursor: 'pointer',
     transition: 'background-color 0.2s',
   },
   buttonPrimary: {
@@ -408,4 +416,26 @@ const styles = {
   },
 };
 
-export default Attendance;
+/* ----------------------------- RESPONSIVE CSS ----------------------------- */
+const responsiveCSS = `
+@media (max-width: 1024px) {
+  .controls { flex-wrap: wrap; gap: 1rem !important; }
+  .control-item { flex: 1 1 45%; }
+}
+
+@media (max-width: 768px) {
+  .controls { flex-direction: column !important; gap: 1rem !important;  }
+  .input, .select { width: 100% !important; padding: 0.75rem !important; font-size: 1rem !important; }
+  .title { font-size: 1.5rem !important; text-align: center; }
+  .button-group { flex-direction: column !important; align-items: stretch !important; }
+  .button { width: 100% !important; padding: 0.85rem 1rem !important; font-size: 1rem !important; border-radius: 10px; }
+  .table-wrapper { overflow-x: auto; border: 1px solid #eee; border-radius: 8px; }
+}
+
+@media (max-width: 480px) {
+  .page-container { padding: 0.8rem !important; }
+  .card { padding: 1rem !important; border-radius: 10px !important; }
+  .title { font-size: 1.3rem !important; }
+  .table-wrapper { font-size: 0.85rem; }
+}
+`;
