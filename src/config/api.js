@@ -55,4 +55,20 @@ export const endpoints = {
     save: (studentId) => api(`/api/marks/${studentId}`),
     getStudent: (studentId) => api(`/api/marks/${studentId}`),
   },
+  classes: {
+    list: api('/api/classes'),
+    create: api('/api/classes'),
+    update: (oldName) => api(`/api/classes/${oldName}`), 
+    delete: (className) => api(`/api/classes/${className}`),
+  },
+  subjects: {
+    list: api('/api/subjects'),
+    create: api('/api/subjects'),
+    update: (oldName) => api(`/api/subjects/${oldName}`),
+    delete: (subjectName) => api(`/api/subjects/${subjectName}`),
+  },
+  classSubjects: {
+    getAll: api('/api/class-subjects'),
+    update: (className) => api(`/api/class-subjects/${className}`),
+  },
 };

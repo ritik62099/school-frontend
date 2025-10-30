@@ -101,7 +101,7 @@ const EditStudent = () => {
       }
 
       alert('Student updated successfully!');
-      navigate('/admin/students'); // or back to list
+      navigate('/students'); // or back to list
     } catch (err) {
       setError(err.message || 'An error occurred');
       console.error(err);
@@ -122,7 +122,7 @@ const EditStudent = () => {
 
       if (!res.ok) throw new Error('Delete failed');
       alert('Student deleted successfully!');
-      navigate('/admin/students');
+      navigate('/students');
     } catch (err) {
       alert('Failed to delete student: ' + err.message);
       console.error(err);

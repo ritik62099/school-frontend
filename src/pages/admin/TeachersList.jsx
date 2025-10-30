@@ -1,14 +1,22 @@
 // src/pages/TeachersList.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { endpoints } from '../../config/api';
+import { useAuth } from '../../context/AuthContext';
+import BottomTabBar from '../../components/ui/BottomTabBar';
 
 const TeachersList = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useAuth();
 
+  // Detect mobile view
+  const isMobile = useMemo(() => window.innerWidth <= 768, []);
+
+  // Fetch teachers
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
@@ -76,6 +84,10 @@ const TeachersList = () => {
     }
   };
 
+  // Show bottom tab only on mobile and for allowed routes
+  const showBottomTab = isMobile && 
+    ['/dashboard', '/my-students', '/attendance', '/teachers', '/profile'].includes(location.pathname);
+
   return (
     <>
       <style>{`
@@ -85,6 +97,7 @@ const TeachersList = () => {
           background-color: #f8f9fa;
           min-height: 100vh;
           box-sizing: border-box;
+          padding-bottom: ${showBottomTab ? '70px' : '0'};
         }
         .teachers-header {
           display: flex;
@@ -328,6 +341,9 @@ const TeachersList = () => {
           </>
         )}
       </div>
+
+      {/* Bottom Tab Bar - Only on mobile and allowed routes */}
+      {showBottomTab && <BottomTabBar userRole={currentUser?.role} />}
     </>
   );
 };

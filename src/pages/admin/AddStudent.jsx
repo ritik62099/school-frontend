@@ -21,25 +21,45 @@ const AddStudent = () => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [assignedClasses, setAssignedClasses] = useState([]);
+  const [allClasses, setAllClasses] = useState([]);
   const navigate = useNavigate();
 
-  const classOptions = [
-    "Nursery", "LKG", "UKG",
-    "1st", "2nd", "3rd", "4th", "5th",
-    "6th", "7th", "8th", "9th", "10th",
-    "11th", "12th"
-  ];
 
-  useEffect(() => {
-    const currentUser = JSON.parse(localStorage.getItem('user'));
-    if (currentUser?.role === 'teacher') {
-      const classes = currentUser.assignedClasses || [];
-      setAssignedClasses(classes);
-      if (classes.length > 0) {
-        setFormData(prev => ({ ...prev, class: classes[0] }));
+ useEffect(() => {
+  const fetchClasses = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      // Fetch all classes from backend
+      const res = await fetch(endpoints.classes.list, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const classes = await res.json();
+        setAllClasses(classes);
+
+        const currentUser = JSON.parse(localStorage.getItem('user'));
+        if (currentUser?.role === 'teacher') {
+          const assigned = currentUser.assignedClasses || [];
+          setAssignedClasses(assigned);
+          if (assigned.length > 0) {
+            setFormData(prev => ({ ...prev, class: assigned[0] }));
+          } else if (classes.length > 0) {
+            setFormData(prev => ({ ...prev, class: classes[0] }));
+          }
+        } else if (classes.length > 0) {
+          // Admin: select first class by default
+          setFormData(prev => ({ ...prev, class: classes[0] }));
+        }
       }
+    } catch (err) {
+      console.error('Failed to load classes', err);
     }
-  }, []);
+  };
+
+  fetchClasses();
+}, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -167,38 +187,39 @@ const AddStudent = () => {
           </div>
 
           {/* Class */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              {assignedClasses.length > 0 ? 'Select Class (Your Assigned)' : 'Select Class'}
-            </label>
-            {assignedClasses.length > 0 ? (
-              <select
-                name="class"
-                value={formData.class}
-                onChange={handleChange}
-                required
-                style={styles.input}
-              >
-                <option value="">-- Choose a class --</option>
-                {assignedClasses.map(cls => (
-                  <option key={cls} value={cls}>{cls}</option>
-                ))}
-              </select>
-            ) : (
-              <select
-                name="class"
-                value={formData.class}
-                onChange={handleChange}
-                required
-                style={styles.input}
-              >
-                <option value="">-- Select Class --</option>
-                {classOptions.map(cls => (
-                  <option key={cls} value={cls}>{cls}</option>
-                ))}
-              </select>
-            )}
-          </div>
+          {/* Class */}
+<div style={styles.inputGroup}>
+  <label style={styles.label}>
+    {assignedClasses.length > 0 ? 'Select Class (Your Assigned)' : 'Select Class'}
+  </label>
+  {assignedClasses.length > 0 ? (
+    <select
+      name="class"
+      value={formData.class}
+      onChange={handleChange}
+      required
+      style={styles.input}
+    >
+      <option value="">-- Choose a class --</option>
+      {assignedClasses.map(cls => (
+        <option key={cls} value={cls}>{cls}</option>
+      ))}
+    </select>
+  ) : (
+    <select
+      name="class"
+      value={formData.class}
+      onChange={handleChange}
+      required
+      style={styles.input}
+    >
+      <option value="">-- Select Class --</option>
+      {allClasses.map(cls => (
+        <option key={cls} value={cls}>{cls}</option>
+      ))}
+    </select>
+  )}
+</div>
 
           {/* Section */}
           <div style={styles.inputGroup}>

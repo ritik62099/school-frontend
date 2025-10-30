@@ -1,98 +1,200 @@
 // src/pages/admin/AssignTeacher.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { endpoints } from '../../config/api';
+import { endpoints } from "../../config/api";
+import { useTeachers } from "../../hooks/useTeachers";
 
 const AssignTeacher = () => {
-  const [teachers, setTeachers] = useState([]);
-  const [classes] = useState([
-    "Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
-    "6th", "7th", "8th", "9th", "10th", "11th", "12th",
-  ]);
-  const [subjects] = useState([
-    "Mathematics", "Science", "English", "Hindi",
-    "Social Studies", "Physics", "Chemistry", "Biology",
-  ]);
   const navigate = useNavigate();
+  const { teachers, loading, error, refetch } = useTeachers();
 
+  // ✅ Dynamic data from backend
+  const [allClasses, setAllClasses] = useState([]);
+  const [classSubjectsMap, setClassSubjectsMap] = useState({}); // { "1st": ["Math", "Hindi"], ... }
+
+  // Local state to manage dynamic subjects per teacher
+  const [teacherLocalState, setTeacherLocalState] = useState({});
+
+  // ✅ Fetch classes and class-subject mapping from backend
   useEffect(() => {
-    fetchTeachers();
+    const fetchData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const [classesRes, mappingRes] = await Promise.all([
+          fetch(endpoints.classes.list, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(endpoints.classSubjects.getAll, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+
+        const classes = classesRes.ok ? await classesRes.json() : [];
+        const mapping = mappingRes.ok ? await mappingRes.json() : {};
+
+        setAllClasses(classes);
+        setClassSubjectsMap(mapping);
+      } catch (err) {
+        console.error("Failed to load class/subject data", err);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const fetchTeachers = async () => {
-    try {
-      const res = await fetch(endpoints.teachers.list, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const data = await res.json();
-      setTeachers(data.filter((t) => t.role === "teacher" && t.isApproved));
-    } catch {
-      alert("Failed to load teachers");
-    }
+  // ✅ Initialize local state for each teacher
+  useEffect(() => {
+    if (teachers.length === 0) return;
+
+    const init = {};
+    teachers.forEach((teacher) => {
+      const assignedClasses = teacher.assignedClasses || [];
+      const availableSubjects = getSubjectsForClasses(assignedClasses);
+      init[teacher._id] = {
+        selectedClasses: assignedClasses,
+        availableSubjects,
+        selectedSubjects: teacher.assignedSubjects || []
+      };
+    });
+    setTeacherLocalState(init);
+  }, [teachers, classSubjectsMap]);
+
+  // ✅ Helper: Get union of subjects for selected classes
+  const getSubjectsForClasses = (selectedClasses) => {
+    const subjectSet = new Set();
+    selectedClasses.forEach((cls) => {
+      const subs = classSubjectsMap[cls] || [];
+      subs.forEach((sub) => subjectSet.add(sub));
+    });
+    return Array.from(subjectSet);
   };
 
-  const handleAssign = async (teacherId, field, selectedValues) => {
-    try {
-      const teacher = teachers.find((t) => t._id === teacherId);
-      const updateData = {
-        assignedClasses:
-          field === "classes" ? selectedValues : teacher?.assignedClasses || [],
-        assignedSubjects:
-          field === "subjects" ? selectedValues : teacher?.assignedSubjects || [],
-      };
+  // ✅ Handle class selection change
+  const handleClassChange = async (teacherId, selectedClasses) => {
+    const availableSubjects = getSubjectsForClasses(selectedClasses);
+    const currentSubjects = teacherLocalState[teacherId]?.selectedSubjects || [];
+    // Keep only subjects that are valid for newly selected classes
+    const validSubjects = currentSubjects.filter((sub) =>
+      availableSubjects.includes(sub)
+    );
 
+    setTeacherLocalState((prev) => ({
+      ...prev,
+      [teacherId]: {
+        selectedClasses,
+        availableSubjects,
+        selectedSubjects: validSubjects
+      }
+    }));
+
+    // Save classes to backend
+    try {
+      const token = localStorage.getItem("token");
       const res = await fetch(endpoints.teachers.assign(teacherId), {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify({
+          assignedClasses: selectedClasses,
+          assignedSubjects: validSubjects // auto-clean invalid subjects
+        })
       });
 
       if (res.ok) {
-        setTeachers(
-          teachers.map((t) =>
-            t._id === teacherId ? { ...t, ...updateData } : t
-          )
-        );
+        refetch();
       } else {
-        const err = await res.json();
-        alert("Failed: " + (err.message || "Unknown error"));
+        const err = await res.json().catch(() => ({}));
+        alert("Failed to save: " + (err.message || "Unknown error"));
       }
-    } catch {
-      alert("Server error");
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Network error");
+    }
+  };
+
+  // ✅ Handle subject selection change
+  const handleSubjectChange = async (teacherId, selectedSubjects) => {
+    const selectedClasses = teacherLocalState[teacherId]?.selectedClasses || [];
+
+    setTeacherLocalState((prev) => ({
+      ...prev,
+      [teacherId]: {
+        ...prev[teacherId],
+        selectedSubjects
+      }
+    }));
+
+    // Save subjects to backend
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(endpoints.teachers.assign(teacherId), {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          assignedClasses: selectedClasses,
+          assignedSubjects: selectedSubjects
+        })
+      });
+
+      if (res.ok) {
+        refetch();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert("Failed to save: " + (err.message || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Network error");
     }
   };
 
   const handleAttendanceToggle = async (teacherId, canMark) => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(endpoints.teachers.attendanceAccess(teacherId), {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ canMarkAttendance: canMark }),
+        body: JSON.stringify({ canMarkAttendance: canMark })
       });
 
       if (res.ok) {
-        setTeachers(
-          teachers.map((t) =>
-            t._id === teacherId ? { ...t, canMarkAttendance: canMark } : t
-          )
-        );
+        refetch();
       } else {
-        alert("Failed to update attendance access");
+        const errData = await res.json().catch(() => ({}));
+        alert("Failed: " + (errData.message || "Unknown error"));
       }
-    } catch {
-      alert("Server error");
+    } catch (err) {
+      console.error("Network error:", err);
+      alert("Network error – please check your connection");
     }
   };
 
   const handleMultiSelectChange = (e) => {
     return Array.from(e.target.selectedOptions, (opt) => opt.value);
   };
+
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", padding: "2rem" }}>
+        Loading teachers and class data...
+      </div>
+    );
+  if (error)
+    return (
+      <div style={{ textAlign: "center", padding: "2rem", color: "red" }}>
+        {error}
+      </div>
+    );
 
   return (
     <div style={{ padding: "1.5rem", fontFamily: "Poppins, sans-serif" }}>
@@ -239,108 +341,94 @@ const AssignTeacher = () => {
           transform: translateX(24px);
         }
 
-        /* Mobile Responsive */
         @media (max-width: 768px) {
-          .page-title {
-            font-size: 1.4rem;
-          }
-          .card-grid {
-            gap: 1.4rem;
-          }
-          .teacher-card {
-            padding: 1.2rem;
-          }
-          .dropdown[multiple] {
-            min-height: 90px;
-          }
+          .page-title { font-size: 1.4rem; }
+          .card-grid { gap: 1.4rem; }
+          .teacher-card { padding: 1.2rem; }
+          .dropdown[multiple] { min-height: 90px; }
         }
-
         @media (max-width: 480px) {
-          .card-grid {
-            grid-template-columns: 1fr;
-          }
-          .teacher-card {
-            padding: 1rem;
-          }
-          .dropdown {
-            font-size: 0.9rem;
-            padding: 0.6rem 0.7rem;
-          }
-          .dropdown[multiple] {
-            min-height: 80px;
-          }
-          .attendance-toggle {
-            flex-wrap: wrap;
-            gap: 0.6rem;
-          }
+          .card-grid { grid-template-columns: 1fr; }
+          .teacher-card { padding: 1rem; }
+          .dropdown { font-size: 0.9rem; padding: 0.6rem 0.7rem; }
+          .dropdown[multiple] { min-height: 80px; }
+          .attendance-toggle { flex-wrap: wrap; gap: 0.6rem; }
         }
       `}</style>
 
-      {/* Header Row: Button + Title on same line */}
       <div className="header-row">
         <button onClick={() => navigate(-1)} className="back-btn">
           ← Back
         </button>
-        <h2 className="page-title">Assign Multiple Classes & Subjects</h2>
+        <h2 className="page-title">Assign Classes & Subjects</h2>
       </div>
 
       <div className="card-grid">
-        {teachers.map((teacher) => (
-          <div className="teacher-card" key={teacher._id}>
-            <div className="teacher-name">{teacher.name}</div>
-            <div className="teacher-email">{teacher.email}</div>
+        {teachers.map((teacher) => {
+          const local = teacherLocalState[teacher._id] || {};
+          return (
+            <div className="teacher-card" key={teacher._id}>
+              <div className="teacher-name">{teacher.name}</div>
+              <div className="teacher-email">{teacher.email}</div>
 
-            <div className="field">
-              <label>Assign Classes:</label>
-              <select
-                multiple
-                className="dropdown"
-                value={teacher.assignedClasses || []}
-                onChange={(e) =>
-                  handleAssign(teacher._id, "classes", handleMultiSelectChange(e))
-                }
-              >
-                {classes.map((cls) => (
-                  <option key={cls} value={cls}>
-                    {cls}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field">
-              <label>Assign Subjects:</label>
-              <select
-                multiple
-                className="dropdown"
-                value={teacher.assignedSubjects || []}
-                onChange={(e) =>
-                  handleAssign(teacher._id, "subjects", handleMultiSelectChange(e))
-                }
-              >
-                {subjects.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="attendance-toggle">
-              <span>Can Mark Attendance</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={teacher.canMarkAttendance || false}
+              <div className="field">
+                <label>Assign Classes:</label>
+                <select
+                  multiple
+                  className="dropdown"
+                  value={local.selectedClasses || []}
                   onChange={(e) =>
-                    handleAttendanceToggle(teacher._id, e.target.checked)
+                    handleClassChange(teacher._id, handleMultiSelectChange(e))
                   }
-                />
-                <span className="slider"></span>
-              </label>
+                >
+                  {allClasses.map((cls) => (
+                    <option key={cls} value={cls}>
+                      {cls}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Assign Subjects:</label>
+                <select
+                  multiple
+                  className="dropdown"
+                  value={local.selectedSubjects || []}
+                  onChange={(e) =>
+                    handleSubjectChange(teacher._id, handleMultiSelectChange(e))
+                  }
+                >
+                  {local.availableSubjects?.map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  )) || (
+                    <option disabled>
+                      {local.selectedClasses?.length
+                        ? "No subjects defined for selected classes"
+                        : "Select classes first"}
+                    </option>
+                  )}
+                </select>
+              </div>
+
+              <div className="attendance-toggle">
+                <span>Can Mark Attendance</span>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={teacher.canMarkAttendance || false}
+                    onChange={(e) =>
+                      handleAttendanceToggle(teacher._id, e.target.checked)
+                    }
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

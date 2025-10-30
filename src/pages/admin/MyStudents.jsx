@@ -1,13 +1,19 @@
 // src/pages/teacher/MyStudents.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { endpoints } from '../../config/api';
+import BottomTabBar from '../../components/ui/BottomTabBar';
 
 const MyStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useAuth();
+
+  const isMobile = useMemo(() => window.innerWidth <= 768, []);
 
   useEffect(() => {
     const fetchMyStudents = async () => {
@@ -32,143 +38,190 @@ const MyStudents = () => {
     fetchMyStudents();
   }, []);
 
+  const showBottomTab = isMobile && 
+    ['/dashboard', '/my-students', '/attendance', '/teachers', '/profile'].includes(location.pathname);
+
+  const getScrollContainerHeight = () => {
+    if (!isMobile) return 'auto';
+    const headerHeight = 70; // slightly increased for safety
+    const tabBarHeight = showBottomTab ? 70 : 0;
+    return `calc(100vh - ${headerHeight + tabBarHeight}px)`;
+  };
+
+  const containerStyle = {
+    padding: isMobile ? '1rem' : '2rem',
+    fontFamily: 'Inter, Arial, sans-serif',
+    backgroundColor: '#f8fafc',
+    minHeight: '100vh',
+    paddingBottom: showBottomTab ? '70px' : (isMobile ? '2rem' : '2rem'),
+    boxSizing: 'border-box',
+  };
+
   if (loading) return <div style={styles.center}>Loading your students...</div>;
   if (error) return <div style={{ ...styles.center, color: 'red' }}>{error}</div>;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h2 style={styles.title}>🎓 My Students</h2>
-        <button onClick={() => navigate(-1)} style={styles.backBtn}>
-          ← Back
-        </button>
-      </div>
+    <>
+      {/* Embedded responsive styles */}
+      <style>{`
+        .my-students-table th,
+        .my-students-table td {
+          padding: 0.8rem 1rem;
+          text-align: left;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .my-students-table thead {
+          background-color: #eff6ff;
+          color: #1e40af;
+        }
+        .my-students-table tr:hover {
+          background-color: #f1f5f9;
+          transition: 0.2s;
+        }
 
-      {students.length === 0 ? (
-        <p style={styles.center}>No students assigned to your classes.</p>
-      ) : (
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Class</th>
-                <th>Roll No</th>
-                <th>Admission Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student) => (
-                <tr key={student._id}>
-                  <td data-label="Name">{student.name}</td>
-                  <td data-label="Class">{student.class}</td>
-                  <td data-label="Roll No">{student.rollNo}</td>
-                  <td data-label="Admission Date">
-                    {new Date(student.admissionDate).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        @media (max-width: 768px) {
+          .my-students-table thead {
+            display: none;
+          }
+          .my-students-table,
+          .my-students-table tbody,
+          .my-students-table tr,
+          .my-students-table td {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .my-students-table tr {
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 0.6rem 0.8rem;
+            overflow: hidden;
+          }
+          .my-students-table td {
+            padding: 0.5rem 1rem !important;
+            text-align: right;
+            position: relative;
+            border: none;
+            word-break: break-word;
+            white-space: normal;
+            font-size: 0.92rem;
+            line-height: 1.4;
+          }
+          .my-students-table td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 1rem;
+            top: 0.5rem;
+            font-weight: 600;
+            color: #334155;
+            text-transform: capitalize;
+          }
+        }
+      `}</style>
+
+      <div style={containerStyle}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.8rem',
+          marginBottom: '1rem'
+        }}>
+          <h2 style={{
+            color: '#1e293b',
+            fontSize: isMobile ? '1.5rem' : '1.8rem',
+            fontWeight: '600',
+            margin: 0
+          }}>
+            🎓 My Students
+          </h2>
+          <button 
+            onClick={() => navigate(-1)} 
+            style={{
+              backgroundColor: '#2563eb',
+              color: 'white',
+              border: 'none',
+              padding: isMobile ? '0.5rem 1rem' : '0.6rem 1.2rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              fontSize: isMobile ? '0.95rem' : '1rem',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            ← Back
+          </button>
         </div>
-      )}
-    </div>
+
+        {students.length === 0 ? (
+          <p style={{
+            textAlign: 'center',
+            marginTop: '2rem',
+            fontSize: '1.1rem',
+            color: '#64748b',
+            padding: '1rem'
+          }}>
+            No students assigned to your classes.
+          </p>
+        ) : (
+          <div style={{
+            maxHeight: getScrollContainerHeight(),
+            overflowY: 'auto',
+            overflowX: 'hidden', // 👈 Prevents horizontal scroll
+            borderRadius: '10px',
+            backgroundColor: 'white',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            padding: isMobile ? '0.5rem' : '0',
+            marginBottom: showBottomTab ? '1rem' : '0',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <table className="my-students-table" style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse' 
+              // ❌ Removed minWidth: '500px'
+            }}>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Class</th>
+                  <th>Roll No</th>
+                  <th>Admission Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map((student) => (
+                  <tr key={student._id}>
+                    <td data-label="Name">{student.name}</td>
+                    <td data-label="Class">{student.class}</td>
+                    <td data-label="Roll No">{student.rollNo}</td>
+                    <td data-label="Admission Date">
+                      {new Date(student.admissionDate).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {showBottomTab && <BottomTabBar userRole={currentUser?.role} />}
+      </div>
+    </>
   );
 };
 
-// ✅ Improved styles for responsiveness & visual appeal
 const styles = {
-  container: {
-    padding: '2rem',
-    fontFamily: 'Inter, Arial, sans-serif',
-    backgroundColor: '#f8fafc',
-    minHeight: '100vh'
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginBottom: '1.5rem'
-  },
-  title: {
-    color: '#1e293b',
-    fontSize: '1.8rem',
-    fontWeight: '600'
-  },
-  backBtn: {
-    backgroundColor: '#2563eb',
-    color: 'white',
-    border: 'none',
-    padding: '0.6rem 1.2rem',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontWeight: '500',
-    transition: 'all 0.2s ease-in-out',
-  },
-  tableWrapper: {
-    overflowX: 'auto',
-    borderRadius: '8px',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-    backgroundColor: 'white'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    minWidth: '600px',
-  },
   center: {
     textAlign: 'center',
     marginTop: '2rem',
     fontSize: '1.1rem',
-    color: '#64748b'
+    color: '#64748b',
+    padding: '0 1.2rem'
   }
 };
-
-// ✅ Inline styles for responsive table (using CSS-in-JS)
-const styleTag = document.createElement("style");
-styleTag.innerHTML = `
-table th, table td {
-  padding: 0.8rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #e2e8f0;
-}
-table thead {
-  background-color: #eff6ff;
-  color: #1e40af;
-}
-table tr:hover {
-  background-color: #f1f5f9;
-  transition: 0.2s;
-}
-@media (max-width: 768px) {
-  table thead {
-    display: none;
-  }
-  table, table tbody, table tr, table td {
-    display: block;
-    width: 100%;
-  }
-  table tr {
-    margin-bottom: 1rem;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-  }
-  table td {
-    padding: 0.8rem 1rem;
-    text-align: right;
-    position: relative;
-  }
-  table td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 1rem;
-    font-weight: 600;
-    color: #334155;
-    text-transform: capitalize;
-  }
-}`;
-document.head.appendChild(styleTag);
 
 export default MyStudents;

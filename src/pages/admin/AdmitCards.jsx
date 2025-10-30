@@ -1,48 +1,42 @@
 // src/pages/admin/AdmitCards.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { endpoints } from '../../config/api'; 
 import Logo from '../../assets/logo.png';
-import { endpoints } from '../../config/api';
+import { useStudents } from '../../hooks/useStudents'; // ✅ Only this needed
 
 const AdmitCards = () => {
-  const [students, setStudents] = useState([]);
+  // ✅ Sirf yeh states rakhein
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
-  const [loading, setLoading] = useState(true);
   const [logoBase64, setLogoBase64] = useState('');
   const [logoLoaded, setLogoLoaded] = useState(false);
+  const [backendClasses, setBackendClasses] = useState([]);
   const navigate = useNavigate();
 
   const [session, setSession] = useState('2025-2026');
   const [examDates, setExamDates] = useState('15 Nov 2025 – 25 Nov 2025');
   const [validityNote, setValidityNote] = useState('This admit card is valid for S.A I 2025-26');
 
-  const classOptions = [
-    "Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
-    "6th", "7th", "8th", "9th", "10th", "11th", "12th"
-  ];
+  // ✅ Hook se students le rahe hain
+  const { students, loading, error } = useStudents(); // ✅ No manual fetch
 
-  // Fetch students
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const res = await fetch(endpoints.students.list, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        const data = await res.json();
-        const studentList = Array.isArray(data) ? data : [];
-        setStudents(studentList);
-        setFilteredStudents(studentList);
-      } catch (err) {
-        console.error('Error fetching students:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStudents();
-  }, []);
+ const classOptions = useMemo(() => {
+  // Get classes that actually have students
+  const studentClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
+  
+  // Use backend classes, but only those that have students
+  return backendClasses
+    .filter(cls => studentClasses.includes(cls))
+    .sort((a, b) => {
+      // Optional: sort in logical order if needed
+      const order = ["Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
+                     "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+      return (order.indexOf(a) - order.indexOf(b)) || a.localeCompare(b);
+    });
+}, [students, backendClasses]);
 
-  // Filter by class
+  // ✅ Filter students
   useEffect(() => {
     if (!selectedClass) {
       setFilteredStudents(students);
@@ -51,7 +45,7 @@ const AdmitCards = () => {
     }
   }, [selectedClass, students]);
 
-  // Load logo as Base64
+  // ✅ Logo loading (same as before)
   useEffect(() => {
     const convertLogoToBase64 = async () => {
       try {
@@ -65,11 +59,33 @@ const AdmitCards = () => {
         reader.readAsDataURL(blob);
       } catch (err) {
         console.error("Error loading logo:", err);
-        setLogoLoaded(true); // Allow UI even if logo fails
+        setLogoLoaded(true);
       }
     };
     convertLogoToBase64();
   }, []);
+
+  // ✅ Fetch classes from backend
+useEffect(() => {
+  const fetchClasses = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(endpoints.classes.list, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const classes = await res.json();
+        setBackendClasses(classes);
+      }
+    } catch (err) {
+      console.error('Failed to load classes', err);
+    }
+  };
+
+  fetchClasses();
+}, []);
 
   // Print single card
   const printCard = (student) => {
