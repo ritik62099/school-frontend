@@ -3,10 +3,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { endpoints } from '../../config/api'; 
 import Logo from '../../assets/logo.png';
-import { useStudents } from '../../hooks/useStudents'; // ✅ Only this needed
+import { useStudents } from '../../hooks/useStudents';
 
 const AdmitCards = () => {
-  // ✅ Sirf yeh states rakhein
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [logoBase64, setLogoBase64] = useState('');
@@ -18,25 +17,19 @@ const AdmitCards = () => {
   const [examDates, setExamDates] = useState('15 Nov 2025 – 25 Nov 2025');
   const [validityNote, setValidityNote] = useState('This admit card is valid for S.A I 2025-26');
 
-  // ✅ Hook se students le rahe hain
-  const { students, loading, error } = useStudents(); // ✅ No manual fetch
+  const { students, loading, error } = useStudents(); 
 
- const classOptions = useMemo(() => {
-  // Get classes that actually have students
-  const studentClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
-  
-  // Use backend classes, but only those that have students
-  return backendClasses
-    .filter(cls => studentClasses.includes(cls))
-    .sort((a, b) => {
-      // Optional: sort in logical order if needed
-      const order = ["Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
-                     "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
-      return (order.indexOf(a) - order.indexOf(b)) || a.localeCompare(b);
-    });
-}, [students, backendClasses]);
+  const classOptions = useMemo(() => {
+    const studentClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
+    return backendClasses
+      .filter(cls => studentClasses.includes(cls))
+      .sort((a, b) => {
+        const order = ["Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
+                       "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+        return (order.indexOf(a) - order.indexOf(b)) || a.localeCompare(b);
+      });
+  }, [students, backendClasses]);
 
-  // ✅ Filter students
   useEffect(() => {
     if (!selectedClass) {
       setFilteredStudents(students);
@@ -45,7 +38,6 @@ const AdmitCards = () => {
     }
   }, [selectedClass, students]);
 
-  // ✅ Logo loading (same as before)
   useEffect(() => {
     const convertLogoToBase64 = async () => {
       try {
@@ -59,36 +51,39 @@ const AdmitCards = () => {
         reader.readAsDataURL(blob);
       } catch (err) {
         console.error("Error loading logo:", err);
-        setLogoLoaded(true);
+        setLogoLoaded(true); // Allow UI to proceed, but logo will be missing
       }
     };
     convertLogoToBase64();
   }, []);
 
-  // ✅ Fetch classes from backend
-useEffect(() => {
-  const fetchClasses = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+  useEffect(() => {
+    const fetchClasses = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-    try {
-      const res = await fetch(endpoints.classes.list, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const classes = await res.json();
-        setBackendClasses(classes);
+      try {
+        const res = await fetch(endpoints.classes.list, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const classes = await res.json();
+          setBackendClasses(classes);
+        }
+      } catch (err) {
+        console.error('Failed to load classes', err);
       }
-    } catch (err) {
-      console.error('Failed to load classes', err);
-    }
-  };
+    };
+    fetchClasses();
+  }, []);
 
-  fetchClasses();
-}, []);
-
-  // Print single card
+  // ✅ FIXED: Print single card only if logo is ready
   const printCard = (student) => {
+    if (!logoLoaded || !logoBase64) {
+      alert("School logo is still loading. Please wait a few seconds and try again.");
+      return;
+    }
+
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <html>
@@ -219,17 +214,22 @@ useEffect(() => {
     printWindow.close();
   };
 
-  // Print all cards
+  // ✅ FIXED: Print all cards only if logo is ready
   const printAllCards = () => {
+    if (!logoLoaded || !logoBase64) {
+      alert("School logo is still loading. Please wait a few seconds and try again.");
+      return;
+    }
+
     const studentsToPrint = filteredStudents.length > 0 ? filteredStudents : students;
     if (studentsToPrint.length === 0) return;
 
     const printWindow = window.open('', '_blank');
     let pagesHtml = '';
 
-    for (let i = 0; i < studentsToPrint.length; i += 3) {
-      const pageStudents = studentsToPrint.slice(i, i + 3);
-      const pageCards = pageStudents.map(student => `
+    for (let i = 0; i < studentsToPrint.length; i += 6) {
+      const pageStudents = studentsToPrint.slice(i, i + 6);
+      const cardElements = pageStudents.map(student => `
         <div class="card">
           <div class="header">
             <img src="${logoBase64}" alt="School Logo" class="logo">
@@ -250,16 +250,16 @@ useEffect(() => {
           </div>
           <div class="note">
             <strong>Note:-</strong>
-            <ul style="padding-left:15px; margin:5px 0;">
+            <ul style="padding-left:12px; margin:4px 0;">
               <li>${validityNote}</li>
               <li>Those who will not have their Admit Card, they will not be allowed to sit in the examination.</li>
             </ul>
           </div>
-          <div class="footer">This is a computer-generated admit card. No signature required.</div>
+          <div class="footer">Computer-generated. No signature required.</div>
         </div>
       `).join('');
 
-      pagesHtml += `<div class="page">${pageCards}</div>`;
+      pagesHtml += `<div class="page">${cardElements}</div>`;
     }
 
     printWindow.document.write(`
@@ -268,34 +268,115 @@ useEffect(() => {
           <title>All Admit Cards</title>
           <style>
             @media print {
-              @page { size: A4; margin: 0; }
-              body { margin: 0; padding: 8mm; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: white; }
-              .page { display: flex; flex-direction: column; height: 279mm; width: 210mm; page-break-after: always; }
+              @page { 
+                size: A4; 
+                margin: 8mm;
+              }
+              body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                background: white; 
+                margin: 0;
+                padding: 0;
+              }
+              .page {
+                width: 210mm;
+                height: 279mm;
+                display: flex;
+                flex-wrap: wrap;
+                page-break-after: always;
+              }
               .card {
-                width: 98%;
-                height: calc((297mm - 16mm) / 3);
-                border: 1.5px solid #3498db;
-                border-radius: 6px;
-                padding: 6px;
+                width: calc(50% - 2mm);
+                height: calc((259mm - 6mm) / 3);
+                border: 1px solid #3498db;
+                border-radius: 4px;
+                padding: 4px;
                 box-sizing: border-box;
+                font-size: 8.5px;
+                background: white;
+                overflow: hidden;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                margin-bottom: 4mm;
-                font-size: 10px;
-                background: white;
+                margin: 1mm 1mm 2mm 1mm;
               }
-              .page > .card:not(:last-child) { margin-bottom: 6mm; }
-              .header { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 8px; border-bottom: 1.5px solid #ddd; padding-bottom: 4px; }
-              .logo { width: 60px; height: 50px; object-fit: contain; }
-              .school-name { color: #e74c3c; font-size: 24px; font-weight: bold; margin: 0; }
-              .session { color: #27ae60; font-size: 16px; font-weight: 600; margin: 1px 0; display: flex; justify-content: center; }
-              .admit-title { background: #34495e; color: white; padding: 3px 7px; border-radius: 3px; font-weight: bold; display: flex; justify-content: center; margin: 6px 0; font-size: 12px; }
-              .details { text-align: left; margin: 8px 0; font-size: 11px; line-height: 1.35; flex-grow: 1; }
-              .detail-row { display: flex; margin-bottom: 3px; }
-              .label { font-weight: bold; color: #2c3e50; min-width: 120px; }
-              .note { background: #f9f9f9; padding: 6px; border-left: 3px solid #e74c3c; margin-top: auto; font-size: 10px; }
-              .footer { margin-top: 5px; font-size: 9px; color: #7f8c8d; font-style: italic; }
+              .header { 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                gap: 6px; 
+                margin-bottom: 3px; 
+                border-bottom: 1px solid #ddd; 
+                padding-bottom: 2px; 
+              }
+              .logo { 
+                width: 45px; 
+                height: 40px; 
+                object-fit: contain; 
+              }
+              .school-name { 
+                color: #e74c3c; 
+                font-size: 18px; 
+                font-weight: bold; 
+                margin: 0; 
+                text-align: center;
+              }
+              .session { 
+                color: #27ae60; 
+                font-size: 12px; 
+                font-weight: 600; 
+                margin: 1px 0; 
+                text-align: center;
+              }
+              .admit-title { 
+                background: #34495e; 
+                color: white; 
+                padding: 2px 5px;
+                border-radius: 2px; 
+                font-weight: bold; 
+                text-align: center; 
+                margin: 3px 0; 
+                font-size: 10px; 
+              }
+              .details { 
+                text-align: left; 
+                margin: 4px 0; 
+                font-size: 12px; 
+                line-height: 1.3;
+                flex-grow: 1;
+              }
+              .detail-row { 
+                display: flex; 
+                margin-bottom: 2px; 
+              }
+              .label { 
+                font-weight: bold; 
+                color: #2c3e50; 
+                min-width: 65px;
+                font-size: 8.5px;
+              }
+              .note { 
+                background: #f9f9f9; 
+                padding: 3px;
+                border-left: 2px solid #e74c3c; 
+                margin-top: auto; 
+                font-size: 8px; 
+              }
+              .footer { 
+                margin-top: 2px; 
+                font-size: 9px; 
+                color: #7f8c8d; 
+                font-style: italic; 
+                text-align: center;
+              }
+              ul { 
+                margin: 2px 0; 
+                padding-left: 12px; 
+              }
+              li { 
+                font-size: 12px; 
+                line-height: 1.2; 
+              }
             }
           </style>
         </head>
@@ -477,7 +558,6 @@ useEffect(() => {
 
       <h2 className="page-title">Admit Cards</h2>
 
-      {/* Editable Details */}
       <div className="controls-section">
         <h3 className="controls-title">Admit Card Details</h3>
         <div className="controls-grid">
@@ -508,7 +588,6 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Class Filter */}
       <div className="filter-section">
         <label>Filter by Class:</label>
         <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
@@ -519,21 +598,19 @@ useEffect(() => {
         </select>
       </div>
 
-      {/* Action Buttons */}
       <div className="button-group">
         <button onClick={() => navigate(-1)} className="btn btn-back">
           ← Back to Dashboard
         </button>
         <button
           onClick={printAllCards}
-          disabled={filteredStudents.length === 0}
+          disabled={filteredStudents.length === 0 || !logoLoaded || !logoBase64}
           className="btn btn-print"
         >
           🖨️ Print All ({filteredStudents.length})
         </button>
       </div>
 
-      {/* Student Cards */}
       {filteredStudents.length === 0 ? (
         <div className="empty-state">
           No students found for the selected class.
@@ -548,7 +625,7 @@ useEffect(() => {
               <div className="student-detail"><strong>Section:</strong> {student.section || 'N/A'}</div>
               <button
                 onClick={() => printCard(student)}
-                disabled={!logoLoaded}
+                disabled={!logoLoaded || !logoBase64}
                 className="print-single-btn"
               >
                 Print Single Card

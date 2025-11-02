@@ -14,7 +14,8 @@ const AddStudent = () => {
     mobile: '',
     address: '',
     aadhar: '',
-    photo: ''
+    photo: '',
+    transport: false
   });
 
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -61,14 +62,17 @@ const AddStudent = () => {
   fetchClasses();
 }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    if (message) {
-      setMessage('');
-      setMessageType('');
-    }
-  };
+ const handleChange = (e) => {
+  const { name, value, type, checked } = e.target;
+  setFormData({
+    ...formData,
+    [name]: type === 'checkbox' ? checked : value
+  });
+  if (message) {
+    setMessage('');
+    setMessageType('');
+  }
+};
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -261,7 +265,6 @@ const AddStudent = () => {
               type="text"
               value={formData.fatherName}
               onChange={handleChange}
-              required
               style={styles.input}
               placeholder="Enter father's name"
             />
@@ -275,7 +278,6 @@ const AddStudent = () => {
               type="text"
               value={formData.motherName}
               onChange={handleChange}
-              required
               style={styles.input}
               placeholder="Enter mother's name"
             />
@@ -289,7 +291,6 @@ const AddStudent = () => {
               type="tel"
               value={formData.mobile}
               onChange={handleChange}
-              required
               style={styles.input}
               placeholder="10-digit mobile number"
               maxLength="10"
@@ -303,11 +304,24 @@ const AddStudent = () => {
               name="address"
               value={formData.address}
               onChange={handleChange}
-              required
               style={{ ...styles.input, minHeight: '60px' }}
               placeholder="Enter address"
             />
           </div>
+
+          {/* Transport */}
+<div style={styles.inputGroup}>
+  <label style={{ ...styles.label, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+    <input
+      type="checkbox"
+      name="transport"
+      checked={formData.transport}
+      onChange={handleChange}
+      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+    />
+    Uses School Transport
+  </label>
+</div>
 
           {/* Aadhaar */}
           <div style={styles.inputGroup}>
@@ -317,7 +331,6 @@ const AddStudent = () => {
               type="text"
               value={formData.aadhar}
               onChange={handleChange}
-              required
               style={styles.input}
               placeholder="12-digit Aadhaar number"
               maxLength="12"

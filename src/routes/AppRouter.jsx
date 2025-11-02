@@ -22,6 +22,9 @@ import IDCards from '../pages/admin/IDCards';
 import EditStudent from '../pages/admin/EditStudent';
 import MonthlyAttendanceReport from '../pages/admin/MonthlyAttendanceReport';
 import ClassSubjectManager from '../pages/admin/ClassSubjectManager';
+import ClassFees from '../pages/admin/ClassFees';
+import StudentPayments from '../pages/admin/StudentPayments';
+import StudentPaymentForm from '../pages/admin/StudentPaymentForm';
 
 const AppRouter = () => {
   return (
@@ -52,6 +55,17 @@ const AppRouter = () => {
       <Route path="/class-subjects" element={
         <ProtectedRoute><ClassSubjectManager /></ProtectedRoute>
       } />
+      <Route path="/class-fees" element={
+        <ProtectedRoute><ClassFees /></ProtectedRoute>
+      } />
+      <Route path="/student-payments" element={
+        <ProtectedRoute><StudentPayments /></ProtectedRoute>
+      } />
+
+      <Route 
+  path="/record-payment" 
+  element={<ProtectedRoute><StudentPaymentForm /></ProtectedRoute>} 
+/>
       
       <Route path="/teachers" element={
         <ProtectedRoute><TeachersList /></ProtectedRoute>

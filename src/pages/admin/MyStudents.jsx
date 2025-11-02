@@ -23,13 +23,16 @@ const MyStudents = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!res.ok) throw new Error('Failed to fetch your students');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || 'Failed to fetch students');
+        }
 
         const data = await res.json();
         setStudents(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error(err);
-        setError("Unable to load your students");
+        console.error("MyStudents fetch error:", err);
+        setError(err.message || "Unable to load your students");
       } finally {
         setLoading(false);
       }
@@ -43,18 +46,9 @@ const MyStudents = () => {
 
   const getScrollContainerHeight = () => {
     if (!isMobile) return 'auto';
-    const headerHeight = 70; // slightly increased for safety
+    const headerHeight = 70;
     const tabBarHeight = showBottomTab ? 70 : 0;
     return `calc(100vh - ${headerHeight + tabBarHeight}px)`;
-  };
-
-  const containerStyle = {
-    padding: isMobile ? '1rem' : '2rem',
-    fontFamily: 'Inter, Arial, sans-serif',
-    backgroundColor: '#f8fafc',
-    minHeight: '100vh',
-    paddingBottom: showBottomTab ? '70px' : (isMobile ? '2rem' : '2rem'),
-    boxSizing: 'border-box',
   };
 
   if (loading) return <div style={styles.center}>Loading your students...</div>;
@@ -62,7 +56,6 @@ const MyStudents = () => {
 
   return (
     <>
-      {/* Embedded responsive styles */}
       <style>{`
         .my-students-table th,
         .my-students-table td {
@@ -78,36 +71,22 @@ const MyStudents = () => {
           background-color: #f1f5f9;
           transition: 0.2s;
         }
-
         @media (max-width: 768px) {
-          .my-students-table thead {
-            display: none;
-          }
-          .my-students-table,
-          .my-students-table tbody,
-          .my-students-table tr,
-          .my-students-table td {
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
+          .my-students-table thead { display: none; }
+          .my-students-table, .my-students-table tbody,
+          .my-students-table tr, .my-students-table td {
+            display: block; width: 100%;
           }
           .my-students-table tr {
-            margin-bottom: 1rem;
-            border-radius: 10px;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 1rem; border-radius: 10px;
+            background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             padding: 0.6rem 0.8rem;
-            overflow: hidden;
           }
           .my-students-table td {
             padding: 0.5rem 1rem !important;
             text-align: right;
             position: relative;
             border: none;
-            word-break: break-word;
-            white-space: normal;
-            font-size: 0.92rem;
-            line-height: 1.4;
           }
           .my-students-table td::before {
             content: attr(data-label);
@@ -116,12 +95,17 @@ const MyStudents = () => {
             top: 0.5rem;
             font-weight: 600;
             color: #334155;
-            text-transform: capitalize;
           }
         }
       `}</style>
 
-      <div style={containerStyle}>
+      <div style={{
+        padding: isMobile ? '1rem' : '2rem',
+        fontFamily: 'Inter, Arial, sans-serif',
+        backgroundColor: '#f8fafc',
+        minHeight: '100vh',
+        paddingBottom: showBottomTab ? '70px' : '2rem'
+      }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -130,12 +114,7 @@ const MyStudents = () => {
           gap: '0.8rem',
           marginBottom: '1rem'
         }}>
-          <h2 style={{
-            color: '#1e293b',
-            fontSize: isMobile ? '1.5rem' : '1.8rem',
-            fontWeight: '600',
-            margin: 0
-          }}>
+          <h2 style={{ color: '#1e293b', fontSize: isMobile ? '1.5rem' : '1.8rem', fontWeight: '600' }}>
             🎓 My Students
           </h2>
           <button 
@@ -147,9 +126,7 @@ const MyStudents = () => {
               padding: isMobile ? '0.5rem 1rem' : '0.6rem 1.2rem',
               borderRadius: '8px',
               cursor: 'pointer',
-              fontWeight: '500',
-              fontSize: isMobile ? '0.95rem' : '1rem',
-              whiteSpace: 'nowrap'
+              fontWeight: '500'
             }}
           >
             ← Back
@@ -170,20 +147,13 @@ const MyStudents = () => {
           <div style={{
             maxHeight: getScrollContainerHeight(),
             overflowY: 'auto',
-            overflowX: 'hidden', // 👈 Prevents horizontal scroll
             borderRadius: '10px',
             backgroundColor: 'white',
             boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
             padding: isMobile ? '0.5rem' : '0',
-            marginBottom: showBottomTab ? '1rem' : '0',
-            width: '100%',
-            boxSizing: 'border-box'
+            marginBottom: showBottomTab ? '1rem' : '0'
           }}>
-            <table className="my-students-table" style={{ 
-              width: '100%', 
-              borderCollapse: 'collapse' 
-              // ❌ Removed minWidth: '500px'
-            }}>
+            <table className="my-students-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th>Name</th>
@@ -196,7 +166,7 @@ const MyStudents = () => {
                 {students.map((student) => (
                   <tr key={student._id}>
                     <td data-label="Name">{student.name}</td>
-                    <td data-label="Class">{student.class}</td>
+                    <td data-label="Class">{student.class} {student.section && `- ${student.section}`}</td>
                     <td data-label="Roll No">{student.rollNo}</td>
                     <td data-label="Admission Date">
                       {new Date(student.admissionDate).toLocaleDateString()}

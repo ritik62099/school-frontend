@@ -1,4 +1,3 @@
-// src/pages/admin/EditStudent.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { endpoints } from '../../config/api';
@@ -15,7 +14,8 @@ const EditStudent = () => {
     rollNo: '',
     mobile: '',
     address: '',
-    aadhar: ''
+    aadhar: '',
+    transport: false
   });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
@@ -23,17 +23,28 @@ const EditStudent = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch student data on mount
+  // ✅ Universal boolean parser (handles true/false/1/0/"true"/"1")
+  const parseBoolean = (value) => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+      return ['true', '1', 'yes', 'on'].includes(value.toLowerCase());
+    }
+    if (typeof value === 'number') return value === 1;
+    return false;
+  };
+
+  // 🔹 Fetch student data on mount
   useEffect(() => {
     const fetchStudent = async () => {
       try {
         const token = localStorage.getItem('token');
         const res = await fetch(`${endpoints.students.list}/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!res.ok) throw new Error('Failed to load student');
         const student = await res.json();
+
         setFormData({
           name: student.name || '',
           fatherName: student.fatherName || '',
@@ -43,8 +54,10 @@ const EditStudent = () => {
           rollNo: student.rollNo || '',
           mobile: student.mobile || '',
           address: student.address || '',
-          aadhar: student.aadhar || ''
+          aadhar: student.aadhar || '',
+          transport: parseBoolean(student.transport), // ✅ Always boolean
         });
+
         setPhotoPreview(student.photo || '');
       } catch (err) {
         setError('Failed to load student data.');
@@ -57,11 +70,16 @@ const EditStudent = () => {
     fetchStudent();
   }, [id]);
 
+  // 🔹 Handle input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
+  // 🔹 Handle photo selection
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -70,6 +88,7 @@ const EditStudent = () => {
     }
   };
 
+  // 🔹 Handle form submit (PUT)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -81,10 +100,9 @@ const EditStudent = () => {
 
       // Append all fields
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== '') formDataToSend.append(key, value);
+        formDataToSend.append(key, String(value));
       });
 
-      // Append photo if changed
       if (photoFile) {
         formDataToSend.append('photo', photoFile);
       }
@@ -92,7 +110,7 @@ const EditStudent = () => {
       const res = await fetch(`${endpoints.students.list}/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
-        body: formDataToSend
+        body: formDataToSend,
       });
 
       if (!res.ok) {
@@ -101,7 +119,7 @@ const EditStudent = () => {
       }
 
       alert('Student updated successfully!');
-      navigate('/students'); // or back to list
+      navigate('/students');
     } catch (err) {
       setError(err.message || 'An error occurred');
       console.error(err);
@@ -110,14 +128,15 @@ const EditStudent = () => {
     }
   };
 
+  // 🔹 Delete student
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this student? This cannot be undone.')) return;
+    if (!window.confirm('Are you sure you want to delete this student?')) return;
 
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${endpoints.students.list}/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) throw new Error('Delete failed');
@@ -129,9 +148,11 @@ const EditStudent = () => {
     }
   };
 
+  // 🔹 Loading / error states
   if (loading) return <div style={styles.center}>Loading...</div>;
   if (error) return <div style={{ ...styles.center, color: 'red' }}>{error}</div>;
 
+  // 🔹 Main render
   return (
     <div style={styles.container}>
       <h2>Edit Student</h2>
@@ -150,12 +171,7 @@ const EditStudent = () => {
               <div style={styles.noPhoto}>No photo</div>
             )}
           </div>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoChange}
-            style={styles.fileInput}
-          />
+          <input type="file" accept="image/*" onChange={handlePhotoChange} style={styles.fileInput} />
         </div>
 
         {/* Form Fields */}
@@ -167,16 +183,17 @@ const EditStudent = () => {
           <InputField label="Section" name="section" value={formData.section} onChange={handleChange} />
           <InputField label="Roll No" name="rollNo" value={formData.rollNo} onChange={handleChange} type="number" />
           <InputField label="Mobile" name="mobile" value={formData.mobile} onChange={handleChange} type="tel" />
+          <InputField
+            label="Uses School Transport"
+            name="transport"
+            type="checkbox"
+            value={formData.transport}
+            onChange={handleChange}
+          />
           <InputField label="Aadhar No" name="aadhar" value={formData.aadhar} onChange={handleChange} />
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={styles.label}>Address</label>
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              rows="3"
-              style={styles.textarea}
-            />
+            <textarea name="address" value={formData.address} onChange={handleChange} rows="3" style={styles.textarea} />
           </div>
         </div>
 
@@ -195,33 +212,46 @@ const EditStudent = () => {
   );
 };
 
-// Reusable Input Field
-const InputField = ({ label, name, value, onChange, type = 'text', required = false }) => (
-  <div>
-    <label style={styles.label}>{label}{required && <span style={{ color: 'red' }}>*</span>}</label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      required={required}
-      style={styles.input}
-    />
-  </div>
-);
+// ✅ Reusable InputField Component
+const InputField = ({ label, name, value, onChange, type = 'text', required = false }) => {
+  if (type === 'checkbox') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <input
+          type="checkbox"
+          name={name}
+          checked={!!value} // 👈 Always boolean
+          onChange={onChange}
+          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+        />
+        <label style={{ ...styles.label, margin: 0 }}>{label}</label>
+      </div>
+    );
+  }
 
-// ✅ Styles (internal CSS)
+  return (
+    <div>
+      <label style={styles.label}>
+        {label}
+        {required && <span style={{ color: 'red' }}>*</span>}
+      </label>
+      <input type={type} name={name} value={value} onChange={onChange} required={required} style={styles.input} />
+    </div>
+  );
+};
+
+// ✅ Inline Styles
 const styles = {
   container: {
     padding: '2rem',
     fontFamily: 'Arial, sans-serif',
     maxWidth: '900px',
-    margin: '0 auto'
+    margin: '0 auto',
   },
   center: {
     textAlign: 'center',
     marginTop: '2rem',
-    fontSize: '1.1rem'
+    fontSize: '1.1rem',
   },
   backBtn: {
     marginBottom: '1.5rem',
@@ -232,18 +262,18 @@ const styles = {
     borderRadius: '6px',
     cursor: 'pointer',
     fontSize: '1rem',
-    fontWeight: '600'
+    fontWeight: '600',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.5rem'
+    gap: '1.5rem',
   },
   photoSection: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: '0.8rem'
+    gap: '0.8rem',
   },
   photoPreviewContainer: {
     width: '120px',
@@ -251,12 +281,12 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '8px',
     overflow: 'hidden',
-    backgroundColor: '#f9f9f9'
+    backgroundColor: '#f9f9f9',
   },
   photoPreview: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover'
+    objectFit: 'cover',
   },
   noPhoto: {
     width: '100%',
@@ -265,28 +295,28 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     color: '#999',
-    fontSize: '14px'
+    fontSize: '14px',
   },
   fileInput: {
-    fontSize: '0.95rem'
+    fontSize: '0.95rem',
   },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '1.2rem'
+    gap: '1.2rem',
   },
   label: {
     display: 'block',
     marginBottom: '0.4rem',
     fontWeight: '600',
-    fontSize: '0.95rem'
+    fontSize: '0.95rem',
   },
   input: {
     width: '100%',
     padding: '0.6rem',
     border: '1px solid #ccc',
     borderRadius: '4px',
-    fontSize: '1rem'
+    fontSize: '1rem',
   },
   textarea: {
     width: '100%',
@@ -294,17 +324,17 @@ const styles = {
     border: '1px solid #ccc',
     borderRadius: '4px',
     fontSize: '1rem',
-    fontFamily: 'Arial, sans-serif'
+    fontFamily: 'Arial, sans-serif',
   },
   error: {
     color: 'red',
-    fontSize: '0.95rem'
+    fontSize: '0.95rem',
   },
   buttonGroup: {
     display: 'flex',
     gap: '1rem',
     justifyContent: 'flex-start',
-    marginTop: '1rem'
+    marginTop: '1rem',
   },
   saveBtn: {
     padding: '0.7rem 1.5rem',
@@ -314,7 +344,7 @@ const styles = {
     borderRadius: '6px',
     fontSize: '1rem',
     fontWeight: '600',
-    cursor: 'pointer'
+    cursor: 'pointer',
   },
   deleteBtn: {
     padding: '0.7rem 1.5rem',
@@ -324,8 +354,8 @@ const styles = {
     borderRadius: '6px',
     fontSize: '1rem',
     fontWeight: '600',
-    cursor: 'pointer'
-  }
+    cursor: 'pointer',
+  },
 };
 
 export default EditStudent;

@@ -71,4 +71,31 @@ export const endpoints = {
     getAll: api('/api/class-subjects'),
     update: (className) => api(`/api/class-subjects/${className}`),
   },
+  classFees: {
+  list: api('/api/class-fees'),
+  create: api('/api/class-fees'),
+  update: (className) => api(`/api/class-fees/${encodeURIComponent(className)}`),
+  delete: (className) => api(`/api/class-fees/${encodeURIComponent(className)}`)
+},
+
+transportFees: {
+  list: api('/api/transport-fees'),
+  create: api('/api/transport-fees'),
+  update: (className) => api(`/api/transport-fees/${encodeURIComponent(className)}`),
+  delete: (className) => api(`/api/transport-fees/${encodeURIComponent(className)}`)
+},
+
+payments: {
+  list: api('/api/payments'),
+  create: api('/api/payments'),
+  update: (id) => api(`/api/payments/${id}`),
+  delete: (id) => api(`/api/payments/${id}`),
+  monthlyReport: api('/api/payments/monthly-report'),
+  // Updated dues function to accept months (optional)
+  dues: (studentId, months = 1) => {
+    const baseUrl = api(`/api/payments/dues/${studentId}`);
+    return `${baseUrl}?months=${encodeURIComponent(months)}`;
+  },
+  history: (studentId) => api(`/api/payments/history/${studentId}`)
+},
 };

@@ -10,7 +10,7 @@ const AssignTeacher = () => {
 
   // ✅ Dynamic data from backend
   const [allClasses, setAllClasses] = useState([]);
-  const [classSubjectsMap, setClassSubjectsMap] = useState({}); // { "1st": ["Math", "Hindi"], ... }
+  const [classSubjectsMap, setClassSubjectsMap] = useState({});
 
   // Local state to manage dynamic subjects per teacher
   const [teacherLocalState, setTeacherLocalState] = useState({});
@@ -71,11 +71,17 @@ const AssignTeacher = () => {
     return Array.from(subjectSet);
   };
 
+  // ✅ Toggle item in array helper
+  const toggleItemInArray = (arr, item) => {
+    return arr.includes(item)
+      ? arr.filter((i) => i !== item)
+      : [...arr, item];
+  };
+
   // ✅ Handle class selection change
   const handleClassChange = async (teacherId, selectedClasses) => {
     const availableSubjects = getSubjectsForClasses(selectedClasses);
     const currentSubjects = teacherLocalState[teacherId]?.selectedSubjects || [];
-    // Keep only subjects that are valid for newly selected classes
     const validSubjects = currentSubjects.filter((sub) =>
       availableSubjects.includes(sub)
     );
@@ -89,7 +95,6 @@ const AssignTeacher = () => {
       }
     }));
 
-    // Save classes to backend
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(endpoints.teachers.assign(teacherId), {
@@ -100,7 +105,7 @@ const AssignTeacher = () => {
         },
         body: JSON.stringify({
           assignedClasses: selectedClasses,
-          assignedSubjects: validSubjects // auto-clean invalid subjects
+          assignedSubjects: validSubjects
         })
       });
 
@@ -128,7 +133,6 @@ const AssignTeacher = () => {
       }
     }));
 
-    // Save subjects to backend
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(endpoints.teachers.assign(teacherId), {
@@ -177,10 +181,6 @@ const AssignTeacher = () => {
       console.error("Network error:", err);
       alert("Network error – please check your connection");
     }
-  };
-
-  const handleMultiSelectChange = (e) => {
-    return Array.from(e.target.selectedOptions, (opt) => opt.value);
   };
 
   if (loading)
@@ -273,24 +273,60 @@ const AssignTeacher = () => {
           font-size: 0.95rem;
           margin-bottom: 0.5rem;
         }
-        .dropdown {
-          width: 100%;
-          padding: 0.65rem 0.8rem;
-          border: 1px solid #dcdfe6;
+
+        .checkbox-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+          max-height: 180px;
+          overflow-y: auto;
+          padding: 0.5rem 0;
+          border: 1px solid #eaeaea;
           border-radius: 8px;
           background-color: #fafafa;
+        }
+        .checkbox-row {
+          display: flex;
+          align-items: center;
+          padding: 0.4rem 0.8rem;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: background 0.2s;
+        }
+        .checkbox-row:hover {
+          background-color: #f0f7ff;
+        }
+        .checkbox-row input[type="checkbox"] {
+          margin-right: 0.8rem;
+          transform: scale(1.2);
+          cursor: pointer;
+        }
+        .checkbox-row span {
           font-size: 0.95rem;
           color: #333;
-          outline: none;
-          transition: border-color 0.2s;
+          flex: 1;
         }
-        .dropdown:focus {
-          border-color: #3498db;
-          box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        .no-subjects-hint {
+          padding: 0.6rem 0.8rem;
+          color: #7f8c8d;
+          font-style: italic;
+          font-size: 0.9rem;
         }
-        .dropdown[multiple] {
-          min-height: 110px;
+
+        .checkbox-list::-webkit-scrollbar {
+          width: 6px;
         }
+        .checkbox-list::-webkit-scrollbar-track {
+          background: #f1f1f1;
+        }
+        .checkbox-list::-webkit-scrollbar-thumb {
+          background: #ccc;
+          border-radius: 3px;
+        }
+        .checkbox-list::-webkit-scrollbar-thumb:hover {
+          background: #999;
+        }
+
         .attendance-toggle {
           display: flex;
           justify-content: space-between;
@@ -345,13 +381,12 @@ const AssignTeacher = () => {
           .page-title { font-size: 1.4rem; }
           .card-grid { gap: 1.4rem; }
           .teacher-card { padding: 1.2rem; }
-          .dropdown[multiple] { min-height: 90px; }
         }
         @media (max-width: 480px) {
           .card-grid { grid-template-columns: 1fr; }
           .teacher-card { padding: 1rem; }
-          .dropdown { font-size: 0.9rem; padding: 0.6rem 0.7rem; }
-          .dropdown[multiple] { min-height: 80px; }
+          .checkbox-row span { font-size: 0.9rem; }
+          .checkbox-row { padding: 0.4rem 0.6rem; }
           .attendance-toggle { flex-wrap: wrap; gap: 0.6rem; }
         }
       `}</style>
@@ -371,54 +406,76 @@ const AssignTeacher = () => {
               <div className="teacher-name">{teacher.name}</div>
               <div className="teacher-email">{teacher.email}</div>
 
+              {/* Assign Classes */}
               <div className="field">
                 <label>Assign Classes:</label>
-                <select
-                  multiple
-                  className="dropdown"
-                  value={local.selectedClasses || []}
-                  onChange={(e) =>
-                    handleClassChange(teacher._id, handleMultiSelectChange(e))
-                  }
-                >
-                  {allClasses.map((cls) => (
-                    <option key={cls} value={cls}>
-                      {cls}
-                    </option>
-                  ))}
-                </select>
+                <div className="checkbox-list">
+                  {allClasses.map((cls) => {
+                    // ✅ FIXED: ensure checked is always boolean
+                    const isSelected = (local.selectedClasses || []).includes(cls);
+                    return (
+                      <label key={cls} className="checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            const newClasses = toggleItemInArray(
+                              local.selectedClasses || [],
+                              cls
+                            );
+                            handleClassChange(teacher._id, newClasses);
+                          }}
+                        />
+                        <span>{cls}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
+              {/* Assign Subjects */}
               <div className="field">
                 <label>Assign Subjects:</label>
-                <select
-                  multiple
-                  className="dropdown"
-                  value={local.selectedSubjects || []}
-                  onChange={(e) =>
-                    handleSubjectChange(teacher._id, handleMultiSelectChange(e))
-                  }
-                >
-                  {local.availableSubjects?.map((sub) => (
-                    <option key={sub} value={sub}>
-                      {sub}
-                    </option>
-                  )) || (
-                    <option disabled>
+                <div className="checkbox-list">
+                  {local.availableSubjects?.length > 0 ? (
+                    local.availableSubjects.map((sub) => {
+                      // ✅ FIXED: ensure checked is always boolean
+                      const isSelected = (local.selectedSubjects || []).includes(sub);
+                      return (
+                        <label key={sub} className="checkbox-row">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {
+                              const newSubjects = toggleItemInArray(
+                                local.selectedSubjects || [],
+                                sub
+                              );
+                              handleSubjectChange(teacher._id, newSubjects);
+                            }}
+                          />
+                          <span>{sub}</span>
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <div className="no-subjects-hint">
                       {local.selectedClasses?.length
                         ? "No subjects defined for selected classes"
                         : "Select classes first"}
-                    </option>
+                    </div>
                   )}
-                </select>
+                </div>
               </div>
 
+              {/* Attendance Toggle */}
               <div className="attendance-toggle">
                 <span>Can Mark Attendance</span>
                 <label className="switch">
+                  {/* ✅ FIXED: ensure checked is boolean */}
                   <input
                     type="checkbox"
-                    checked={teacher.canMarkAttendance || false}
+                    checked={Boolean(teacher.canMarkAttendance)}
                     onChange={(e) =>
                       handleAttendanceToggle(teacher._id, e.target.checked)
                     }

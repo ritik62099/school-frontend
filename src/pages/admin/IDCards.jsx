@@ -3,12 +3,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { endpoints } from '../../config/api';
 import Logo from "../../assets/logo.png";
-import { useStudents } from '../../hooks/useStudents'; // ✅ Only this needed
+import { useStudents } from '../../hooks/useStudents';
 
 const SCHOOL_LOGO_URL = Logo;
 
 const IDCards = () => {
-  // ✅ Sirf yeh states rakhein
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [logoBase64, setLogoBase64] = useState('');
@@ -16,25 +15,19 @@ const IDCards = () => {
   const [backendClasses, setBackendClasses] = useState([]);
   const navigate = useNavigate();
 
-  // ✅ Hook se students le rahe hain
-  const { students, loading, error } = useStudents(); // ✅ No manual fetch
+  const { students, loading, error } = useStudents(); 
 
   const classOptions = useMemo(() => {
-  // Get classes that actually have students
-  const studentClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
-  
-  // Use backend classes, but only those that have students
-  return backendClasses
-    .filter(cls => studentClasses.includes(cls))
-    .sort((a, b) => {
-      // Optional: sort in logical order
-      const order = ["Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
-                     "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
-      return (order.indexOf(a) - order.indexOf(b)) || a.localeCompare(b);
-    });
-}, [students, backendClasses]);
+    const studentClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
+    return backendClasses
+      .filter(cls => studentClasses.includes(cls))
+      .sort((a, b) => {
+        const order = ["Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
+                       "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+        return (order.indexOf(a) - order.indexOf(b)) || a.localeCompare(b);
+      });
+  }, [students, backendClasses]);
 
-  // ✅ Filter students
   useEffect(() => {
     if (!selectedClass) {
       setFilteredStudents(students);
@@ -43,29 +36,25 @@ const IDCards = () => {
     }
   }, [selectedClass, students]);
 
-
-  // ✅ Fetch classes from backend
-useEffect(() => {
-  const fetchClasses = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-      const res = await fetch(endpoints.classes.list, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const classes = await res.json();
-        setBackendClasses(classes);
+  useEffect(() => {
+    const fetchClasses = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await fetch(endpoints.classes.list, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const classes = await res.json();
+          setBackendClasses(classes);
+        }
+      } catch (err) {
+        console.error('Failed to load classes', err);
       }
-    } catch (err) {
-      console.error('Failed to load classes', err);
-    }
-  };
+    };
+    fetchClasses();
+  }, []);
 
-  fetchClasses();
-}, []);
-  // ✅ Logo loading (same as before)
   useEffect(() => {
     const convertLogoToBase64 = async () => {
       try {
@@ -84,126 +73,130 @@ useEffect(() => {
     };
     convertLogoToBase64();
   }, []);
-  // ✅ Print single ID card
+
+  // ✅ Print SINGLE Student ID Card (54mm x 85mm) — NEW DESIGN
   const printIDCard = (student) => {
+    if (!logoLoaded || !logoBase64) {
+      alert("School logo is still loading. Please wait and try again.");
+      return;
+    }
+
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <html>
         <head>
           <title>ID Card - ${student.name}</title>
           <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 0; 
-              padding: 20px; 
-              background: #fff; 
-              display: flex;
-              justify-content: left;
-              align-items: left;
-              min-height: 100vh;
+            @media print {
+              @page {
+                size: 54mm 85mm;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                background: white;
+              }
+            }
+            body {
+              width: 54mm;
+              height: 85mm;
+              margin: 0;
+              padding: 0;
+              font-family: Arial, sans-serif;
+              background: #f9f9f9;
+              box-sizing: border-box;
             }
             .id-card {
-              width: 350px;
-              height: 230px;
-              border: 2px solid #2c3e50;
-              border-radius: 8px;
+              width: 100%;
+              height: 100%;
               position: relative;
-              background: white;
-              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-              padding: 10px;
-              box-sizing: border-box;
-              font-size: 11px;
+              overflow: hidden;
+              border: 0.5mm solid #2c3e50;
             }
             .header {
-              position: absolute;
-              top: 10px;
-              right: 10px;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            }
-            .school-logo {
-              width: 36px;
-              height: 36px;
-              object-fit: contain;
-              border-radius: 4px;
+              width: 100%;
+              height: 28mm;
+              background: #2980b9;
+              color: white;
+              text-align: center;
+              padding-top: 3mm;
+              box-sizing: border-box;
             }
             .school-name {
+              font-size: 4mm;
               font-weight: bold;
-              font-size: 16px;
-              color: #2c3e50;
               margin: 0;
               line-height: 1.2;
             }
             .school-address {
-              font-size: 10px;
-              color: #7f8c8d;
-              margin-top: 4px;
-              text-align: center;
+              font-size: 2.5mm;
+              margin: 0.5mm 0 0 0;
             }
-            .photo-placeholder {
+            .photo-circle {
               position: absolute;
-              left: 10px;
-              bottom: 60px;
-              width: 80px;
-              height: 90px;
-              border: 1px solid #ddd;
-              background: #f5f5f5;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 10px;
-              color: #999;
+              top: 26mm;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 20mm;
+              height: 20mm;
+              border-radius: 50%;
+              background: white;
+              overflow: hidden;
+              box-shadow: 0 0 1mm rgba(0,0,0,0.3);
             }
-            .photo-placeholder img {
+            .photo-circle img {
               width: 100%;
               height: 100%;
               object-fit: cover;
             }
-            .details {
+            .content {
               position: absolute;
-              left: 120px;
-              top: 50px;
-              line-height: 1.5;
+              top: 47mm;
+              left: 0;
+              right: 0;
+              padding: 1mm 3mm;
+              font-size: 3mm;
+              line-height: 1.4;
+            }
+            .name {
+              font-size: 4.5mm;
+              font-weight: bold;
+              text-align: center;
+              margin: 0 0 2mm 0;
+              color: #2c3e50;
             }
             .detail-row {
-              margin: 4px 0;
               display: flex;
-              justify-content: flex-start;
+              justify-content: space-between;
+              margin: 1mm 0;
             }
             .label {
-              display: inline-block;
-              width: 51px;
               font-weight: bold;
+              min-width: 18mm;
+            }
+            .value {
               text-align: left;
+              flex-grow: 1;
             }
           </style>
         </head>
         <body>
           <div class="id-card">
             <div class="header">
-              <img 
-                src="${logoBase64}" 
-                alt="School Logo" 
-                class="school-logo"
-              />
-              <div>
-                <p class="school-name">AMBICA INTERNATIONAL SCHOOL</p>
-                <p class="school-address">SAIDPUR, DIGHWARA SARAN</p>
-              </div>
+              <div class="school-name">AMBICA</div>
+              <div class="school-name">INTERNATIONAL SCHOOL</div>
+              <div class="school-address">SAIDPUR, DIGHWARA (SARAN)</div>
             </div>
-
-            <div class="photo-placeholder">
-              ${student.photo ? `<img src="${student.photo}" alt="Student Photo" />` : '<div style="font-size:10px;color:#999;text-align:center;height:100%;display:flex;align-items:center;justify-content:center;">PHOTO</div>'}
+            <div class="photo-circle">
+              <img src="${student.photo || 'https://via.placeholder.com/20'}" alt="Student Photo" />
             </div>
-
-            <div class="details">
-              <div class="detail-row"><span class="label">NAME</span> : ${student.name || 'N/A'}</div>
-              <div class="detail-row"><span class="label">FATHER</span> : ${student.fatherName || 'N/A'}</div>
-              <div class="detail-row"><span class="label">CLASS</span> : ${student.class || 'N/A'}</div>
-              <div class="detail-row"><span class="label">ROLL NO</span> : ${student.rollNo || 'N/A'}</div>
-              <div class="detail-row"><span class="label">MOB</span> : ${student.mobile || 'N/A'}</div>
-              <div class="detail-row"><span class="label">ADD</span> : ${student.address || 'N/A'}</div>
+            <div class="content">
+              <div class="name">${student.name || 'N/A'}</div>
+              <div class="detail-row"><span class="label">FATHER</span><span class="value">:- ${student.fatherName || 'N/A'}</span></div>
+              <div class="detail-row"><span class="label">CLASS</span><span class="value">:- ${student.class || 'N/A'}</span></div>
+              <div class="detail-row"><span class="label">MOB</span><span class="value">:- ${student.mobile || 'N/A'}</span></div>
+              <div class="detail-row"><span class="label">ADD</span><span class="value">:- ${student.address?.substring(0, 15) || 'N/A'}</span></div>
             </div>
           </div>
         </body>
@@ -215,34 +208,35 @@ useEffect(() => {
     printWindow.close();
   };
 
-  // ✅ Print ALL ID Cards (Grid layout - 3 per row, multiple pages)
+  // ✅ Print ALL Student ID Cards (A4 with 54x85mm cards in grid) — NEW DESIGN
   const printAllIDCards = () => {
+    if (!logoLoaded || !logoBase64) {
+      alert("School logo is still loading. Please wait and try again.");
+      return;
+    }
+
     const studentsToPrint = filteredStudents.length > 0 ? filteredStudents : students;
     if (studentsToPrint.length === 0) return;
 
     const printWindow = window.open('', '_blank');
 
-    // Generate HTML for all cards
     const cardsHtml = studentsToPrint.map(student => `
-      <div class="id-card-wrapper">
+      <div class="card-item">
         <div class="id-card">
           <div class="header">
-            <img src="${logoBase64}" alt="School Logo" class="school-logo" />
-            <div>
-              <p class="school-name">AMBICA INTERNATIONAL SCHOOL</p>
-              <p class="school-address">SAIDPUR, DIGHWARA SARAN</p>
-            </div>
+            <div class="school-name">AMBICA</div>
+            <div class="school-name">INTERNATIONAL SCHOOL</div>
+            <div class="school-address">SAIDPUR, DIGHWARA (SARAN)</div>
           </div>
-          <div class="photo-placeholder">
-            ${student.photo ? `<img src="${student.photo}" alt="Student Photo" />` : '<div style="font-size:10px;color:#999;text-align:center;height:100%;display:flex;align-items:center;justify-content:center;">PHOTO</div>'}
+          <div class="photo-circle">
+            <img src="${student.photo || 'https://via.placeholder.com/20'}" alt="Student Photo" />
           </div>
-          <div class="details">
-            <div class="detail-row"><span class="label">NAME</span> : ${student.name || 'N/A'}</div>
-            <div class="detail-row"><span class="label">FATHER</span> : ${student.fatherName || 'N/A'}</div>
-            <div class="detail-row"><span class="label">CLASS</span> : ${student.class || 'N/A'}</div>
-            <div class="detail-row"><span class="label">ROLL NO</span> : ${student.rollNo || 'N/A'}</div>
-            <div class="detail-row"><span class="label">MOB</span> : ${student.mobile || 'N/A'}</div>
-            <div class="detail-row"><span class="label">ADD</span> : ${student.address || 'N/A'}</div>
+          <div class="content">
+            <div class="name">${student.name || 'N/A'}</div>
+            <div class="detail-row"><span class="label">FATHER</span><span class="value">:- ${student.fatherName || 'N/A'}</span></div>
+            <div class="detail-row"><span class="label">CLASS</span><span class="value">:- ${student.class || 'N/A'}</span></div>
+            <div class="detail-row"><span class="label">MOB</span><span class="value">:- ${student.mobile || 'N/A'}</span></div>
+            <div class="detail-row"><span class="label">ADD</span><span class="value">:- ${student.address?.substring(0, 15) || 'N/A'}</span></div>
           </div>
         </div>
       </div>
@@ -251,100 +245,100 @@ useEffect(() => {
     printWindow.document.write(`
       <html>
         <head>
-          <title>All ID Cards</title>
+          <title>All Student ID Cards</title>
           <style>
             @media print {
-              @page { size: A4; margin: 5mm; }
-              body { 
-                font-family: Arial, sans-serif; 
-                margin: 0; 
-                padding: 0; 
+              @page {
+                size: A4;
+                margin: 5mm;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
                 background: white;
               }
               .container {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 10px;
-                justify-content: center;
+                gap: 10mm;
+                width: 200mm;
               }
-              .id-card-wrapper {
-                width: 350px;
-                margin-bottom: 10px;
+              .card-item {
+                width: 54mm;
+                height: 85mm;
               }
               .id-card {
                 width: 100%;
-                height: 230px;
-                border: 2px solid #2c3e50;
-                border-radius: 8px;
+                height: 100%;
                 position: relative;
-                background: white;
-                box-shadow: none;
-                padding: 10px;
-                box-sizing: border-box;
-                font-size: 11px;
+                overflow: hidden;
+                border: 0.3mm solid #2c3e50;
               }
               .header {
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-              }
-              .school-logo {
-                width: 36px;
-                height: 36px;
-                object-fit: contain;
-                border-radius: 4px;
+                width: 100%;
+                height: 28mm;
+                background: #2980b9;
+                color: white;
+                text-align: center;
+                padding-top: 3mm;
+                box-sizing: border-box;
               }
               .school-name {
+                font-size: 4mm;
                 font-weight: bold;
-                font-size: 16px;
-                color: #2c3e50;
                 margin: 0;
                 line-height: 1.2;
               }
               .school-address {
-                font-size: 10px;
-                color: #7f8c8d;
-                margin-top: 4px;
-                text-align: center;
+                font-size: 2.5mm;
+                margin: 0.5mm 0 0 0;
               }
-              .photo-placeholder {
+              .photo-circle {
                 position: absolute;
-                left: 10px;
-                bottom: 60px;
-                width: 80px;
-                height: 90px;
-                border: 1px solid #ddd;
-                background: #f5f5f5;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 10px;
-                color: #999;
+                top: 26mm;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 20mm;
+                height: 20mm;
+                border-radius: 50%;
+                background: white;
+                overflow: hidden;
+                box-shadow: 0 0 1mm rgba(0,0,0,0.3);
               }
-              .photo-placeholder img {
+              .photo-circle img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
               }
-              .details {
+              .content {
                 position: absolute;
-                left: 120px;
-                top: 50px;
-                line-height: 1.5;
+                top: 47mm;
+                left: 0;
+                right: 0;
+                padding: 1mm 3mm;
+                font-size: 3mm;
+                line-height: 1.4;
+              }
+              .name {
+                font-size: 4.5mm;
+                font-weight: bold;
+                text-align: center;
+                margin: 0 0 2mm 0;
+                color: #2c3e50;
               }
               .detail-row {
-                margin: 4px 0;
                 display: flex;
-                justify-content: flex-start;
+                justify-content: space-between;
+                margin: 1mm 0;
               }
               .label {
-                display: inline-block;
-                width: 51px;
                 font-weight: bold;
+                min-width: 18mm;
+              }
+              .value {
                 text-align: left;
+                flex-grow: 1;
               }
             }
           </style>
@@ -369,9 +363,8 @@ useEffect(() => {
 
   return (
     <div style={pageStyles.container}>
-      <h2>ID Cards</h2>
+      <h2>Student ID Cards (54mm × 85mm)</h2>
 
-      {/* Class Filter */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <label style={{ fontWeight: 'bold', color: '#2c3e50' }}>Filter by Class:</label>
         <select
@@ -392,18 +385,17 @@ useEffect(() => {
         </select>
       </div>
 
-      {/* ✅ Print All Button */}
       <div style={{ ...pageStyles.buttonGroup, marginBottom: '1.5rem' }}>
         <button onClick={() => navigate(-1)} style={pageStyles.backBtn}>
           ← Back to Dashboard
         </button>
         <button
           onClick={printAllIDCards}
-          disabled={filteredStudents.length === 0}
+          disabled={filteredStudents.length === 0 || !logoLoaded}
           style={{
             ...pageStyles.printBtn,
-            backgroundColor: filteredStudents.length === 0 ? '#bdc3c7' : '#27ae60',
-            cursor: filteredStudents.length === 0 ? 'not-allowed' : 'pointer'
+            backgroundColor: (filteredStudents.length === 0 || !logoLoaded) ? '#bdc3c7' : '#27ae60',
+            cursor: (filteredStudents.length === 0 || !logoLoaded) ? 'not-allowed' : 'pointer'
           }}
         >
           🖨️ Print All ({filteredStudents.length})
@@ -418,46 +410,76 @@ useEffect(() => {
         <div style={pageStyles.cardGrid}>
           {filteredStudents.map((student) => (
             <div key={student._id} style={pageStyles.cardWrapper}>
-              <div style={idCardStyles.idCard}>
-                <div style={idCardStyles.header}>
+              {/* Preview with NEW DESIGN (scaled) */}
+              <div style={{
+                width: '160px',
+                height: '250px',
+                position: 'relative',
+                border: '1px solid #2c3e50',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                backgroundColor: '#f9f9f9',
+                transform: 'scale(0.8)',
+                transformOrigin: 'top left'
+              }}>
+                <div style={{
+                  width: '100%',
+                  height: '28%',
+                  background: '#2980b9',
+                  color: 'white',
+                  textAlign: 'center',
+                  paddingTop: '8px'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold' }}>AMBICA</div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold' }}>INTERNATIONAL SCHOOL</div>
+                  <div style={{ fontSize: '10px', marginTop: '2px' }}>SAIDPUR, DIGHWARA (SARAN)</div>
+                </div>
+                <div style={{
+                  position: 'absolute',
+                  top: '28%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  background: 'white',
+                  overflow: 'hidden',
+                  boxShadow: '0 0 4px rgba(0,0,0,0.3)'
+                }}>
                   <img
-                    src={SCHOOL_LOGO_URL}
-                    alt="School Logo"
-                    style={idCardStyles.schoolLogo}
-                    onError={(e) => (e.target.style.display = 'none')}
+                    src={student.photo || 'https://via.placeholder.com/60'}
+                    alt="Student Photo"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
-                  <div>
-                    <p style={idCardStyles.schoolName}>AMBICA INTERNATIONAL SCHOOL</p>
-                    <p style={idCardStyles.schoolAddress}>SAIDPUR, DIGHWARA SARAN</p>
+                </div>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '0',
+                  right: '0',
+                  padding: '4px 8px',
+                  fontSize: '10px',
+                  lineHeight: '1.4'
+                }}>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold', textAlign: 'center', marginBottom: '4px' }}>
+                    {student.name || 'N/A'}
                   </div>
-                </div>
-
-                <div style={idCardStyles.photoPlaceholder}>
-                  {student.photo ? (
-                    <img
-                      src={student.photo}
-                      alt="Student Photo"
-                      style={idCardStyles.photo}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        const fallback = document.createElement('div');
-                        fallback.textContent = 'PHOTO';
-                        fallback.style.cssText = idCardStyles.photoFallback.cssText;
-                        e.target.parentNode.appendChild(fallback);
-                      }}
-                    />
-                  ) : (
-                    <div style={idCardStyles.photoFallback}>PHOTO</div>
-                  )}
-                </div>
-
-                <div style={idCardStyles.details}>
-                  <div style={idCardStyles.detailRow}><span style={idCardStyles.label}>NAME</span> : {student.name || 'N/A'}</div>
-                  <div style={idCardStyles.detailRow}><span style={idCardStyles.label}>FATHER</span> : {student.fatherName || 'N/A'}</div>
-                  <div style={idCardStyles.detailRow}><span style={idCardStyles.label}>CLASS</span> : {student.class || 'N/A'}</div>
-                  <div style={idCardStyles.detailRow}><span style={idCardStyles.label}>ROLL NO</span> : {student.rollNo || 'N/A'}</div>
-                  <div style={idCardStyles.detailRow}><span style={idCardStyles.label}>MOB</span> : {student.mobile || 'N/A'}</div>
-                  <div style={idCardStyles.detailRow}><span style={idCardStyles.label}>ADD</span> : {student.address || 'N/A'}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{ fontWeight: 'bold' }}>FATHER</span>
+                    <span>:- {student.fatherName || 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{ fontWeight: 'bold' }}>CLASS</span>
+                    <span>:- {student.class || 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{ fontWeight: 'bold' }}>MOB</span>
+                    <span>:- {student.mobile || 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 'bold' }}>ADD</span>
+                    <span>:- {student.address?.substring(0, 15) || 'N/A'}</span>
+                  </div>
                 </div>
               </div>
 
@@ -467,7 +489,7 @@ useEffect(() => {
                 style={{
                   ...pageStyles.printBtn,
                   backgroundColor: '#16a085',
-                  marginTop: '1rem',
+                  marginTop: '0.5rem',
                   opacity: logoLoaded ? 1 : 0.6,
                   cursor: logoLoaded ? 'pointer' : 'not-allowed'
                 }}
@@ -482,7 +504,6 @@ useEffect(() => {
   );
 };
 
-// ✅ Styles
 const pageStyles = {
   container: {
     padding: '2rem',
@@ -507,7 +528,7 @@ const pageStyles = {
   },
   cardGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
     gap: '2rem',
     marginTop: '1rem',
     justifyContent: 'center',
@@ -524,94 +545,6 @@ const pageStyles = {
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
-  },
-};
-
-const idCardStyles = {
-  idCard: {
-    width: '350px',
-    height: '220px',
-    border: '2px solid #2c3e50',
-    borderRadius: '8px',
-    position: 'relative',
-    background: 'white',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-    padding: '10px',
-    boxSizing: 'border-box',
-    fontSize: '11px',
-    fontFamily: 'Arial, sans-serif',
-  },
-  header: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  schoolLogo: {
-    width: '36px',
-    height: '36px',
-    objectFit: 'contain',
-    borderRadius: '4px',
-  },
-  schoolName: {
-    margin: '0',
-    fontWeight: 'bold',
-    fontSize: '16px',
-    color: '#2c3e50',
-    lineHeight: '1.2',
-  },
-  schoolAddress: {
-    fontSize: '10px',
-    color: '#7f8c8d',
-    marginTop: '4px',
-    textAlign: 'center',
-  },
-  photoPlaceholder: {
-    position: 'absolute',
-    left: '10px',
-    bottom: '60px',
-    width: '80px',
-    height: '90px',
-    border: '1px solid #ddd',
-    background: '#f5f5f5',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '10px',
-    color: '#999',
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
-  photoFallback: {
-    fontSize: '10px',
-    color: '#999',
-    textAlign: 'center',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-  },
-  details: {
-    position: 'absolute',
-    left: '120px',
-    top: '50px',
-    lineHeight: '1.5',
-  },
-  detailRow: {
-    margin: '4px 0',
-    display: 'flex',
-    justifyContent: 'flex-start',
-  },
-  label: {
-    display: 'inline-block',
-    width: '51px',
-    fontWeight: 'bold',
-    textAlign: 'left',
   },
 };
 

@@ -85,27 +85,28 @@ const AdminDashboard = () => {
     { label: 'Admit Cards', path: '/admit-cards', color: '#9b59b6' },
     { label: 'ID Cards', path: '/id-cards', color: '#16a085' },
     { label: 'View Result', path: '/view-result', color: '#f39c12' },
-    { label: 'Manage Class Subjects', path: '/class-subjects', color: '#8e44ad' }
+    { label: 'Manage Class Subjects', path: '/class-subjects', color: '#8e44ad' },
+    { label: 'Class-wise Fees', path: '/class-fees', color: '#0d9488' },
+    { label: 'Student Payments', path: '/student-payments', color: '#7e22ce' }
   ];
 
   const teacherButtons = [
-  { label: 'View My Students', path: '/my-students', color: '#3498db' },
-  { label: 'Add Student', path: '/add-student', color: '#3498db' }, // ✅ Added for teachers
-  { label: 'Add Marks', path: '/add-marks', color: '#e74c3c' },
-  ...(currentUser?.canMarkAttendance 
+    { label: 'View My Students', path: '/my-students', color: '#3498db' },
+    { label: 'Add Marks', path: '/add-marks', color: '#e74c3c' },
+    ...(currentUser?.canMarkAttendance
       ? [
-          { label: 'Mark Attendance', path: '/attendance', color: '#9b59b6' },
-          
-          { label: 'View Result', path: '/view-result', color: '#f39c12' },
-          { label: 'Attendance Download', path: '/attendance/monthly-report', color: '#f39c12' }
-        ] 
+        { label: 'Mark Attendance', path: '/attendance', color: '#9b59b6' },
+        { label: 'Add Student', path: '/add-student', color: '#3498db' }, // ✅ Added for teachers
+        { label: 'View Result', path: '/view-result', color: '#f39c12' },
+        { label: 'Attendance Download', path: '/attendance/monthly-report', color: '#f39c12' }
+      ]
       : [])
-];
+  ];
 
   const buttons = currentUser?.role === 'admin' ? adminButtons : teacherButtons;
 
-  const showBottomTab = isMobile && 
-    ['/dashboard', '/my-students', '/attendance', '/teachers', '/profile'].some(path => 
+  const showBottomTab = isMobile &&
+    ['/dashboard', '/my-students', '/attendance', '/teachers', '/profile'].some(path =>
       location.pathname === path
     );
 
@@ -127,8 +128,8 @@ const AdminDashboard = () => {
           </h1>
           <p style={styles.subtitle}>Welcome back, <strong>{currentUser?.name || 'User'}</strong></p>
         </div>
-        <button 
-          onClick={handleLogout} 
+        <button
+          onClick={handleLogout}
           style={styles.logoutBtn}
         >
           Logout

@@ -5,6 +5,7 @@ import { useStudents } from "../../hooks/useStudents";
 
 const StudentsList = () => {
   const [selectedClass, setSelectedClass] = useState("all");
+  const [selectedRoll, setSelectedRoll] = useState("all");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const navigate = useNavigate();
 
@@ -16,6 +17,7 @@ const StudentsList = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Get sorted unique classes
   const classes = useMemo(() => {
     const unique = [...new Set(students.map((s) => s.class).filter(Boolean))];
     return unique.sort((a, b) =>
@@ -23,12 +25,24 @@ const StudentsList = () => {
     );
   }, [students]);
 
-  const filteredStudents = useMemo(() => {
-    if (selectedClass === "all") return students;
-    return students.filter((student) => student.class === selectedClass);
+  // Get roll numbers based on selected class
+  const rolls = useMemo(() => {
+    let filtered = students;
+    if (selectedClass !== "all") {
+      filtered = students.filter((s) => s.class === selectedClass);
+    }
+    const rollSet = new Set(filtered.map((s) => s.rollNo).filter(Boolean));
+    return Array.from(rollSet).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
   }, [students, selectedClass]);
 
- 
+  // Apply both filters
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      const matchesClass = selectedClass === "all" || student.class === selectedClass;
+      const matchesRoll = selectedRoll === "all" || student.rollNo === selectedRoll;
+      return matchesClass && matchesRoll;
+    });
+  }, [students, selectedClass, selectedRoll]);
 
   if (loading) return <div style={styles.center}>Loading students...</div>;
   if (error)
@@ -39,22 +53,44 @@ const StudentsList = () => {
       <div style={styles.headerRow}>
         <h2 style={styles.heading}>All Students</h2>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button onClick={() => navigate(-1)} style={styles.backBtn}>← Back</button>
-          
+          <button onClick={() => navigate('/')} style={styles.backBtn}>← Back</button>
         </div>
       </div>
 
+      {/* Class Filter */}
       <div style={styles.filterContainer}>
         <label htmlFor="class-filter" style={styles.label}>Filter by Class:</label>
         <select
           id="class-filter"
           value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
+          onChange={(e) => {
+            setSelectedClass(e.target.value);
+            setSelectedRoll("all"); // Reset roll when class changes
+          }}
           style={styles.select}
         >
           <option value="all">All Classes</option>
           {classes.map((cls) => (
             <option key={cls} value={cls}>Class {cls}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Roll No Filter */}
+      <div style={styles.filterContainer}>
+        <label htmlFor="roll-filter" style={styles.label}>Filter by Roll No:</label>
+        <select
+          id="roll-filter"
+          value={selectedRoll}
+          onChange={(e) => setSelectedRoll(e.target.value)}
+          style={styles.select}
+          disabled={rolls.length === 0}
+        >
+          <option value="all">All Rolls</option>
+          {rolls.map((roll) => (
+            <option key={roll} value={roll}>
+              {roll}
+            </option>
           ))}
         </select>
       </div>
@@ -170,15 +206,6 @@ const styles = {
     fontWeight: "600",
     cursor: "pointer",
     height: "fit-content",
-  },
-  printBtn: {
-    backgroundColor: "#8b5cf6",
-    color: "#fff",
-    border: "none",
-    borderRadius: "10px",
-    padding: "0.6rem 1.2rem",
-    fontWeight: "600",
-    cursor: "pointer",
   },
   filterContainer: {
     marginBottom: "1.2rem",

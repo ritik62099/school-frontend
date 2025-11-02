@@ -13,10 +13,8 @@ const TeachersList = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
 
-  // Detect mobile view
   const isMobile = useMemo(() => window.innerWidth <= 768, []);
 
-  // Fetch teachers
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
@@ -84,7 +82,6 @@ const TeachersList = () => {
     }
   };
 
-  // Show bottom tab only on mobile and for allowed routes
   const showBottomTab = isMobile && 
     ['/dashboard', '/my-students', '/attendance', '/teachers', '/profile'].includes(location.pathname);
 
@@ -146,7 +143,6 @@ const TeachersList = () => {
           font-size: 1.1rem;
         }
 
-        /* Desktop Table */
         .desktop-table-container {
           display: block;
         }
@@ -178,7 +174,6 @@ const TeachersList = () => {
           font-size: 0.95rem;
         }
 
-        /* Buttons */
         .teachers-approve-btn,
         .teachers-delete-btn {
           padding: 0.5rem 1rem;
@@ -205,7 +200,6 @@ const TeachersList = () => {
           background-color: #c0392b;
         }
 
-        /* Mobile: Card Layout */
         .mobile-cards-container {
           display: none;
           flex-direction: column;
@@ -235,19 +229,19 @@ const TeachersList = () => {
           flex-wrap: wrap;
           margin-top: 0.5rem;
         }
-        .teachers-approve-btn,
-        .teachers-delete-btn {
-          flex: 1;
-          text-align: center;
-        }
 
-        /* Responsive Breakpoints */
         @media (max-width: 768px) {
           .desktop-table-container {
             display: none;
           }
           .mobile-cards-container {
             display: flex;
+          }
+          .teachers-approve-btn,
+          .teachers-delete-btn {
+            flex: 1;
+            text-align: center;
+            margin-left: 0;
           }
         }
 
@@ -342,7 +336,6 @@ const TeachersList = () => {
         )}
       </div>
 
-      {/* Bottom Tab Bar - Only on mobile and allowed routes */}
       {showBottomTab && <BottomTabBar userRole={currentUser?.role} />}
     </>
   );
