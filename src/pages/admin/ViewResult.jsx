@@ -1,8 +1,11 @@
+
+
 // src/pages/teacher/ViewResult.jsx
 import React, { useEffect, useState } from "react";
 import html2pdf from "html2pdf.js";
 import Logo from "../../assets/logo.png";
 import { endpoints } from "../../config/api";
+
 
 const ViewResult = () => {
   const [results, setResults] = useState([]);
@@ -14,6 +17,7 @@ const ViewResult = () => {
   const [assignedClasses, setAssignedClasses] = useState([]);
   const [selectedExamType, setSelectedExamType] = useState("halfYearly");
   const [attendanceData, setAttendanceData] = useState({});
+  const [classSubjectMap, setClassSubjectMap] = useState({});
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -39,6 +43,14 @@ const ViewResult = () => {
         setError("Failed to load results.");
         setLoading(false);
       });
+
+    fetch(endpoints.classSubjects.getAll, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("Failed to load class-subject mapping");
+      })
+      .then((mapping) => setClassSubjectMap(mapping))
+      .catch((err) => console.error("Error fetching class-subject mapping:", err));
   }, []);
 
   useEffect(() => {
@@ -113,51 +125,118 @@ const ViewResult = () => {
     return "E";
   };
 
-  // ✅ Updated: PDF with controlled logo size
   const downloadReportCard = (studentId, name, examType) => {
-  const element = document.getElementById(`report-card-${studentId}-${examType}`);
-  if (!element) return;
+    const element = document.getElementById(`report-card-${studentId}-${examType}`);
+    if (!element) return;
 
-  const logo = element.querySelector('img');
-  const originalWidth = logo?.style.width || logo?.width || '40px';
-  const originalHeight = logo?.style.height || 'auto';
+    const logo = element.querySelector('img');
+    const originalWidth = logo?.style.width || '60px';
+    const originalHeight = logo?.style.height || 'auto';
 
-  // 👇 Set to 36px for PDF
-  if (logo) {
-    logo.style.width = '60px';
-    logo.style.height = 'auto';
-  }
+    if (logo) {
+      logo.style.width = '60px';
+      logo.style.height = 'auto';
+    }
 
-  const opt = {
-    margin: 0.4,
-    filename: `${name.replace(/\s+/g, "_")}_${examType === "halfYearly" ? "HalfYearly" : "Annual"}_ReportCard.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    const opt = {
+      margin: 0.4,
+      filename: `${name.replace(/\s+/g, "_")}_${examType === "halfYearly" ? "HalfYearly" : "Annual"}_ReportCard.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf()
+      .from(element)
+      .set(opt)
+      .save()
+      .finally(() => {
+        if (logo) {
+          logo.style.width = originalWidth;
+          logo.style.height = originalHeight;
+        }
+      });
   };
 
-  html2pdf()
-    .from(element)
-    .set(opt)
-    .save()
-    .finally(() => {
-      if (logo) {
-        logo.style.width = originalWidth;
-        logo.style.height = originalHeight;
-      }
-    });
-};
-  // ✅ Updated: Print with embedded print-safe CSS + small logo
- const printReportCard = (studentId, examType) => {
-  const element = document.getElementById(`report-card-${studentId}-${examType}`);
-  if (!element) return;
+  const printReportCard = (studentId, examType) => {
+    const element = document.getElementById(`report-card-${studentId}-${examType}`);
+    if (!element) return;
 
-  const clone = element.cloneNode(true);
-  const logo = clone.querySelector('img');
-  if (logo) {
-    logo.style.width = '60px'; // 👈 Updated
-    logo.style.height = 'auto';
-  }
+    const clone = element.cloneNode(true);
+    const logo = clone.querySelector('img');
+    if (logo) {
+      logo.style.width = '60px';
+      logo.style.height = 'auto';
+    }
+
+    const printContent = clone.innerHTML;
+
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+      <html>
+        <head>
+          <title>Report Card</title>
+          <style>
+            body {
+              font-family: Poppins, sans-serif;
+              padding: 15px;
+              font-size: 12px;
+            }
+            .header {
+              display: flex;
+              align-items: center;
+              border-bottom: 2px solid #000;
+              margin-bottom: 10px;
+            }
+            .header img {
+              width: 60px;
+              height: auto;
+              margin-right: 10px;
+            }
+            h1 { font-size: 16px; margin: 0; }
+            h3 { font-size: 14px; margin: 8px 0; text-align: center; }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11px;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 4px;
+              text-align: center;
+            }
+            @media print {
+              body { padding: 0; }
+              .header img { width: 60px !important; }
+            }
+          </style>
+        </head>
+        <body>${printContent}</body>
+      </html>
+    `);
+    printWin.document.close();
+    printWin.print();
+  };
+
+  // ✅ Print only Periodic Assessments section
+const printPAReport = () => {
+  const paSection = document.querySelector('.pa-report-section');
+  if (!paSection) return;
+
+  const clone = paSection.cloneNode(true);
+  
+  // Logo add karein (optional, but consistent)
+  const header = document.createElement('div');
+  header.innerHTML = `
+    <div style="display: flex; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+      <img src="${Logo}" alt="School Logo" style="width: 60px; height: auto; margin-right: 10px;" />
+      <div>
+        <h1 style="font-size: 18px; margin: 0; color: #2c3e50;">AMBIKA INTERNATIONAL SCHOOL</h1>
+        <p style="font-size: 12px; margin: 4px 0; color: #555;">Periodic Assessments Report</p>
+      </div>
+    </div>
+  `;
+  clone.insertBefore(header, clone.firstChild);
 
   const printContent = clone.innerHTML;
 
@@ -165,39 +244,37 @@ const ViewResult = () => {
   printWin.document.write(`
     <html>
       <head>
-        <title>Report Card</title>
+        <title>Periodic Assessments Report</title>
         <style>
           body {
             font-family: Poppins, sans-serif;
             padding: 15px;
             font-size: 12px;
-          }
-          .header {
-            display: flex;
-            align-items: center;
-            border-bottom: 2px solid #000;
-            margin-bottom: 10px;
+            line-height: 1.4;
           }
           .header img {
-            width: 60px ; /* 👈 Updated */
+            width: 60px;
             height: auto;
             margin-right: 10px;
           }
-          h1 { font-size: 16px; margin: 0; }
-          h3 { font-size: 14px; margin: 8px 0; text-align: center; }
+          h1 { font-size: 18px; margin: 0; }
+          h2 { font-size: 16px; color: #2c3e50; text-align: center; margin: 15px 0; }
+          h3 { font-size: 14px; margin: 12px 0; color: #2980b9; }
+          h4 { font-size: 13px; margin: 10px 0 8px; color: #2c3e50; }
           table {
             width: 100%;
             border-collapse: collapse;
             font-size: 11px;
+            margin: 8px 0;
           }
           th, td {
             border: 1px solid #000;
-            padding: 4px;
+            padding: 5px;
             text-align: center;
           }
           @media print {
             body { padding: 0; }
-            .header img { width: 36px !important; } /* 👈 Also here for safety */
+            .header img { width: 50px !important; }
           }
         </style>
       </head>
@@ -207,6 +284,168 @@ const ViewResult = () => {
   printWin.document.close();
   printWin.print();
 };
+
+// ✅ Print a SINGLE PA report for a SPECIFIC CLASS
+const printSinglePAClass = (paKey, className) => {
+  const element = document.getElementById(`pa-section-${paKey}-${className}`);
+  if (!element) return;
+
+  const paNames = {
+    pa1: "PA I",
+    pa2: "PA II",
+    pa3: "PA III",
+    pa4: "PA IV"
+  };
+
+  const clone = element.cloneNode(true);
+  
+  // Remove print buttons from print view
+  const printButtons = clone.querySelectorAll('button');
+  printButtons.forEach(btn => btn.remove());
+
+  // Add school header
+  const header = document.createElement('div');
+  header.innerHTML = `
+    <div style="display: flex; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+      <img src="${Logo}" alt="School Logo" style="width: 60px; height: auto; margin-right: 10px;" />
+      <div>
+        <h1 style="font-size: 18px; margin: 0; color: #2c3e50;">AMBIKA INTERNATIONAL SCHOOL</h1>
+        <p style="font-size: 12px; margin: 4px 0; color: #555;">${paNames[paKey]} Report - Class ${className}</p>
+      </div>
+    </div>
+  `;
+  clone.insertBefore(header, clone.firstChild);
+
+  const printContent = clone.innerHTML;
+
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`
+    <html>
+      <head>
+        <title>${paNames[paKey]} - Class ${className}</title>
+        <style>
+          body {
+            font-family: 'Poppins', sans-serif;
+            padding: 15px;
+            font-size: 12px;
+            line-height: 1.4;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+          }
+          th, td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+          }
+          .header img {
+            width: 60px;
+            height: auto;
+            margin-right: 10px;
+          }
+          h1 { font-size: 18px; margin: 0; color: #2c3e50; }
+          h3 { font-size: 14px; margin: 12px 0; color: #2980b9; }
+          h4 { font-size: 13px; margin: 10px 0 8px; color: #2c3e50; }
+          @media print {
+            body { padding: 0; }
+            .header img { width: 50px !important; }
+          }
+        </style>
+      </head>
+      <body>${printContent}</body>
+    </html>
+  `);
+  printWin.document.close();
+  printWin.print();
+};
+
+// ✅ Print a SINGLE PA report (e.g., only PA1)
+const printSinglePA = (paKey) => {
+  const element = document.getElementById(`pa-section-${paKey}`);
+  if (!element) return;
+
+  const paNames = {
+    pa1: "PA I",
+    pa2: "PA II",
+    pa3: "PA III",
+    pa4: "PA IV"
+  };
+
+  const clone = element.cloneNode(true);
+  
+  // Remove the print button from print view
+  const printButton = clone.querySelector('button');
+  if (printButton) printButton.remove();
+
+  // Add school header
+  const header = document.createElement('div');
+  header.innerHTML = `
+    <div style="display: flex; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+      <img src="${Logo}" alt="School Logo" style="width: 60px; height: auto; margin-right: 10px;" />
+      <div>
+        <h1 style="font-size: 18px; margin: 0; color: #2c3e50;">AMBIKA INTERNATIONAL SCHOOL</h1>
+        <p style="font-size: 12px; margin: 4px 0; color: #555;">${paNames[paKey]} Report</p>
+      </div>
+    </div>
+  `;
+  clone.insertBefore(header, clone.firstChild);
+
+  const printContent = clone.innerHTML;
+
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`
+    <html>
+      <head>
+        <title>${paNames[paKey]} Report</title>
+        <style>
+          body {
+            font-family: 'Poppins', sans-serif;
+            padding: 15px;
+            font-size: 12px;
+            line-height: 1.4;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+          }
+          th, td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+          }
+          .header img {
+            width: 60px;
+            height: auto;
+            margin-right: 10px;
+          }
+          h1 { font-size: 18px; margin: 0; color: #2c3e50; }
+          h3 { font-size: 14px; margin: 12px 0; color: #2980b9; }
+          h4 { font-size: 13px; margin: 10px 0 8px; color: #2c3e50; }
+          @media print {
+            body { padding: 0; }
+            .header img { width: 50px !important; }
+          }
+        </style>
+      </head>
+      <body>${printContent}</body>
+    </html>
+  `);
+  printWin.document.close();
+  printWin.print();
+};
+  // ✅ Helper: Safely extract student object
+  const getStudentFromRecord = (record) => {
+    if (!record.studentId) return null;
+    // If it's already an object (populated)
+    if (typeof record.studentId === 'object' && record.studentId !== null) {
+      return record.studentId;
+    }
+    // If it's just an ID string, we can't show details → skip
+    return null;
+  };
 
   return (
     <div className="view-result-container">
@@ -357,40 +596,38 @@ const ViewResult = () => {
       <h2>Student Marks Record</h2>
 
       <div className="filters">
-        <input
-          type="text"
-          placeholder="🔍 Search by Student Name"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
-          <option value="">All Classes</option>
-          {classOptions.map((cls) => (
-            <option key={cls} value={cls}>
-              {cls}
-            </option>
-          ))}
-        </select>
-        <select value={selectedExamType} onChange={(e) => setSelectedExamType(e.target.value)}>
-          <option value="halfYearly">Half Yearly Report</option>
-          <option value="final">Annual Report Card</option>
-        </select>
-      </div>
+  <input
+    type="text"
+    placeholder="🔍 Search by Student Name"
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+  />
+  <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+    <option value="">All Classes</option>
+    {classOptions.map((cls) => (
+      <option key={cls} value={cls}>
+        {cls}
+      </option>
+    ))}
+  </select>
+  <select value={selectedExamType} onChange={(e) => setSelectedExamType(e.target.value)}>
+    <option value="halfYearly">Half Yearly Report</option>
+    <option value="final">Annual Report Card</option>
+  </select>
+</div>
+
 
       {filteredResults.length === 0 ? (
         <p style={{ textAlign: "center", color: "#7f8c8d", padding: "1.5rem" }}>No matching results found.</p>
       ) : (
         <div className="report-cards-grid">
           {filteredResults.map((r) => {
-            if (!r.studentId) return null;
-            const student = r.studentId;
-            const studentId = student._id || student;
+            const student = getStudentFromRecord(r);
+            if (!student || !r.class) return null;
+
+            const studentId = student._id || r.studentId;
             const examData = r.exams || {};
-            const subjects = new Set();
-            Object.values(examData).forEach((exam) => {
-              if (exam) Object.keys(exam).forEach((sub) => subjects.add(sub));
-            });
-            const subjectsArray = Array.from(subjects);
+            const subjectsArray = classSubjectMap[r.class] || [];
 
             const att = attendanceData[studentId];
             const attendanceDisplay = att
@@ -446,7 +683,7 @@ const ViewResult = () => {
                       <strong>Student's Name:</strong> {student.name} &nbsp;&nbsp;&nbsp;
                       <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
                       <strong>Mother's Name:</strong> {student.motherName || "N/A"} &nbsp;&nbsp;&nbsp;
-                      <strong>Contact No:</strong> {student.phone || "N/A"}<br />
+                      {/* <strong>Contact No:</strong> {student.mobile || "N/A"}<br /> */}
                       <strong>Father's Name:</strong> {student.fatherName || "N/A"} &nbsp;&nbsp;&nbsp;
                       <strong>Attendance:</strong> {attendanceDisplay}<br />
                       <strong>Address:</strong> {student.address || "N/A"}
@@ -562,7 +799,7 @@ const ViewResult = () => {
                       <strong>Student's Name:</strong> {student.name} &nbsp;&nbsp;&nbsp;
                       <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
                       <strong>Mother's Name:</strong> {student.motherName || "N/A"} &nbsp;&nbsp;&nbsp;
-                      <strong>Contact No:</strong> {student.phone || "N/A"}<br />
+                      {/* <strong>Contact No:</strong> {student.phone || "N/A"}<br /> */}
                       <strong>Father's Name:</strong> {student.fatherName || "N/A"} &nbsp;&nbsp;&nbsp;
                       <strong>Attendance:</strong> {attendanceDisplay}<br />
                       <strong>Address:</strong> {student.address || "N/A"}
@@ -680,6 +917,138 @@ const ViewResult = () => {
                   </button>
                   <button onClick={() => printReportCard(r._id, selectedExamType)}>
                     🖨️ Print
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ✅ NEW: Periodic Assessment (PA1–PA4) Summary Tables - FIXED */}
+            {/* ✅ NEW: Periodic Assessment (PA1–PA4) Summary Tables - WITH INDIVIDUAL PRINT */}
+      {filteredResults.length > 0 && (
+        <div style={{ marginTop: "2.5rem", paddingTop: "2rem", borderTop: "2px solid #e0e0e0" }}>
+          <h2 style={{ textAlign: 'center', color: '#2c3e50', marginBottom: '1.5rem', fontSize: '1.6rem' }}>
+            Periodic Assessments (PA1 - PA4)
+          </h2>
+
+          {['pa1', 'pa2', 'pa3', 'pa4'].map((paKey) => {
+            const paLabel = paKey === 'pa1' ? 'PA I' : 
+                           paKey === 'pa2' ? 'PA II' : 
+                           paKey === 'pa3' ? 'PA III' : 'PA IV';
+            
+            return (
+              <div 
+                key={paKey} 
+                id={`pa-section-${paKey}`} 
+                style={{ marginBottom: '2.5rem', pageBreakInside: 'avoid' }}
+              >
+                <h3 style={{ 
+                  backgroundColor: '#e8f4f8', 
+                  padding: '0.7rem', 
+                  borderRadius: '8px', 
+                  color: '#2980b9',
+                  marginBottom: '1.2rem',
+                  fontSize: '1.3rem'
+                }}>
+                  {paLabel} Report ({paKey.toUpperCase()})
+                </h3>
+
+                {classOptions.map((cls) => {
+                  const classStudents = filteredResults.filter(r => r.class === cls);
+                  if (classStudents.length === 0) return null;
+
+                  const subjects = classSubjectMap[cls] || [];
+
+                  return (
+                    <div 
+  key={`${paKey}-${cls}`} 
+  id={`pa-section-${paKey}-${cls}`} 
+  style={{ marginBottom: '1.8rem', pageBreakInside: 'avoid' }}
+>
+                      <h4 style={{ 
+                        color: '#2c3e50', 
+                        borderBottom: '1px solid #ccc', 
+                        paddingBottom: '0.5rem',
+                        marginBottom: '1rem',
+                        fontSize: '1.15rem'
+                      }}>
+                        Class: {cls}
+                      </h4>
+                      <div className="table-container">
+                        <table className="marks-table">
+                          <thead>
+                            <tr>
+                              <th>Roll No</th>
+                              <th>Student Name</th>
+                              {subjects.map(sub => (
+                                <th key={`${paKey}-${cls}-${sub}`}>{sub}</th>
+                              ))}
+                              <th>Total / {20 * subjects.length}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {classStudents.map((r) => {
+                              const student = getStudentFromRecord(r);
+                              if (!student) return null;
+
+                              const examData = r.exams || {};
+                              const marks = subjects.map(sub => 
+                                examData[paKey]?.[sub] !== undefined ? examData[paKey][sub] : 0
+                              );
+                              const total = marks.reduce((sum, m) => sum + m, 0);
+                              const max = subjects.length * 20;
+
+                              return (
+                                <tr key={`${paKey}-${r._id || 'no-id'}`}>
+                                  <td>{student.rollNo || "—"}</td>
+                                  <td>{student.name || "Unknown"}</td>
+                                  {marks.map((mark, idx) => (
+                                    <td key={idx}>{mark}</td>
+                                  ))}
+                                  <td><strong>{total} / {max}</strong></td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{ textAlign: 'center', marginTop: '0.8rem' }}>
+    <button
+      onClick={() => printSinglePAClass(paKey, cls)}
+      style={{
+        padding: '0.35rem 0.9rem',
+        backgroundColor: '#27ae60',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        fontSize: '0.8rem',
+        cursor: 'pointer'
+      }}
+    >
+      🖨️ Print Class {cls}
+    </button>
+  </div>
+                    </div>
+                  );
+                })}
+
+                {/* ✅ Print button for THIS PA only */}
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  <button
+                    onClick={() => printSinglePA(paKey)}
+                    style={{
+                      padding: '0.4rem 1rem',
+                      backgroundColor: '#3498db',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🖨️ Print {paLabel} Report
                   </button>
                 </div>
               </div>
