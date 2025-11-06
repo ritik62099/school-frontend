@@ -200,116 +200,183 @@ const AddMarks = () => {
   return (
     <div>
       <style>{`
-        .container {
-          max-width: 750px;
-          margin: 30px auto;
-          padding: 25px;
-          border: 1px solid #ddd;
-          border-radius: 12px;
-          background: white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        h2 {
-          text-align: center;
-          color: #2c3e50;
-          margin-bottom: 20px;
-        }
-        form {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-        label {
-          font-weight: 600;
-          margin-bottom: 6px;
-          color: #34495e;
-        }
-        select, input {
-          padding: 10px;
-          border: 1px solid #ccc;
-          border-radius: 6px;
-          width: 100%;
-          font-size: 15px;
-          box-sizing: border-box;
-        }
-        button {
-          background: #27ae60;
-          color: white;
-          padding: 12px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 16px;
-          font-weight: bold;
-          transition: background 0.2s;
-        }
-        button:hover {
-          background: #219653;
-        }
-        button:disabled {
-          background: #bdc3c7;
-          cursor: not-allowed;
-        }
-        .message {
-          text-align: center;
-          margin-top: 15px;
-          padding: 10px;
-          border-radius: 6px;
-          font-weight: bold;
-        }
-        .message:empty {
-          display: none;
-        }
-        .exam-section {
-          border: 1px solid #e0e0e0;
-          padding: 16px;
-          border-radius: 10px;
-          background-color: #f8f9fa;
-        }
-        .exam-title {
-          font-weight: bold;
-          margin-bottom: 14px;
-          color: #e74c3c;
-          font-size: 16px;
-        }
-        .subject-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 10px;
-        }
-        .subject-label {
-          min-width: 130px;
-          font-size: 14px;
-        }
-        input[type="number"] {
-          width: 100px;
-          text-align: center;
-          padding: 8px;
-        }
-        .student-info {
-          background: #e8f4fc;
-          padding: 12px;
-          border-radius: 8px;
-          margin-top: 10px;
-          font-size: 14px;
-          color: #2980b9;
-        }
-        .loading {
-          text-align: center;
-          color: #7f8c8d;
-          font-style: italic;
-        }
-        .no-subjects {
-          padding: 12px;
-          background: #fff3cd;
-          border: 1px solid #ffeaa7;
-          border-radius: 6px;
-          color: #856404;
-          font-size: 14px;
-        }
-      `}</style>
+  .container {
+    max-width: 750px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    width: 95%;
+    box-sizing: border-box;
+  }
+
+  h2 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #34495e;
+    font-size: 0.95rem;
+  }
+
+  select, input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 15px;
+    box-sizing: border-box;
+  }
+
+  button {
+    background: #27ae60;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background 0.2s;
+    width: 100%;
+  }
+
+  button:hover {
+    background: #219653;
+  }
+
+  button:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+  }
+
+  .message {
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: bold;
+  }
+
+  .message:empty {
+    display: none;
+  }
+
+  .exam-section {
+    border: 1px solid #e0e0e0;
+    padding: 16px;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    margin-bottom: 16px;
+  }
+
+  .exam-title {
+    font-weight: bold;
+    margin-bottom: 14px;
+    color: #e74c3c;
+    font-size: 1.1rem;
+  }
+
+  .subject-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .subject-label {
+    min-width: 120px;
+    font-size: 14px;
+    flex: 1;
+    word-break: break-word;
+  }
+
+  input[type="number"] {
+    width: 90px;
+    max-width: 100px;
+    text-align: center;
+    padding: 8px;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .student-info {
+    background: #e8f4fc;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #2980b9;
+    word-break: break-word;
+  }
+
+  .loading {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  .no-subjects {
+    padding: 12px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    color: #856404;
+    font-size: 14px;
+  }
+
+  /* ✅ Responsive adjustments for mobile */
+  @media (max-width: 600px) {
+    .container {
+      padding: 16px;
+      margin: 10px;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+    }
+
+    .subject-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .subject-label {
+      min-width: auto;
+      width: 100%;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+    }
+
+    button {
+      padding: 14px;
+      font-size: 16px;
+    }
+  }
+`}</style>
 
       <div className="container">
         <h2>Add / Update Student Marks</h2>
