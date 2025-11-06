@@ -417,7 +417,7 @@ const AssignTeacher = () => {
   const [allClasses, setAllClasses] = useState([]);
   const [classSubjectsMap, setClassSubjectsMap] = useState({});
   const [teacherLocalState, setTeacherLocalState] = useState({});
-
+  
   // Fetch classes & subject mapping
   useEffect(() => {
     const fetchData = async () => {
