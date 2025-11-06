@@ -104,11 +104,11 @@ const AddStudent = () => {
       return;
     }
 
-    if (!/^\d{12}$/.test(formData.aadhar)) {
-      setMessage('Aadhaar number must be exactly 12 digits.');
-      setMessageType('error');
-      return;
-    }
+    // if (!/^\d{12}$/.test(formData.aadhar)) {
+    //   setMessage('Aadhaar number must be exactly 12 digits.');
+    //   setMessageType('error');
+    //   return;
+    // }
 
     if (!/^\d+$/.test(formData.rollNo)) {
       setMessage('Roll number must be numeric.');
