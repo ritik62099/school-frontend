@@ -75,14 +75,14 @@ export const endpoints = {
   list: api('/api/class-fees'),
   create: api('/api/class-fees'),
   update: (className) => api(`/api/class-fees/${encodeURIComponent(className)}`),
-  delete: (className) => api(`/api/class-fees/${encodeURIComponent(className)}`)
+  delete: (className) => api(`/api/class-fees/${encodeURIComponent(className)}`),
+  get: (className) => api(`/api/payments/class-fees/${encodeURIComponent(className)}`)
 },
 
-
-  payments: {
-    list: api('/api/payments'),
+payments: {
+    // ✅ Added these two functions
     create: api('/api/payments'),
-    history: (studentId) => api(`/api/payments/history/${studentId}`),
-    dues: (studentId, months = 1) => api(`/api/payments/dues/${studentId}?months=${months}`),
+    history: (studentId) => api(`/api/payments/history/${encodeURIComponent(studentId)}`)
   },
+ 
 };
