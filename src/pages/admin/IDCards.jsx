@@ -180,8 +180,8 @@ const generatePrint = (studentsList) => {
           }
 
           .id-card {
-            width: 54mm; /* Adjusted for better fit */
-            height: 85mm;
+            width: 60mm; /* Adjusted for better fit */
+            height: 88mm;
             background: url('${bgBase64}') no-repeat center center;
             background-size: cover;
             border: 0.3mm solid #003399;
@@ -202,7 +202,7 @@ const generatePrint = (studentsList) => {
             width: 15mm;
             margin-bottom: 1mm;
           }
-          .school-name { font-size: 3mm; }
+          .school-name { font-size: 4mm; }
           .school-address { font-size: 2.3mm; }
 
           .photo {
@@ -229,7 +229,7 @@ const generatePrint = (studentsList) => {
           .footer {
             position: absolute;
             bottom: 3mm;
-            left: 24mm;
+            left: 30mm;
             right: 0;
             text-align: center;
             font-size: 2.5mm;

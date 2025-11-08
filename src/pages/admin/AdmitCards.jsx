@@ -811,7 +811,7 @@ const AdmitCards = () => {
         <body>
           <div class="card">
             <div class="header">
-              <img src="${logoBase64}" class="logo" alt="Logo" />
+              <img src="/logo.png" class="logo" alt="Logo" />
               <div>
                 <h2 class="school-title">AMBIKA INTERNATIONAL SCHOOL</h2>
                 <p class="sub">Saidpur, Dighwara (Saran) 841207</p>
@@ -867,7 +867,7 @@ const printAllCards = () => {
         (student) => `
       <div class="card">
         <div class="header">
-          <img src="${logoBase64}" alt="School Logo" class="logo" />
+          <img src="/logo.png" alt="School Logo" class="logo" />
           <div class="school-info">
             <h2 class="school-name">AMBIKA INTERNATIONAL SCHOOL</h2>
             <p class="school-sub">Saidpur, Dighwara (Saran) - 841207</p>
