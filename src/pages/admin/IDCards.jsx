@@ -219,7 +219,7 @@ const IDCardsStudent = () => {
 
           .info {
             margin-top: 2mm;
-            font-size: 2.8mm;
+            font-size: 3mm;
             padding: 0 5mm;
           }
 
