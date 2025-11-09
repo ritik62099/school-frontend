@@ -127,7 +127,7 @@ const IDCardsStudent = () => {
     <div class="id-card">
       <div class="header">
         <img src="${logoBase64}" alt="School Logo" />
-        <div class="school-name">AMBIKA INTERNATIONAL SCHOOL</div>
+        <div class="school-name">AMBIKA <br> INTERNATIONAL SCHOOL</div>
         <div class="school-address">SAIDPUR, DIGHWARA (SARAN)</div>
       </div>
       <div class="photo">
