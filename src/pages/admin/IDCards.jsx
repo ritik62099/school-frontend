@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { endpoints } from '../../config/api';
 import Logo from "../../assets/logo.png";
-import BackgroundImage from "../../assets/background.png"; // background image file
+import BackgroundImage from "../../assets/background.png"; 
 import { useStudents } from '../../hooks/useStudents';
 
 const SCHOOL_LOGO_URL = Logo;
@@ -28,7 +28,7 @@ const IDCardsStudent = () => {
       .filter(cls => studentClasses.includes(cls))
       .sort((a, b) => {
         const order = ["Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
-                       "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+          "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
         return (order.indexOf(a) - order.indexOf(b)) || a.localeCompare(b);
       });
   }, [students, backendClasses]);
@@ -114,17 +114,16 @@ const IDCardsStudent = () => {
     generatePrint(filteredStudents);
   };
 
-  // ✅ Universal Print Function
-// ✅ Universal Print Function (A4 sheet with exactly 9 cards)
-const generatePrint = (studentsList) => {
-  if (!logoLoaded || !logoBase64 || !bgBase64) {
-    alert("Images are still loading. Please wait...");
-    return;
-  }
 
-  const printWindow = window.open('', '_blank');
+  const generatePrint = (studentsList) => {
+    if (!logoLoaded || !logoBase64 || !bgBase64) {
+      alert("Images are still loading. Please wait...");
+      return;
+    }
 
-  const cardsHtml = studentsList.map(student => `
+    const printWindow = window.open('', '_blank');
+
+    const cardsHtml = studentsList.map(student => `
     <div class="id-card">
       <div class="header">
         <img src="${logoBase64}" alt="School Logo" />
@@ -135,11 +134,11 @@ const generatePrint = (studentsList) => {
         <img src="${student.photo || 'https://via.placeholder.com/100'}" alt="Student Photo" />
       </div>
       <div class="info">
-        <div class="info-row"><span class="label">NAME</span> :- ${student.name || 'N/A'}</div>
-        <div class="info-row"><span class="label">FATHER</span> :- ${student.fatherName || 'N/A'}</div>
-        <div class="info-row"><span class="label">CLASS</span> :- ${student.class || 'N/A'}</div>
-        <div class="info-row"><span class="label">MOB</span> :- ${student.mobile || 'N/A'}</div>
-        <div class="info-row"><span class="label">ADD</span> :- ${student.address?.substring(0, 18) || 'N/A'}</div>
+        <div class="info-row"><span class="label">NAME</span> : ${student.name || 'N/A'}</div>
+        <div class="info-row"><span class="label">FATHER</span> : ${student.fatherName || 'N/A'}</div>
+        <div class="info-row"><span class="label">CLASS</span> : ${student.class || 'N/A'}</div>
+        <div class="info-row"><span class="label">MOB</span> : ${student.mobile || 'N/A'}</div>
+        <div class="info-row"><span class="label">ADD</span> : ${student.address?.substring(0, 18) || 'N/A'}</div>
       </div>
       <div class="footer">
         <div class="sign"></div>
@@ -148,7 +147,7 @@ const generatePrint = (studentsList) => {
     </div>
   `).join('');
 
-  printWindow.document.write(`
+    printWindow.document.write(`
     <html>
       <head>
         <title>Student ID Cards</title>
@@ -221,10 +220,21 @@ const generatePrint = (studentsList) => {
           .info {
             margin-top: 2mm;
             font-size: 2.8mm;
-            padding: 0 8mm;
+            padding: 0 5mm;
           }
-          .info-row { margin: 0.8mm 0; }
-          .label { font-weight: bold; }
+
+          .info-row {
+            display: flex;
+            justify-content: flex-start;
+            align-items: baseline;
+            margin: 0.8mm 0;
+          }
+
+          .label {
+            display: inline-block;
+            width: 12mm; /* label ke liye fixed width */
+            font-weight: bold;
+          }
 
           .footer {
             position: absolute;
@@ -245,11 +255,11 @@ const generatePrint = (studentsList) => {
     </html>
   `);
 
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
-  printWindow.close();
-};
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
 
   // ✅ Select checkbox toggle
   const toggleSelect = (id) => {
@@ -312,11 +322,11 @@ const generatePrint = (studentsList) => {
                 }} />
               </div>
               <div style={{ fontSize: '9px', marginTop: '6px', textAlign: 'left', padding: '0 6px' }}>
-                <div><b>NAME</b> :- {student.name || 'N/A'}</div>
-                <div><b>FATHER</b> :- {student.fatherName || 'N/A'}</div>
-                <div><b>CLASS</b> :- {student.class || 'N/A'}</div>
-                <div><b>MOB</b> :- {student.mobile || 'N/A'}</div>
-                <div><b>ADD</b> :- {student.address?.substring(0, 15) || 'N/A'}</div>
+                <div><b>NAME</b> : {student.name || 'N/A'}</div>
+                <div><b>FATHER</b> : {student.fatherName || 'N/A'}</div>
+                <div><b>CLASS</b> : {student.class || 'N/A'}</div>
+                <div><b>MOB</b> : {student.mobile || 'N/A'}</div>
+                <div><b>ADD</b> : {student.address?.substring(0, 15) || 'N/A'}</div>
               </div>
               <div style={{ position: 'absolute', bottom: '10px', width: '100%', textAlign: 'center', fontSize: '8px' }}>
                 <div style={{ borderTop: '1px solid black', width: '60px', margin: '0 auto 2px' }}></div>

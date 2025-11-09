@@ -267,7 +267,7 @@ const handleGenerateDemandBill = () => {
       </head>
       <body>
         <div class="header">
-        <img src="/logo.png" alt="Ambica International School Logo" class="logo" />
+        <img src="/logo.png" alt="Ambika International School Logo" class="logo" />
           <h1 class="school-name">AMBICA INTERNATIONAL SCHOOL</h1>
           <p class="address">N.H -19, Main Road, Saidpur Dighwara, Saran</p>
         </div>
@@ -428,9 +428,9 @@ const handleGenerateDemandBill = () => {
       <body>
         <div class="header">
           <!-- ✅ LOGO: Use absolute path from /public -->
-          <img src="/logo.png" alt="Ambica International School Logo" class="logo" />
+          <img src="/logo.png" alt="Ambika International School Logo" class="logo" />
           <div class="school-info">
-            <h1 class="school-name">AMBICA INTERNATIONAL SCHOOL</h1>
+            <h1 class="school-name">Ambika INTERNATIONAL SCHOOL</h1>
             <p class="address">N.H -19, Main Road, Saidpur Dighwara, Saran</p>
           </div>
         </div>

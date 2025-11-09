@@ -878,9 +878,14 @@ const printAllCards = () => {
         <div class="details">
           <p><strong>Name:</strong> ${student.name || "N/A"}</p>
           <p><strong>Father’s Name:</strong> Mr. ${student.fatherName || "N/A"}</p>
-          <p><strong>Class:</strong> ${student.class || "N/A"}</p>
-          <p><strong>Roll No:</strong> ${student.rollNo || "N/A"}</p>
-          <p><strong>Section:</strong> ${student.section || "N/A"}</p>
+          <p>
+  <strong>Class:</strong> ${student.class || "N/A"} 
+  &nbsp;&nbsp;&nbsp; <!-- 3 spaces -->
+  <strong>Roll No:</strong> ${student.rollNo || "N/A"} 
+  &nbsp;&nbsp;&nbsp;
+  <strong>Section:</strong> ${student.section || "N/A"}
+</p>
+
           <p><strong>Date of Examination:</strong> ${examDates}</p>
         </div>
         <div class="note">
@@ -957,17 +962,24 @@ const printAllCards = () => {
           .school-name {
             color: #dc2626;
             font-weight: 700;
-            font-size: 13px;
+            font-size: 15px;
             margin: 0;
             text-align: center;
+             margin-top: 8px; /* niche space */
+    margin-bottom: 4px; /* niche space */
           }
+  //           .school-name {
+  //           margin-top: 8px; /* niche space */
+  //   margin-bottom: 4px; /* niche space */
+  // }
 
           .school-sub,
           .session {
             color: #2563eb;
-            font-size: 10px;
+            font-size: 12px;
             text-align: center;
             margin: 0;
+            margin-bottom: 4px;
           }
 
           .title {
@@ -982,12 +994,12 @@ const printAllCards = () => {
           }
 
           .details {
-            font-size: 9px;
+            font-size: 12px;
             line-height: 1.4;
           }
 
           .note {
-            font-size: 8.5px;
+            font-size: 10px;
             background: #f9fafb;
             border-left: 2px solid #ef4444;
             padding: 3px;
