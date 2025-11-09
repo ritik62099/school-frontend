@@ -179,7 +179,7 @@ const IDCardsStudent = () => {
           }
 
           .id-card {
-            width: 60mm; /* Adjusted for better fit */
+            width: 70mm; /* Adjusted for better fit */
             height: 88mm;
             background: url('${bgBase64}') no-repeat center center;
             background-size: cover;
