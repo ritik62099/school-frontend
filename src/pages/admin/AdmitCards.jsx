@@ -830,13 +830,14 @@ const printCard = (student) => {
           .info {
             font-size: 12px;
             line-height: 1.5;
+            margin-bottom : 5px;
           }
 
           .note {
             border-top: 1px solid #000;
             margin-top: 6px;
             padding-top: 3px;
-            font-size: 11px;
+            font-size: 14px;
           }
 
           .note-title {
