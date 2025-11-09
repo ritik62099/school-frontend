@@ -163,33 +163,59 @@ const IDCardsStudent = () => {
             }
           }
 
-          body {
-            font-family: Arial, sans-serif;
-            background: #fff;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 6mm;
-            justify-items: center;
-            align-items: center;
-            margin: 0;
-            padding: 6mm;
-            height: 100%;
-            box-sizing: border-box;
-          }
+          // body {
+          //   font-family: Arial, sans-serif;
+          //   background: #fff;
+          //   display: grid;
+          //   grid-template-columns: repeat(3, 1fr);
+          //   grid-template-rows: repeat(3, 1fr);
+          //   gap: 6mm;
+          //   justify-items: center;
+          //   align-items: center;
+          //   margin: 0;
+          //   padding: 6mm;
+          //   height: 100%;
+          //   box-sizing: border-box;
+          // }
 
-          .id-card {
-            width: 65mm; /* Adjusted for better fit */
-            height: 90mm;
-            background: url('${bgBase64}') no-repeat center center;
-            background-size: cover;
-            border: 0.3mm solid #003399;
-            border-radius: 2mm;
-            padding: 2mm;
-            box-sizing: border-box;
-            position: relative;
-            page-break-inside: avoid;
-          }
+          body {
+  font-family: Arial, sans-serif;
+  background: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 8mm;
+  margin: 0;
+  padding: 6mm;
+  box-sizing: border-box;
+}
+
+.id-card {
+  width: 85mm; /* increase width */
+  height: 110mm; /* increase height */
+  background: url('${bgBase64}') no-repeat center center;
+  background-size: cover;
+  border: 0.3mm solid #003399;
+  border-radius: 2mm;
+  padding: 3mm;
+  box-sizing: border-box;
+  position: relative;
+  page-break-inside: avoid;
+}
+
+          // .id-card {
+          //   width: 70mm; /* Adjusted for better fit */
+          //   height: 100mm;
+          //   background: url('${bgBase64}') no-repeat center center;
+          //   background-size: cover;
+          //   border: 0.3mm solid #003399;
+          //   border-radius: 2mm;
+          //   padding: 2mm;
+          //   box-sizing: border-box;
+          //   position: relative;
+          //   page-break-inside: avoid;
+          // }
 
           .header {
             text-align: center;
