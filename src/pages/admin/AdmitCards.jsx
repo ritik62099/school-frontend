@@ -739,7 +739,6 @@ const AdmitCards = () => {
     loadLogo();
   }, []);
 
- /** 🖨 Print single card */
 const printCard = (student) => {
   if (!logoBase64) return alert("Logo is still loading, please wait...");
   const win = window.open("", "_blank");
@@ -748,77 +747,111 @@ const printCard = (student) => {
       <head>
         <title>Admit Card - ${student.name}</title>
         <style>
+          @page {
+            size: A4;
+            margin: 10mm;
+          }
+
           body {
             font-family: "Times New Roman", serif;
             background: #fff;
-            padding: 20px;
             margin: 0;
+            padding: 10mm;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
           }
+
           .card {
             border: 2px solid #000;
-            padding: 10px 15px;
-            width: 650px;
-            margin: 0 auto;
+            padding: 10px 12px;
+            width: 48%;
+            box-sizing: border-box;
+            font-size: 12px;
           }
+
           .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 5px;
+            border-bottom: 1.5px solid #000;
+            padding-bottom: 4px;
           }
+
           .logo {
-            width: 80px;
-            height: 80px;
+            width: 55px;
+            height: 55px;
             object-fit: contain;
           }
+
           .school-title {
             color: #d00000;
-            font-size: 22px;
             font-weight: bold;
+            font-size: 18px;
             text-align: center;
             margin: 0;
+            margin-top : 1
           }
+
           .school-sub {
             color: #008000;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 13px;
             text-align: center;
             margin: 0;
+            margin-top : 1
           }
+
           .session {
             text-align: center;
+            font-size: 12px;
             font-weight: 600;
-            margin-top: 5px;
+            margin-top: 2px;
           }
+
+          /* "Admit Card" text only background around text */
           .admit {
+            text-align: center;
+            margin: 6px 0;
+            border-radius: 5px;
+          }
+
+          .admit span {
             background: #000;
             color: #fff;
-            text-align: center;
             font-weight: bold;
-            margin: 10px 0;
-            padding: 5px;
-            width: 120px;
-            margin-left: auto;
-            margin-right: auto;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            display: inline-block;
+            
           }
+
           .info {
-            font-size: 15px;
-            line-height: 1.6;
-            margin-top: 10px;
+            font-size: 12px;
+            line-height: 1.5;
           }
+
           .note {
-            border-top: 2px solid #000;
-            margin-top: 10px;
-            padding-top: 5px;
-            font-size: 14px;
+            border-top: 1px solid #000;
+            margin-top: 6px;
+            padding-top: 3px;
+            font-size: 11px;
           }
+
           .note-title {
             color: red;
             font-weight: bold;
+            margin: 0;
           }
+
           ul {
-            margin-top: 3px;
+            margin: 3px 0 0 12px;
+            padding: 0;
+          }
+
+          li {
+            line-height: 1.3;
           }
         </style>
       </head>
@@ -832,13 +865,15 @@ const printCard = (student) => {
               <p class="session">Session :- ${session}</p>
             </div>
           </div>
-          <div class="admit">Admit Card</div>
+          <div class="admit"><span>Admit Card</span></div>
           <div class="info">
             <p><strong>Name :</strong> ${student.name}</p>
             <p><strong>Father’s Name :</strong> Mr. ${student.fatherName || "N/A"}</p>
-            <p><strong>Class :</strong> ${student.class} &nbsp;&nbsp;&nbsp;
-               <strong>Roll No :</strong> ${student.rollNo} &nbsp;&nbsp;&nbsp;
-               <strong>Sec :</strong> ${student.section || "N/A"}</p>
+            <p>
+              <strong>Class :</strong> ${student.class} &nbsp;&nbsp;&nbsp;
+              <strong>Roll No :</strong> ${student.rollNo} &nbsp;&nbsp;&nbsp;
+              <strong>Sec :</strong> ${student.section || "N/A"}
+            </p>
             <p><strong>Date of Examination :</strong> ${examDates}</p>
           </div>
           <div class="note">
@@ -856,7 +891,6 @@ const printCard = (student) => {
   win.focus();
   win.print();
 };
-
 
   /** 🖨 Print all cards */
 
