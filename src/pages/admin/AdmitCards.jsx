@@ -662,6 +662,11 @@ const AdmitCards = () => {
     "This admit card is valid for S.A I 2025-26"
   );
 
+  const [customNote, setCustomNote] = useState(
+  "Those who will not have their Admit card will not be allowed to sit in the examination."
+);
+
+
   /** 🎓 Load all backend classes */
   useEffect(() => {
     const fetchClasses = async () => {
@@ -734,115 +739,124 @@ const AdmitCards = () => {
     loadLogo();
   }, []);
 
-  /** 🖨 Print single card */
-  const printCard = (student) => {
-    if (!logoBase64) return alert("Logo is still loading, please wait...");
-    const win = window.open("", "_blank");
-    win.document.write(`
-      <html>
-        <head>
-          <title>Admit Card - ${student.name}</title>
-          <style>
-            body {
-              font-family: "Poppins", sans-serif;
-              margin: 0;
-              padding: 10mm;
-              background: white;
-            }
-            @page { size: A4; margin: 0; }
-            .card {
-              border: 1.5px solid #2563eb;
-              border-radius: 8px;
-              padding: 12px;
-              width: 100%;
-            }
-            .header {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 16px;
-              border-bottom: 2px solid #e5e7eb;
-              padding-bottom: 8px;
-            }
-            .logo { width: 65px; height: 55px; object-fit: contain; }
-            .school-title {
-              text-align: center;
-              font-size: 22px;
-              font-weight: 700;
-              color: #e11d48;
-              margin: 0;
-            }
-            .sub {
-              color: #1e40af;
-              margin: 2px 0;
-              font-weight: 500;
-              text-align: center;
-            }
-            .admit {
-              background: #1e3a8a;
-              color: white;
-              text-align: center;
-              padding: 4px;
-              border-radius: 4px;
-              font-weight: 600;
-              margin-top: 8px;
-            }
-            .info {
-              font-size: 13px;
-              line-height: 1.6;
-              margin-top: 10px;
-            }
-            .note {
-              margin-top: 10px;
-              background: #f8fafc;
-              border-left: 3px solid #ef4444;
-              padding: 6px;
-              font-size: 12px;
-            }
-            .footer {
-              font-style: italic;
-              color: #6b7280;
-              text-align: center;
-              font-size: 11px;
-              margin-top: 8px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="header">
-              <img src="/logo.png" class="logo" alt="Logo" />
-              <div>
-                <h2 class="school-title">AMBIKA INTERNATIONAL SCHOOL</h2>
-                <p class="sub">Saidpur, Dighwara (Saran) 841207</p>
-                <p class="sub">Session: ${session}</p>
-              </div>
+ /** 🖨 Print single card */
+const printCard = (student) => {
+  if (!logoBase64) return alert("Logo is still loading, please wait...");
+  const win = window.open("", "_blank");
+  win.document.write(`
+    <html>
+      <head>
+        <title>Admit Card - ${student.name}</title>
+        <style>
+          body {
+            font-family: "Times New Roman", serif;
+            background: #fff;
+            padding: 20px;
+            margin: 0;
+          }
+          .card {
+            border: 2px solid #000;
+            padding: 10px 15px;
+            width: 650px;
+            margin: 0 auto;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+          }
+          .logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+          }
+          .school-title {
+            color: #d00000;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            margin: 0;
+          }
+          .school-sub {
+            color: #008000;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin: 0;
+          }
+          .session {
+            text-align: center;
+            font-weight: 600;
+            margin-top: 5px;
+          }
+          .admit {
+            background: #000;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 5px;
+            width: 120px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .info {
+            font-size: 15px;
+            line-height: 1.6;
+            margin-top: 10px;
+          }
+          .note {
+            border-top: 2px solid #000;
+            margin-top: 10px;
+            padding-top: 5px;
+            font-size: 14px;
+          }
+          .note-title {
+            color: red;
+            font-weight: bold;
+          }
+          ul {
+            margin-top: 3px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="header">
+            <img src="${logoBase64}" class="logo" alt="School Logo"/>
+            <div style="flex:1">
+              <h2 class="school-title">AMBIKA INTERNATIONAL SCHOOL</h2>
+              <p class="school-sub">SAIDPUR, DIGHWARA</p>
+              <p class="session">Session :- ${session}</p>
             </div>
-            <div class="admit">Admit Card</div>
-            <div class="info">
-              <p><strong>Name:</strong> ${student.name}</p>
-              <p><strong>Father's Name:</strong> Mr. ${student.fatherName || "N/A"}</p>
-              <p><strong>Class:</strong> ${student.class}</p>
-              <p><strong>Roll No:</strong> ${student.rollNo}</p>
-              <p><strong>Section:</strong> ${student.section || "N/A"}</p>
-              <p><strong>Date of Examination:</strong> ${examDates}</p>
-            </div>
-            <div class="note">
-              <strong>Note:</strong>
-              <ul>
-                <li>${validityNote}</li>
-                <li>Students without admit cards will not be allowed to sit in the exam.</li>
-              </ul>
-            </div>
-            <div class="footer">Computer generated – no signature required.</div>
           </div>
-        </body>
-      </html>
-    `);
-    win.document.close();
-    win.focus();
-    win.print();
-  };
+          <div class="admit">Admit Card</div>
+          <div class="info">
+            <p><strong>Name :</strong> ${student.name}</p>
+            <p><strong>Father’s Name :</strong> Mr. ${student.fatherName || "N/A"}</p>
+            <p><strong>Class :</strong> ${student.class} &nbsp;&nbsp;&nbsp;
+               <strong>Roll No :</strong> ${student.rollNo} &nbsp;&nbsp;&nbsp;
+               <strong>Sec :</strong> ${student.section || "N/A"}</p>
+            <p><strong>Date of Examination :</strong> ${examDates}</p>
+          </div>
+          <div class="note">
+            <p class="note-title">Note :-</p>
+            <ul>
+              <li>${validityNote}</li>
+              <li>${customNote}</li>
+            </ul>
+          </div>
+        </div>
+      </body>
+    </html>
+  `);
+  win.document.close();
+  win.focus();
+  win.print();
+};
+
 
   /** 🖨 Print all cards */
 
@@ -858,45 +872,40 @@ const printAllCards = () => {
   const printWindow = window.open("", "_blank");
   let pageContent = "";
 
-  // Break into groups of 6 (for each A4 page)
+  // 6 admit cards per A4 page
   for (let i = 0; i < studentsToPrint.length; i += 6) {
     const pageStudents = studentsToPrint.slice(i, i + 6);
 
     const cards = pageStudents
       .map(
         (student) => `
-      <div class="card">
-        <div class="header">
-          <img src="/logo.png" alt="School Logo" class="logo" />
-          <div class="school-info">
-            <h2 class="school-name">AMBIKA INTERNATIONAL SCHOOL</h2>
-            <p class="school-sub">Saidpur, Dighwara (Saran) - 841207</p>
-            <p class="session">Session: ${session}</p>
+        <div class="card">
+          <div class="header">
+            <img src="${logoBase64}" class="logo" alt="School Logo"/>
+            <div style="flex:1">
+              <h2 class="school-title">AMBIKA INTERNATIONAL SCHOOL</h2>
+              <p class="school-sub">SAIDPUR, DIGHWARA</p>
+              <p class="session">Session :- ${session}</p>
+            </div>
+          </div>
+          <div class="admit"><span>Admit Card</span></div>
+          <div class="info">
+            <p><strong>Name :</strong> ${student.name}</p>
+            <p><strong>Father’s Name :</strong> Mr. ${student.fatherName || "N/A"}</p>
+            <p><strong>Class :</strong> ${student.class} &nbsp;&nbsp;&nbsp;
+               <strong>Roll No :</strong> ${student.rollNo} &nbsp;&nbsp;&nbsp;
+               <strong>Sec :</strong> ${student.section || "N/A"}</p>
+            <p><strong>Date of Examination :</strong> ${examDates}</p>
+          </div>
+          <div class="note">
+            <p class="note-title">Note :-</p>
+            <ul>
+              <li>${validityNote}</li>
+              <li>${customNote}</li>
+            </ul>
           </div>
         </div>
-        <div class="title">Admit Card</div>
-        <div class="details">
-          <p><strong>Name:</strong> ${student.name || "N/A"}</p>
-          <p><strong>Father’s Name:</strong> Mr. ${student.fatherName || "N/A"}</p>
-          <p>
-  <strong>Class:</strong> ${student.class || "N/A"} 
-  &nbsp;&nbsp;&nbsp; <!-- 3 spaces -->
-  <strong>Roll No:</strong> ${student.rollNo || "N/A"} 
-  &nbsp;&nbsp;&nbsp;
-  <strong>Section:</strong> ${student.section || "N/A"}
-</p>
-
-          <p><strong>Date of Examination:</strong> ${examDates}</p>
-        </div>
-        <div class="note">
-          <strong>Note:</strong>
-          <ul>
-            <li>${validityNote}</li>
-            <li>Students without an admit card will not be allowed in the exam.</li>
-          </ul>
-        </div>
-        <div class="footer">Computer-generated — no signature required</div>
-      </div>`
+      `
       )
       .join("");
 
@@ -914,109 +923,107 @@ const printAllCards = () => {
           }
 
           body {
-            margin: 0;
+            font-family: "Times New Roman", serif;
             background: white;
-            display: flex;
-            flex-direction: column;
-            font-family: "Poppins", sans-serif;
+            margin: 0;
           }
 
           .page {
             width: 100%;
-            height: 90%;
+            height: 100%;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            gap: 6mm;
+            gap: 8mm;
             page-break-after: always;
-            padding: 5mm;
             box-sizing: border-box;
+            padding: 8mm;
           }
 
           .card {
-            border: 1.2px solid #2563eb;
-            border-radius: 6px;
-            padding: 6px;
-            box-sizing: border-box;
+            border: 2px solid #000;
+            padding: 8px 10px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            font-size: 10px;
+            font-size: 11px;
+            box-sizing: border-box;
           }
 
           .header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 2px;
+            border-bottom: 1.5px solid #000;
+            padding-bottom: 4px;
           }
 
           .logo {
             width: 45px;
-            height: 40px;
+            height: 45px;
             object-fit: contain;
           }
 
-          .school-name {
-            color: #dc2626;
-            font-weight: 700;
-            font-size: 15px;
-            margin: 0;
+          .school-title {
+            color: #d00000;
+            font-weight: bold;
+            font-size: 14px;
             text-align: center;
-             margin-top: 8px; /* niche space */
-    margin-bottom: 4px; /* niche space */
+            margin: 0;
           }
-  //           .school-name {
-  //           margin-top: 8px; /* niche space */
-  //   margin-bottom: 4px; /* niche space */
-  // }
 
-          .school-sub,
+          .school-sub {
+            color: #008000;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+            margin: 0;
+          }
+
           .session {
-            color: #2563eb;
-            font-size: 12px;
             text-align: center;
-            margin: 0;
-            margin-bottom: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 2px;
           }
 
-          .title {
+          /* 🎯 Admit Card text - black box only around text */
+          .admit {
             text-align: center;
-            font-weight: 700;
-            color: white;
-            background: #1e3a8a;
-            padding: 2px 0;
-            border-radius: 3px;
-            font-size: 10px;
-            margin: 3px 0;
+            margin: 6px 0;
           }
 
-          .details {
-            font-size: 12px;
+          .admit span {
+            background: #000;
+            color: #fff;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 11px;
+            display: inline-block;
+          }
+
+          .info {
+            font-size: 14px;
             line-height: 1.4;
           }
 
           .note {
+            border-top: 1px solid #000;
+            margin-top: 4px;
+            padding-top: 3px;
             font-size: 10px;
-            background: #f9fafb;
-            border-left: 2px solid #ef4444;
-            padding: 3px;
-            margin-top: auto;
           }
 
-          .footer {
-            text-align: center;
-            font-size: 8px;
-            color: #6b7280;
-            font-style: italic;
-            margin-top: 4px;
+          .note-title {
+            color: red;
+            font-weight: bold;
+            margin: 0;
           }
 
           ul {
-            margin: 0;
-            padding-left: 10px;
+            margin: 2px 0 0 12px;
+            padding: 0;
           }
 
           li {
@@ -1032,6 +1039,8 @@ const printAllCards = () => {
   printWindow.focus();
   printWindow.print();
 };
+
+
 
 
   /** 🧠 Loading / error states */
@@ -1079,6 +1088,15 @@ const printAllCards = () => {
             style={styles.input}
           />
         </div>
+        <div>
+  <label>General Note</label>
+  <input
+    value={customNote}
+    onChange={(e) => setCustomNote(e.target.value)}
+    style={styles.input}
+  />
+</div>
+
       </div>
 
       {/* Filter */}

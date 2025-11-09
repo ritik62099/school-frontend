@@ -204,18 +204,18 @@ const IDCardsStudent = () => {
   page-break-inside: avoid;
 }
 
-          // .id-card {
-          //   width: 70mm; /* Adjusted for better fit */
-          //   height: 100mm;
-          //   background: url('${bgBase64}') no-repeat center center;
-          //   background-size: cover;
-          //   border: 0.3mm solid #003399;
-          //   border-radius: 2mm;
-          //   padding: 2mm;
-          //   box-sizing: border-box;
-          //   position: relative;
-          //   page-break-inside: avoid;
-          // }
+          .id-card {
+            width: 70mm; /* Adjusted for better fit */
+            height: 100mm;
+            background: url('${bgBase64}') no-repeat center center;
+            background-size: cover;
+            border: 0.3mm solid #003399;
+            border-radius: 2mm;
+            padding: 2mm;
+            box-sizing: border-box;
+            position: relative;
+            page-break-inside: avoid;
+          }
 
           .header {
             text-align: center;
