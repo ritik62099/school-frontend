@@ -115,15 +115,15 @@ const IDCardsStudent = () => {
   };
 
 
-  const generatePrint = (studentsList) => {
-    if (!logoLoaded || !logoBase64 || !bgBase64) {
-      alert("Images are still loading. Please wait...");
-      return;
-    }
+ const generatePrint = (studentsList) => {
+  if (!logoLoaded || !logoBase64 || !bgBase64) {
+    alert("Images are still loading. Please wait...");
+    return;
+  }
 
-    const printWindow = window.open('', '_blank');
+  const printWindow = window.open('', '_blank');
 
-    const cardsHtml = studentsList.map(student => `
+  const cardsHtml = studentsList.map(student => `
     <div class="id-card">
       <div class="header">
         <img src="${logoBase64}" alt="School Logo" />
@@ -147,128 +147,124 @@ const IDCardsStudent = () => {
     </div>
   `).join('');
 
-    printWindow.document.write(`
+  printWindow.document.write(`
     <html>
       <head>
         <title>Student ID Cards</title>
         <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
           @media print {
             @page {
               size: A4;
-              margin: 6mm;
+              margin: 5mm; /* Small margin for printer safety */
             }
             body {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+              break-before: auto;
+            }
+            .id-card {
+              page-break-inside: avoid;
+            }
+            /* Force new page every 9 cards */
+            .page-break {
+              page-break-after: always;
             }
           }
 
-          // body {
-          //   font-family: Arial, sans-serif;
-          //   background: #fff;
-          //   display: grid;
-          //   grid-template-columns: repeat(3, 1fr);
-          //   grid-template-rows: repeat(3, 1fr);
-          //   gap: 6mm;
-          //   justify-items: center;
-          //   align-items: center;
-          //   margin: 0;
-          //   padding: 6mm;
-          //   height: 100%;
-          //   box-sizing: border-box;
-          // }
-
           body {
-  font-family: Arial, sans-serif;
-  background: #fff;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 8mm;
-  margin: 0;
-  padding: 6mm;
-  box-sizing: border-box;
-}
+            font-family: Arial, sans-serif;
+            background: white;
+            padding: 5mm;
+            display: flex;
+            flex-direction: column;
+            gap: 2mm;
+          }
 
-.id-card {
-  width: 234; /* increase width */
-  height: 332; /* increase height */
-  background: url('${bgBase64}') no-repeat center center;
-  background-size: cover;
-  border: 0.3mm solid #003399;
-  border-radius: 2mm;
-  padding: 3mm;
-  box-sizing: border-box;
-  position: relative;
-  page-break-inside: avoid;
-}
+          .card-page {
+            display: grid;
+            grid-template-columns: repeat(3, 62mm);
+            grid-template-rows: repeat(3, 88mm);
+            gap: 10mm;
+            width: 210mm; /* A4 width minus margins */
+            margin: 0 auto;
+          }
 
           .id-card {
-            width: 70mm; /* Adjusted for better fit */
-            height: 100mm;
+            width: 67mm;
+            height: 95mm;
             background: url('${bgBase64}') no-repeat center center;
             background-size: cover;
             border: 0.3mm solid #003399;
             border-radius: 2mm;
-            padding: 2mm;
-            box-sizing: border-box;
+            padding: 2.5mm;
             position: relative;
-            page-break-inside: avoid;
+            font-size: 3.8mm;
+            display: flex;
+            flex-direction: column;
+            
           }
 
           .header {
             text-align: center;
             color: #003399;
             font-weight: bold;
-            line-height: 1.2;
+            line-height: 1.1;
+            margin-bottom: 2mm;
           }
           .header img {
-            width: 15mm;
+            width: 12mm;
+            height: auto;
             margin-bottom: 1mm;
           }
-          .school-name { font-size: 4mm; }
-          .school-address { font-size: 2.3mm; }
+          .school-name { font-size: 4.2mm; }
+          .school-address { font-size: 2.5mm; }
 
           .photo {
             display: flex;
             justify-content: center;
-            margin-top: 2mm;
+            margin: 1mm 0;
           }
           .photo img {
-            width: 20mm;
-            height: 20mm;
+            width: 18mm;
+            height: 18mm;
             border-radius: 50%;
             border: 0.3mm solid #003399;
             object-fit: cover;
           }
 
           .info {
-            margin-top: 2mm;
-            font-size: 4mm;
-            padding: 0 5mm;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.8mm;
           }
 
           .info-row {
             display: flex;
-            justify-content: flex-start;
             align-items: baseline;
-            margin: 0.8mm 0;
           }
 
           .label {
             display: inline-block;
-            width: 12mm; /* label ke liye fixed width */
+            width: 12mm;
             font-weight: bold;
+            flex-shrink: 0;
           }
 
           .footer {
             position: absolute;
-            bottom: 3mm;
-            left: 30mm;
+            bottom: 2.5mm;
+            left: 0;
             right: 0;
             text-align: center;
-            font-size: 2.5mm;
+            font-size: 2.4mm;
           }
           .sign {
             width: 20mm;
@@ -277,15 +273,52 @@ const IDCardsStudent = () => {
           }
         </style>
       </head>
-      <body>${cardsHtml}</body>
+      <body>
+        ${chunkArray(studentsList, 9).map(chunk => `
+          <div class="card-page">
+            ${chunk.map(student => `
+              <div class="id-card">
+                <div class="header">
+                  <img src="${logoBase64}" alt="School Logo" />
+                  <div class="school-name">AMBIKA <br> INTERNATIONAL SCHOOL</div>
+                  <div class="school-address">SAIDPUR, DIGHWARA (SARAN)</div>
+                </div>
+                <div class="photo">
+                  <img src="${student.photo || 'https://via.placeholder.com/100'}" alt="Student Photo" />
+                </div>
+                <div class="info">
+                  <div class="info-row"><span class="label">NAME</span> : ${student.name || 'N/A'}</div>
+                  <div class="info-row"><span class="label">FATHER</span> : ${student.fatherName || 'N/A'}</div>
+                  <div class="info-row"><span class="label">CLASS</span> : ${student.class || 'N/A'}</div>
+                  <div class="info-row"><span class="label">MOB</span> : ${student.mobile || 'N/A'}</div>
+                  <div class="info-row"><span class="label">ADD</span> : ${student.address?.substring(0, 18) || 'N/A'}</div>
+                </div>
+                <div class="footer">
+                  <div class="sign"></div>
+                  <div>PRINCIPAL</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `).join('')}
+      </body>
     </html>
   `);
 
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-  };
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
+};
+
+// Helper to split array into chunks of max 9
+const chunkArray = (arr, size) => {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+};
 
   // ✅ Select checkbox toggle
   const toggleSelect = (id) => {

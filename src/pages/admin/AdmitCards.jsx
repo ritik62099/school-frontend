@@ -729,13 +729,15 @@ const printCard = (student) => {
               onChange={(e) => setValidityNote(e.target.value)}
             />
           </div>
+           <div className="control-group">
           <label>General Note</label>
         <input
         type="text"
         value={customNote}
         onChange={(e) => setCustomNote(e.target.value)}
-        style={{ width: "100%", padding: "0.5rem", border: "1px solid #ddd", borderRadius: "6px", fontSize: "0.95rem" }}
+        
       />
+      </div>
 
         </div>
       </div>
