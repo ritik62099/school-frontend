@@ -1840,11 +1840,11 @@ const ViewResult = () => {
             }}>
 
               {/* LEFT SIDE : Principal Signature */}
-              <div style={{ fontSize: "10pt" }}>
+              <div style={{ fontSize: "10pt", display: "flex" ,gap: "20px",marginTop: "10px"}}>
                 <div style={{ marginBottom: "40px" }}>
-                  Class Teacher Sig.
+                  Class Teacher Sig._________
                 </div>
-                Principal Sig.
+                Principal Sig.__________
               </div>
 
               {/* RIGHT SIDE : RESULT BOX */}
