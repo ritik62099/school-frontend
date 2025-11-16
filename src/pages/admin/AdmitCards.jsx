@@ -14,7 +14,7 @@ const AdmitCards = () => {
   const navigate = useNavigate();
 
   const [session, setSession] = useState('2025-2026');
-  const [examDates, setExamDates] = useState('15 Nov 2025 – 25 Nov 2025');
+  const [examDates, setExamDates] = useState(' ');
   const [validityNote, setValidityNote] = useState('This admit card is valid for S.A I 2025-26');
   const [customNote, setCustomNote] = useState(
     "Those who will not have their Admit card will not be allowed to sit in the examination."
@@ -391,7 +391,7 @@ const printCard = (student) => {
               <span class="value">${student.name || "N/A"}</span>
             </div>
             <div class="detail-row">
-              <span class="label">Father's Name :</span>
+              <span class="labels">Father's Name :</span>
               <span class="value">Mr. ${student.fatherName || "N/A"}</span>
             </div>
             <div class="detail-row combined">
@@ -515,12 +515,12 @@ const printCard = (student) => {
               padding-left: 6px;
             }
             .student-photo {
-              width: 65px;
+              width: 70px;
               height: 75px;
               border: 1px solid #000;
               object-fit: cover;
               border-radius: 5px;
-             margin-right : 10px;
+             margin-right : 15px;
             }
             .detail-row {
               display: flex;
@@ -529,19 +529,25 @@ const printCard = (student) => {
               margin-bottom: 5px;
             }
             .detail-row.combined {
-              gap: 16px;
+              gap: 45px;
               font-size: 14px;
-              
             }
             .label {
               font-weight: 600;
-              min-width: 45px;
+              min-width: 50px;
               font-size: 14px;
               
             }
+            .labels {
+              font-weight: 600;
+              min-width: 100px;
+              font-size: 14px;
+              
+            }
+            
             .value {
               font-size: 14px;
-              font-weight: 500;
+              font-weight: 400;
             }
             .detail-rowss{
             margin-bottom: 10px;}

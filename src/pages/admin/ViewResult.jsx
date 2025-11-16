@@ -249,34 +249,77 @@ useEffect(() => {
     const isPrimary = isPrimaryClass(r.class);
     const isHalfYearly = examType === "halfYearly";
 
-    const subjectRows = subjectsArray.map(sub => {
-      const pa1 = examData.pa1?.[sub] || 0;
-      const pa2 = examData.pa2?.[sub] || 0;
-      const sa1 = examData.halfYear?.[sub] || 0; // ✅ Always from halfYear
-      const pa3 = examData.pa3?.[sub] || 0;
-      const pa4 = examData.pa4?.[sub] || 0;
-      const sa2 = examData.final?.[sub] || 0;   // ✅ Always from final
+const subjectRows = subjectsArray.map(sub => {
+  const pa1 = examData.pa1?.[sub] || 0;
+  const pa2 = examData.pa2?.[sub] || 0;
+  const sa1 = examData.halfYear?.[sub] || 0;
 
-      if (isPrimary) {
-        // For LKG: PA I, PA II, PA II, SA I → total = pa1 + pa2 + pa2 + sa1
-        const total = pa1 + pa2 + pa2 + sa1;
-        const { grade, point } = getGradePointAndGrade(total);
-        return { sub, pa1, pa2, sa1, total, grade, point, type: 'primary' };
-      } else {
-        if (isHalfYearly) {
-          const total = pa1 + pa2 + sa1;
-          const { grade, point } = getGradePointAndGrade(total);
-          return { sub, pa1, pa2, sa1, total, grade, point, type: 'standard' };
-        } else {
-          // Annual: Term I (pa1+pa2+sa1) + Term II (pa3+pa4+sa2)
-          const term1 = pa1 + pa2 + sa1;
-          const term2 = pa3 + pa4 + sa2;
-          const finalTotal = (term1 + term2) / 2;
-          const { grade, point } = getGradePointAndGrade(finalTotal);
-          return { sub, pa1, pa2, sa1, pa3, pa4, sa2, total: finalTotal, grade, point, type: 'annual' };
-        }
-      }
-    });
+  const pa3 = examData.pa3?.[sub] || 0;
+  const pa4 = examData.pa4?.[sub] || 0;
+  const sa2 = examData.final?.[sub] || 0;
+
+  // ==================== PRIMARY CLASSES ====================
+  if (isPrimary) {
+    const total = pa1 + pa2 + pa2 + sa1;
+    const { grade, point } = getGradePointAndGrade(total);
+    return { sub, pa1, pa2, sa1, total, grade, point };
+  }
+
+  // ==================== HALF YEARLY ====================
+  if (isHalfYearly) {
+
+    const pa1Weighted = pa1 / 2; // 10%
+    const pa2Weighted = pa2 / 2; // 10%
+    const sa1Weighted = sa1;     // 80 marks already
+
+    const total = pa1Weighted + pa2Weighted + sa1Weighted;
+
+    const { grade, point } = getGradePointAndGrade(total);
+
+    return {
+      sub,
+      pa1: pa1Weighted,
+      pa2: pa2Weighted,
+      sa1: sa1Weighted,
+      total,
+      grade,
+      point
+    };
+  }
+
+  // ==================== ANNUAL ====================
+  const pa1Weighted = pa1 / 2;
+  const pa2Weighted = pa2 / 2;
+  const sa1Weighted = sa1;
+
+  const pa3Weighted = pa3 / 2;
+  const pa4Weighted = pa4 / 2;
+  const sa2Weighted = sa2;
+
+  // Term wise
+  const term1 = pa1Weighted + pa2Weighted + sa1Weighted;
+  const term2 = pa3Weighted + pa4Weighted + sa2Weighted;
+
+  const finalTotal = (term1 + term2) / 2;
+
+  const { grade, point } = getGradePointAndGrade(finalTotal);
+
+  return {
+    sub,
+    pa1: pa1Weighted,
+    pa2: pa2Weighted,
+    sa1: sa1Weighted,
+    pa3: pa3Weighted,
+    pa4: pa4Weighted,
+    sa2: sa2Weighted,
+    total: finalTotal,
+    grade,
+    point
+  };
+});
+
+
+
     // ===== TOTAL ROW CALCULATION (Drawing ko exclude kiya gaya) =====
     let totalPA1 = 0;
     let totalPA2 = 0;
@@ -301,12 +344,6 @@ useEffect(() => {
 
     let grandTotal = 0;
     let maxPossible = subjectsArray.length * 100;
-    // if (isPrimary) {
-    //   grandTotal = subjectRows.reduce((sum, row) => sum + row.total, 0);
-    // } else {
-    //   grandTotal = subjectRows.reduce((sum, row) => sum + row.total, 0);
-    // }
-
     grandTotal = subjectRows.reduce((sum, row) => {
       if (row.sub.toLowerCase() === "drawing") return sum; // ❌ Skip Drawing
       return sum + row.total;
