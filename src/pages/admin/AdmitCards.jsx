@@ -395,9 +395,9 @@ const printCard = (student) => {
               <span class="value">Mr. ${student.fatherName || "N/A"}</span>
             </div>
             <div class="detail-row combined">
-              <span class="value">Class: ${student.class || "N/A"}</span>
-              <span class="value">Roll No: ${student.rollNo || "N/A"}</span>
-              <span class="value">Sec: ${student.section || "N/A"}</span>
+              <span class="values">Class: ${student.class || "N/A"}</span>
+              <span class="values">Roll No: ${student.rollNo || "N/A"}</span>
+              <span class="values">Sec: ${student.section || "N/A"}</span>
             </div>
             </div>
             <div class="right-photo">
@@ -528,10 +528,20 @@ const printCard = (student) => {
               font-size: 14px;
               margin-bottom: 5px;
             }
-            .detail-row.combined {
-              gap: 45px;
-              font-size: 14px;
-            }
+   .detail-row.combined {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 30px;
+  width: 100%;
+}
+
+.values {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
             .label {
               font-weight: 600;
               min-width: 50px;
@@ -547,11 +557,12 @@ const printCard = (student) => {
             
             .value {
               font-size: 14px;
-              font-weight: 400;
-              min-width: 50px;
+              font-weight: 500;
             }
+
             .detail-rowss{
-            margin-bottom: 10px;}
+            margin-bottom: 10px;
+            }
             .note {
               background: #ffffffff;
               border-top: 1.5px solid #000;
