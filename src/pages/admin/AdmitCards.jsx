@@ -1,7 +1,7 @@
 // src/pages/admin/AdmitCards.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { endpoints } from '../../config/api'; 
+import { endpoints } from '../../config/api';
 import Logo from '../../assets/logo.png';
 import { useStudents } from '../../hooks/useStudents';
 
@@ -16,11 +16,11 @@ const AdmitCards = () => {
   const [session, setSession] = useState('2025-2026');
   const [examDates, setExamDates] = useState('15 Nov 2025 – 25 Nov 2025');
   const [validityNote, setValidityNote] = useState('This admit card is valid for S.A I 2025-26');
-   const [customNote, setCustomNote] = useState(
-  "Those who will not have their Admit card will not be allowed to sit in the examination."
-);
+  const [customNote, setCustomNote] = useState(
+    "Those who will not have their Admit card will not be allowed to sit in the examination."
+  );
 
-  const { students, loading, error } = useStudents(); 
+  const { students, loading, error } = useStudents();
 
   const classOptions = useMemo(() => {
     const studentClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
@@ -28,7 +28,7 @@ const AdmitCards = () => {
       .filter(cls => studentClasses.includes(cls))
       .sort((a, b) => {
         const order = ["Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
-                       "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+          "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
         return (order.indexOf(a) - order.indexOf(b)) || a.localeCompare(b);
       });
   }, [students, backendClasses]);
@@ -41,38 +41,38 @@ const AdmitCards = () => {
     }
   }, [selectedClass, students]);
 
-useEffect(() => {
-  const convertLogoToBase64 = async () => {
-    try {
-      const response = await fetch(Logo);
-      const blob = await response.blob();
-      const reader = new FileReader();
+  useEffect(() => {
+    const convertLogoToBase64 = async () => {
+      try {
+        const response = await fetch(Logo);
+        const blob = await response.blob();
+        const reader = new FileReader();
 
-      reader.onloadend = () => {
-        const base64Logo = reader.result;
+        reader.onloadend = () => {
+          const base64Logo = reader.result;
 
-        // ✅ ensure image actually loaded before marking ready
-        const img = new Image();
-        img.onload = () => {
-          setLogoBase64(base64Logo);
-          setLogoLoaded(true);
+          // ✅ ensure image actually loaded before marking ready
+          const img = new Image();
+          img.onload = () => {
+            setLogoBase64(base64Logo);
+            setLogoLoaded(true);
+          };
+          img.onerror = () => {
+            console.error("Logo failed to load visually");
+            setLogoLoaded(true); // allow UI
+          };
+          img.src = base64Logo;
         };
-        img.onerror = () => {
-          console.error("Logo failed to load visually");
-          setLogoLoaded(true); // allow UI
-        };
-        img.src = base64Logo;
-      };
 
-      reader.readAsDataURL(blob);
-    } catch (err) {
-      console.error("Error loading logo:", err);
-      setLogoLoaded(true);
-    }
-  };
+        reader.readAsDataURL(blob);
+      } catch (err) {
+        console.error("Error loading logo:", err);
+        setLogoLoaded(true);
+      }
+    };
 
-  convertLogoToBase64();
-}, []);
+    convertLogoToBase64();
+  }, []);
 
 
   useEffect(() => {
@@ -95,240 +95,283 @@ useEffect(() => {
     fetchClasses();
   }, []);
 
-// ✅ Print single card — same size, same style, aligned top-left
 const printCard = (student) => {
   if (!logoLoaded || !logoBase64) {
     alert("School logo is still loading. Please wait a few seconds and try again.");
     return;
   }
 
-  const printWindow = window.open('', '_blank');
+  const fallbackPhoto = `data:image/svg+xml,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="65" height="75" viewBox="0 0 65 75">
+      <rect width="65" height="75" fill="#f0f0f0"/>
+      <text x="50%" y="45%" font-size="10" fill="#aaa" text-anchor="middle">No</text>
+      <text x="50%" y="60%" font-size="10" fill="#aaa" text-anchor="middle">Photo</text>
+    </svg>`)}
+  `;
+
+  const photoUrl =
+    student.photo && student.photo.trim() !== "" ? student.photo : fallbackPhoto;
+
+  const printWindow = window.open("", "_blank");
+
   printWindow.document.write(`
-    <html>
-      <head>
-        <title>Admit Card - ${student.name}</title>
-        <style>
-          @media print {
-            @page { size: A4; margin: 8mm; }
+  <html>
+    <head>
+      <title>Admit Card - ${student.name}</title>
 
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              background: white; 
-              margin: 0;
-              padding: 8mm;
-            }
+      <style>
+        @media print {
+          @page { size: A4; margin: 8mm; }
 
-            .page {
-              width: 210mm;
-              height: 279mm;
-              display: flex;
-              flex-wrap: wrap;
-              align-content: flex-start;  /* 👈 card top pe rahe */
-              justify-content: flex-start; /* 👈 card left pe rahe */
-            }
-
-            .card {
-              width: calc(50% - 2mm);
-              height: calc((259mm - 4mm) / 3.3);  /* 👈 same as printAllCards */
-              border: 1px solid #000000ff;
-              border-radius: 10px;
-              padding: 4px;
-              box-sizing: border-box;
-              font-size: 8.5px;
-              background: white;
-              overflow: hidden;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              margin: 1mm 1mm 2mm 1mm;
-            }
-
-            .header { 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              margin-bottom: 5px; 
-              border-bottom: 1.5px solid #000000ff; 
-              padding-bottom: 4px; 
-            }
-
-            .logo { 
-              width: 55px; 
-              height: 45px; 
-              object-fit: contain; 
-            }
-
-            .school-name { 
-              color: #e74c3c; 
-              font-size: 18px; 
-              font-weight: bold; 
-              margin: 0; 
-              text-align: center;
-            }
-
-            .session { 
-              color: #27ae60; 
-              font-size: 12px; 
-              font-weight: 600; 
-              margin: 1px 0; 
-              text-align: center;
-            }
-
-            .admit-title {
-              display: inline-block;
-              background: #34495e;
-              color: white;
-              padding: 3px 12px;
-              border-radius: 20px;
-              font-weight: bold;
-              margin: 4px auto;
-              font-size: 12px;
-              text-align: center;
-              margin-bottom: 3px;
-            }
-
-            .details { 
-              text-align: left; 
-              margin: 4px 0; 
-              font-size: 11px; 
-              line-height: 1.3;
-              flex-grow: 1;
-            }
-
-            .detail-row { 
-              display: flex; 
-              margin-bottom: 5px; 
-              align-items: center;
-            }
-
-            /* 👇 Class–Roll–Sec combined row */
-            .detail-row.combined {
-              display: flex;
-              justify-content: space-between;
-              margin: 3px 0;
-              font-size: 10.8px;
-              font-weight: 500;
-            }
-
-            .detail-row.combined .label {
-              flex: 1;
-              text-align: left;
-            }
-
-            /* 👇 Date of exam a little lower */
-            .detail-row:last-of-type {
-              margin-top: 10px;
-            }
-
-            .label { 
-              font-weight: bold; 
-              color: #2c3e50; 
-              min-width: 80px;
-              font-size: 14px;
-            }
-
-            .note { 
-              background: #f9f9f9; 
-              padding: 4px; 
-              border-top: 1.5px solid #000000ff;
-              margin-top: 4px; 
-              font-size: 14px; 
-            }
-
-            .footer { 
-              margin-top: 2px; 
-              font-size: 14px; 
-              color: #7f8c8d; 
-              font-style: italic; 
-              text-align: center;
-            }
-
-            ul { 
-              margin: 2px 0; 
-              padding-left: 12px; 
-            }
-
-            li { 
-              font-size: 12px; 
-              line-height: 1.2; 
-            }
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
           }
-        </style>
-      </head>
-      <body>
-        <div class="page">
-          <div class="card">
-            <div class="header">
-              <img src="${logoBase64}" alt="School Logo" class="logo">
-              <div>
-                <h2 class="school-name">AMBIKA INTERNATIONAL SCHOOL</h2>
-                <p class="session">Saidpur, Dighwara (Saran), 841207</p>
-                <p class="session">Session: - ${session}</p>
-              </div>
-            </div>
 
-            <div class="admit-title">Admit Card</div>
+          .page {
+            width: 210mm;
+            height: 279mm;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            justify-content: flex-start;
+            padding: 8mm;
+          }
 
-            <div class="details">
-              <div class="detail-row">
-                <span class="label">Name :</span> 
-                <span class="label">${student.name || 'N/A'}</span>
-              </div>
-              <div class="detail-row">
-                <span class="label">Father's Name :</span> 
-                <span class="label">Mr. ${student.fatherName || 'N/A'}</span>
-              </div>
+          .card {
+            width: calc(50% - 2mm);
+            height: calc((259mm - 4mm) / 3);
+            border: 1px solid #000;
+            border-radius: 10px;
+            padding: 6px;
+            margin: 1mm;
+            box-sizing: border-box;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
 
-              <!-- 👇 Combined row -->
-              <div class="detail-row combined">
-                <span class="label">Class: ${student.class || 'N/A'}</span>
-                <span class="label">Roll No: ${student.rollNo || 'N/A'}</span>
-                <span class="label">Sec: ${student.section || 'N/A'}</span>
-              </div>
+          .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1.5px solid #000;
+            padding-bottom: 4px;
+          }
 
-              <div class="detail-row">
-                <span class="label">Date of Examination :</span> 
-                <span class="label">${examDates}</span>
-              </div>
-            </div>
+          .logo {
+            width: 55px;
+            height: 45px;
+            object-fit: contain;
+            margin-right: 10px;
+          }
 
-            <div class="note">
-              <strong>Note:-</strong>
-              <ul style="padding-left:12px; margin:4px 0;">
-                <li>${validityNote}</li>
-                <li>${customNote}</li>
-              </ul>
+          .school-name {
+            color: #e74c3c;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+          }
+
+          .session {
+            font-size: 12px;
+            margin: 1px 0;
+            text-align: center;
+            color: #27ae60;
+          }
+
+          .admit-title {
+            text-align: center;
+            background: #34495e;
+            color: white;
+            font-weight: bold;
+            border-radius: 20px;
+            padding: 3px 12px;
+            width: fit-content;
+            margin: 5px auto;
+            font-size: 12px;
+          }
+
+          .details-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 6px;
+            padding: 2px 0;
+            flex: 1;
+          }
+
+          .left-details {
+            width: 68%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+
+          .right-photo {
+            width: 20%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+            padding-left: 6px;
+          }
+
+          .student-photo {
+            width: 65px;
+            height: 75px;
+            border: 1px solid #000;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-right: 10px;
+          }
+
+          .detail-row {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            margin-bottom: 5px;
+          }
+
+          .detail-row.combined {
+            gap: 16px;
+            font-size: 14px;
+          }
+
+          .label {
+            font-weight: 600;
+            min-width: 45px;
+            font-size: 14px;
+          }
+
+          .value {
+            font-size: 14px;
+            font-weight: 500;
+          }
+
+          .detail-rowss {
+            margin-bottom: 10px;
+          }
+
+          .note {
+            background: #ffffff;
+            border-top: 1.5px solid #000;
+            padding: 4px;
+            font-size: 12px;
+            margin-top: 4px;
+          }
+
+          ul {
+            padding-left: 18px;
+            margin: 4px 0;
+          }
+
+          li {
+            line-height: 1.4;
+          }
+        }
+      </style>
+    </head>
+
+    <body>
+      <div class="page">
+        <div class="card">
+          <div class="header">
+            <img src="${logoBase64}" class="logo" />
+            <div>
+              <h2 class="school-name">AMBIKA INTERNATIONAL SCHOOL</h2>
+              <p class="session">Saidpur, Dighwara (Saran), 841207</p>
+              <p class="session">Session: - ${session}</p>
             </div>
           </div>
+
+          <div class="admit-title">Admit Card</div>
+
+          <div class="details-row">
+            <div class="left-details">
+              <div class="detail-row">
+                <span class="label">Name :</span>
+                <span class="value">${student.name}</span>
+              </div>
+
+              <div class="detail-row">
+                <span class="label">Father's Name :</span>
+                <span class="value">Mr. ${student.fatherName}</span>
+              </div>
+
+              <div class="detail-row combined">
+                <span class="value">Class: ${student.class}</span>
+                <span class="value">Roll No: ${student.rollNo}</span>
+                <span class="value">Sec: ${student.section}</span>
+              </div>
+            </div>
+
+            <div class="right-photo">
+              <img src="${photoUrl}" class="student-photo" />
+            </div>
+          </div>
+
+          <div class="detail-rowss">
+            <span class="label">Date of Examination :</span>
+            <span class="value">${examDates}</span>
+          </div>
+
+          <div class="note">
+            <strong>Note:-</strong>
+            <ul>
+              <li>${validityNote}</li>
+              <li>${customNote}</li>
+            </ul>
+          </div>
         </div>
-      </body>
-    </html>
+      </div>
+    </body>
+  </html>
   `);
 
   printWindow.document.close();
   printWindow.focus();
-  printWindow.print();
-  printWindow.close();
+
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 500);
 };
 
 
-
-  // ✅ FIXED: Print all cards only if logo is ready
   const printAllCards = () => {
-  if (!logoLoaded || !logoBase64) {
-    alert("School logo is still loading. Please wait a few seconds and try again.");
-    return;
-  }
+    if (!logoLoaded || !logoBase64) {
+      alert("School logo is still loading. Please wait a few seconds and try again.");
+      return;
+    }
 
-  const studentsToPrint = filteredStudents.length > 0 ? filteredStudents : students;
-  if (studentsToPrint.length === 0) return;
+    const studentsToPrint = filteredStudents.length > 0 ? filteredStudents : students;
+    if (studentsToPrint.length === 0) return;
 
-  const printWindow = window.open('', '_blank');
-  let pagesHtml = '';
+    const printWindow = window.open("", "_blank");
+    let pagesHtml = "";
 
-  for (let i = 0; i < studentsToPrint.length; i += 6) {
-    const pageStudents = studentsToPrint.slice(i, i + 6);
-    const cardElements = pageStudents.map(student => `
+    // SVG placeholder (always works offline)
+    const noPhotoSvg = encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="65" height="75" viewBox="0 0 65 75">
+      <rect width="65" height="75" fill="#f0f0f0"/>
+      <text x="50%" y="45%" font-size="10" fill="#aaa" text-anchor="middle">No</text>
+      <text x="50%" y="60%" font-size="10" fill="#aaa" text-anchor="middle">Photo</text>
+    </svg>`
+    );
+    const fallbackPhoto = `data:image/svg+xml,${noPhotoSvg}`;
+
+    for (let i = 0; i < studentsToPrint.length; i += 6) {
+      const pageStudents = studentsToPrint.slice(i, i + 6);
+      const cardElements = pageStudents
+        .map((student) => {
+          const photoUrl = student.photo && student.photo.trim() !== ""
+            ? student.photo
+            : fallbackPhoto;
+
+          return `
       <div class="card">
         <div class="header">
           <img src="${logoBase64}" alt="School Logo" class="logo">
@@ -338,57 +381,61 @@ const printCard = (student) => {
             <p class="session">Session: - ${session}</p>
           </div>
         </div>
+
         <div class="admit-title">Admit Card</div>
-        <div class="details">
-          <div class="detail-row">
-            <span class="label">Name :</span> 
-            <span class="label">${student.name || 'N/A'}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">Father's Name :</span> 
-            <span class="label">Mr. ${student.fatherName || 'N/A'}</span>
-          </div>
 
-          <div class="detail-row combined">
-  <span class="label">Class: ${student.class || 'N/A'}</span>
-  <span class="label">Roll No: ${student.rollNo || 'N/A'}</span>
-  <span class="label">Sec: ${student.section || 'N/A'}</span>
-</div>
+        <div class="details-row">
+          <div class="left-details">
+            <div class="detail-row">
+              <span class="label">Name :</span>
+              <span class="value">${student.name || "N/A"}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Father's Name :</span>
+              <span class="value">Mr. ${student.fatherName || "N/A"}</span>
+            </div>
+            <div class="detail-row combined">
+              <span class="value">Class: ${student.class || "N/A"}</span>
+              <span class="value">Roll No: ${student.rollNo || "N/A"}</span>
+              <span class="value">Sec: ${student.section || "N/A"}</span>
+            </div>
+            </div>
+            <div class="right-photo">
+            <img src="${photoUrl}" class="student-photo" />
+            </div>
+            </div>
+            <div class="detail-rowss">
+              <span class="label">Date of Examination :</span>
+              <span class="value">${examDates}</span>
+            </div>
 
-
-          <div class="detail-row">
-            <span class="label">Date of Examination :</span> 
-            <span class="label">${examDates}</span>
-          </div>
-        </div>
         <div class="note">
           <strong>Note:-</strong>
-          <ul style="padding-left:12px; margin:4px 0;">
+          <ul>
             <li>${validityNote}</li>
             <li>${customNote}</li>
           </ul>
         </div>
       </div>
-    `).join('');
+    `;
+        })
+        .join("");
 
-    pagesHtml += `<div class="page">${cardElements}</div>`;
-  }
+      pagesHtml += `<div class="page">${cardElements}</div>`;
+    }
 
-  printWindow.document.write(`
+    printWindow.document.write(`
     <html>
       <head>
         <title>All Admit Cards</title>
         <style>
           @media print {
             @page { size: A4; margin: 8mm; }
-
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              background: white; 
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
               margin: 0;
               padding: 0;
             }
-
             .page {
               width: 210mm;
               height: 279mm;
@@ -396,129 +443,121 @@ const printCard = (student) => {
               flex-wrap: wrap;
               page-break-after: always;
             }
-
             .card {
               width: calc(50% - 2mm);
-              height: calc((259mm - 4mm) / 3.3); /* slightly reduced height */
-              border: 1px solid #000000ff;
+              height: calc((259mm - 4mm) / 3);
+              border: 1px solid #000;
               border-radius: 10px;
-              padding: 4px;
+              padding: 6px;
+              margin: 1mm;
               box-sizing: border-box;
-              font-size: 8.5px;
               background: white;
-              overflow: hidden;
               display: flex;
               flex-direction: column;
               justify-content: space-between;
-              margin: 1mm 1mm 2mm 1mm;
             }
-
-            .header { 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              // gap: 16px; 
-              margin-bottom: 5px; 
-              border-bottom: 1.5px solid #000000ff; 
-              padding-bottom: 4px; 
+            .header {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-bottom: 1.5px solid #000;
+              padding-bottom: 4px;
             }
-
-            .logo { 
-              width: 55px; 
-              height: 45px; 
-              object-fit: contain; 
+            .logo {
+              width: 55px;
+              height: 45px;
+              object-fit: contain;
+              margin-right: 10px;
             }
-
-            .school-name { 
-              color: #e74c3c; 
-              font-size: 18px; 
-              font-weight: bold; 
-              margin: 0; 
+            .school-name {
+              color: #e74c3c;
+              font-size: 18px;
+              font-weight: bold;
+              margin: 0;
               text-align: center;
             }
-
-            .session { 
-              color: #27ae60; 
-              font-size: 12px; 
-              font-weight: 600; 
-              margin: 1px 0; 
+            .session {
+              font-size: 12px;
+              margin: 1px 0;
               text-align: center;
+              color: #27ae60;
             }
-
             .admit-title {
-              display: inline-block;
+              text-align: center;
               background: #34495e;
               color: white;
-              padding: 3px 12px;
-              border-radius: 20px;
               font-weight: bold;
-              margin: 4px auto;
+              border-radius: 20px;
+              padding: 3px 12px;
+              width: fit-content;
+              margin: 5px auto;
               font-size: 12px;
-              text-align: center;
-              margin-bottom : 3px
             }
-
-            .details { 
-              text-align: left; 
-              margin: 4px 0; 
-              font-size: 11px; 
-              line-height: 1.3;
-              flex-grow: 1;
-            }
-
-            .detail-row { 
-              display: flex; 
-              margin-bottom: 5px; 
-              align-items: center;
-            }
-
-            .detail-row:last-of-type {
-  margin-top: 10px;   /* ✅ pushes it slightly lower */
-}
-
-            /* ✅ Combined row - Class, Roll, Section (no borders) */
-            .detail-row combined {
+            .details-row {
               display: flex;
               justify-content: space-between;
-              margin: 3px 0;
-              font-size: 10.8px;
+              align-items: flex-start;
+              margin-top: 6px;
+              padding: 2px 0;
+              flex: 1;
+            }
+            .left-details {
+              width: 68%;
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+            }
+            .right-photo {
+              width: 20%;
+              display: flex;
+              justify-content: flex-end;
+              align-items: flex-start;
+              padding-left: 6px;
+            }
+            .student-photo {
+              width: 65px;
+              height: 75px;
+              border: 1px solid #000;
+              object-fit: cover;
+              border-radius: 5px;
+             margin-right : 10px;
+            }
+            .detail-row {
+              display: flex;
+              align-items: center;
+              font-size: 14px;
+              margin-bottom: 5px;
+            }
+            .detail-row.combined {
+              gap: 16px;
+              font-size: 14px;
+              
+            }
+            .label {
+              font-weight: 600;
+              min-width: 45px;
+              font-size: 14px;
+              
+            }
+            .value {
+              font-size: 14px;
               font-weight: 500;
             }
-
-            .detail-row.combined .label {
-  flex: 1;               /* 👈 Equal width */
-}
-            .label { 
-              font-weight: bold; 
-              color: #2c3e50; 
-              min-width: 80px;
-              font-size: 14px;
+            .detail-rowss{
+            margin-bottom: 10px;}
+            .note {
+              background: #ffffffff;
+              border-top: 1.5px solid #000;
+              padding: 4px;
+              font-size: 12px;
+              margin-top: 4px;
             }
-
-            .note { 
-              background: #f9f9f9; 
-              padding: 4px; 
-              border-top: 1.5px solid #000000ff;
-              margin-top: 4px; 
-              font-size: 14px; 
+            ul {
+              padding-left: 18px;
+              margin: 4px 0;
             }
-
-            .footer { 
-              margin-top: 2px; 
-              font-size: 14px; 
-              color: #7f8c8d; 
-              font-style: italic; 
-              text-align: center;
-            }
-
-            ul { 
-              margin: 2px 0; 
-              padding-left: 12px; 
-            }
-
-            li { 
-              font-size: 12px; 
-              line-height: 1.2; 
+            li {
+              line-height: 1.4;
             }
           }
         </style>
@@ -529,11 +568,15 @@ const printCard = (student) => {
     </html>
   `);
 
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
-  printWindow.close();
-};
+    printWindow.document.close();
+    printWindow.focus();
+
+    // Wait a bit for images to load before printing (optional but helpful)
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 800);
+  };
 
   if (loading || !logoLoaded) {
     return (
@@ -729,15 +772,15 @@ const printCard = (student) => {
               onChange={(e) => setValidityNote(e.target.value)}
             />
           </div>
-           <div className="control-group">
-          <label>General Note</label>
-        <input
-        type="text"
-        value={customNote}
-        onChange={(e) => setCustomNote(e.target.value)}
-        
-      />
-      </div>
+          <div className="control-group">
+            <label>General Note</label>
+            <input
+              type="text"
+              value={customNote}
+              onChange={(e) => setCustomNote(e.target.value)}
+
+            />
+          </div>
 
         </div>
       </div>
@@ -772,6 +815,7 @@ const printCard = (student) => {
       ) : (
         <div className="card-grid">
           {filteredStudents.map((student) => (
+
             <div key={student._id} className="student-card">
               <div className="student-name">{student.name}</div>
               <div className="student-detail"><strong>Class:</strong> {student.class}</div>
