@@ -548,6 +548,7 @@ const printCard = (student) => {
             .value {
               font-size: 14px;
               font-weight: 400;
+              min-width: 50px;
             }
             .detail-rowss{
             margin-bottom: 10px;}
