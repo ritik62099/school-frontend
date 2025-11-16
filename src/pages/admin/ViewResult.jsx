@@ -243,8 +243,7 @@ useEffect(() => {
     return null;
   };
 
-  // === RENDER REPORT CARD (works for both halfYearly & final, and both class types) ===
-  // === RENDER REPORT CARD (FIXED: SA I always from halfYear, SA II from final) ===
+  
   const renderReportCard = (r, student, examData, subjectsArray, attendanceDisplay, examType) => {
     const isPrimary = isPrimaryClass(r.class);
     const isHalfYearly = examType === "halfYearly";
@@ -517,7 +516,7 @@ const subjectRows = subjectsArray.map(sub => {
                   }}
                 >
                   <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
-                  <strong>Contact No:</strong> {student.mobile || "N/A"}<br />
+                  {/* <strong>Contact No:</strong> {student.mobile || "N/A"}<br /> */}
                   <strong>Attendance:</strong> {attendanceDisplay}
                 </td>
               </tr>
