@@ -106,7 +106,8 @@ const AdminDashboard = () => {
     { label: 'View Result', path: '/view-result', color: '#f39c12' },
     { label: 'Manage Class Subjects', path: '/class-subjects', color: '#8e44ad' },
     { label: 'Class-wise Fees', path: '/class-fees', color: '#0d9488' },
-    { label: 'Student Payments', path: '/student-payments', color: '#7e22ce' }
+    { label: 'Student Payments', path: '/student-payments', color: '#7e22ce' },
+    { label: 'Periodic Result', path: '/periodic-result', color: '#2563eb' }
   ];
 
   const teacherButtons = [

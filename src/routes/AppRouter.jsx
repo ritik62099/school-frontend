@@ -25,6 +25,7 @@ import ClassSubjectManager from '../pages/admin/ClassSubjectManager';
 import ClassFees from '../pages/admin/ClassFees';
 import StudentPayments from '../pages/admin/StudentPayments';
 import StudentPaymentForm from '../pages/admin/StudentPaymentForm';
+import Periodic from '../pages/admin/Periodicresult';
 
 const AppRouter = () => {
   return (
@@ -89,6 +90,9 @@ const AppRouter = () => {
       
       <Route path="/view-result" element={
         <ProtectedRoute><ViewResult /></ProtectedRoute>
+      } />
+      <Route path="/periodic-result" element={
+        <ProtectedRoute><Periodic /></ProtectedRoute>
       } />
       
       <Route path="/admit-cards" element={
