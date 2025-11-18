@@ -253,7 +253,7 @@ const printCard = (student) => {
           }
 
           .detail-rowss {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
           }
 
           .note {
@@ -498,7 +498,7 @@ const printCard = (student) => {
               display: flex;
               justify-content: space-between;
               align-items: flex-start;
-              margin-top: 6px;
+              margin-top: 8px;
               padding: 2px 0;
               flex: 1;
             }
@@ -562,7 +562,7 @@ const printCard = (student) => {
             }
 
             .detail-rowss{
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             }
             .note {
               background: #ffffffff;
