@@ -141,7 +141,7 @@ const printCard = (student) => {
 
           .card {
             width: calc(50% - 2mm);
-            height: calc((259mm - 4mm) / 3);
+            height: calc((259mm - 4mm) / 2.9);
             border: 1px solid #000;
             border-radius: 10px;
             padding: 6px;
@@ -216,12 +216,13 @@ const printCard = (student) => {
             display: flex;
             justify-content: flex-end;
             align-items: flex-start;
-            padding-left: 6px;
+            // padding-left: 6px;
+           
           }
 
           .student-photo {
-            width: 65px;
-            height: 75px;
+            width: 100px;
+            height: 90px;
             border: 1px solid #000;
             object-fit: cover;
             border-radius: 5px;
@@ -445,7 +446,7 @@ const printCard = (student) => {
             }
             .card {
               width: calc(50% - 2mm);
-              height: calc((259mm - 4mm) / 3);
+              height: calc((259mm - 4mm) / 2.9);
               border: 1px solid #000;
               border-radius: 10px;
               padding: 6px;
@@ -515,8 +516,8 @@ const printCard = (student) => {
               padding-left: 6px;
             }
             .student-photo {
-              width: 70px;
-              height: 75px;
+              width: 100px;
+              height: 90px;
               border: 1px solid #000;
               object-fit: cover;
               border-radius: 5px;
