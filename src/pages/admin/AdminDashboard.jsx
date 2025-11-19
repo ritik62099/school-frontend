@@ -107,7 +107,9 @@ const AdminDashboard = () => {
     { label: 'Manage Class Subjects', path: '/class-subjects', color: '#8e44ad' },
     { label: 'Class-wise Fees', path: '/class-fees', color: '#0d9488' },
     { label: 'Student Payments', path: '/student-payments', color: '#7e22ce' },
-    { label: 'Periodic Result', path: '/periodic-result', color: '#2563eb' }
+    { label: 'Periodic Result', path: '/periodic-result', color: '#2563eb' },
+    { label: 'Exam Controls', path: '/exam-controls', color: '#b91c1c' },
+    { label: 'Attendance Overview', path: '/admin/attendance-overview', color: '#3b82f6' },
   ];
 
   const teacherButtons = [

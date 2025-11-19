@@ -18,7 +18,7 @@ const ViewResult = () => {
   const [attendanceData, setAttendanceData] = useState({});
   const [classSubjectMap, setClassSubjectMap] = useState({});
   const [searchRoll, setSearchRoll] = useState("");
-const [searchMobile, setSearchMobile] = useState("");
+  const [searchMobile, setSearchMobile] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -83,42 +83,42 @@ const [searchMobile, setSearchMobile] = useState("");
     fetchAttendance();
   }, [filteredResults]);
 
-useEffect(() => {
-  let filtered = results;
+  useEffect(() => {
+    let filtered = results;
 
-  // Only classes assigned to teacher
-  if (assignedClasses.length > 0) {
-    filtered = filtered.filter((r) => assignedClasses.includes(r.class));
-  }
+    // Only classes assigned to teacher
+    if (assignedClasses.length > 0) {
+      filtered = filtered.filter((r) => assignedClasses.includes(r.class));
+    }
 
-  // Name Search
-  if (searchTerm) {
-    filtered = filtered.filter((r) =>
-      r.studentId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }
+    // Name Search
+    if (searchTerm) {
+      filtered = filtered.filter((r) =>
+        r.studentId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
 
-  // Roll Search
-  if (searchRoll) {
-    filtered = filtered.filter((r) =>
-      String(r.studentId?.rollNo || "").includes(searchRoll)
-    );
-  }
+    // Roll Search
+    if (searchRoll) {
+      filtered = filtered.filter((r) =>
+        String(r.studentId?.rollNo || "").includes(searchRoll)
+      );
+    }
 
-  // Mobile Search
-  if (searchMobile) {
-    filtered = filtered.filter((r) =>
-      String(r.studentId?.mobile || "").includes(searchMobile)
-    );
-  }
+    // Mobile Search
+    if (searchMobile) {
+      filtered = filtered.filter((r) =>
+        String(r.studentId?.mobile || "").includes(searchMobile)
+      );
+    }
 
-  // Class Filter
-  if (selectedClass) {
-    filtered = filtered.filter((r) => r.class === selectedClass);
-  }
+    // Class Filter
+    if (selectedClass) {
+      filtered = filtered.filter((r) => r.class === selectedClass);
+    }
 
-  setFilteredResults(filtered);
-}, [searchTerm, searchRoll, searchMobile, selectedClass, results, assignedClasses]);
+    setFilteredResults(filtered);
+  }, [searchTerm, searchRoll, searchMobile, selectedClass, results, assignedClasses]);
 
 
   if (loading) return <h3 style={{ textAlign: "center", padding: "2rem" }}>Loading results...</h3>;
@@ -180,7 +180,7 @@ useEffect(() => {
 
     const printWin = window.open('', '_blank');
 
-   printWin.document.write(`
+    printWin.document.write(`
   <html>
     <head>
       <title>Report Card</title>
@@ -243,79 +243,79 @@ useEffect(() => {
     return null;
   };
 
-  
+
   const renderReportCard = (r, student, examData, subjectsArray, attendanceDisplay, examType) => {
     const isPrimary = isPrimaryClass(r.class);
     const isHalfYearly = examType === "halfYearly";
 
-const subjectRows = subjectsArray.map(sub => {
-  const pa1 = examData.pa1?.[sub] || 0;
-  const pa2 = examData.pa2?.[sub] || 0;
-  const sa1 = examData.halfYear?.[sub] || 0;
+    const subjectRows = subjectsArray.map(sub => {
+      const pa1 = examData.pa1?.[sub] || 0;
+      const pa2 = examData.pa2?.[sub] || 0;
+      const sa1 = examData.halfYear?.[sub] || 0;
 
-  const pa3 = examData.pa3?.[sub] || 0;
-  const pa4 = examData.pa4?.[sub] || 0;
-  const sa2 = examData.final?.[sub] || 0;
+      const pa3 = examData.pa3?.[sub] || 0;
+      const pa4 = examData.pa4?.[sub] || 0;
+      const sa2 = examData.final?.[sub] || 0;
 
-  // ==================== PRIMARY CLASSES ====================
-  if (isPrimary) {
-    const total = pa1 + pa2 + pa2 + sa1;
-    const { grade, point } = getGradePointAndGrade(total);
-    return { sub, pa1, pa2, sa1, total, grade, point };
-  }
+      // ==================== PRIMARY CLASSES ====================
+      if (isPrimary) {
+        const total = pa1 + pa2 + pa2 + sa1;
+        const { grade, point } = getGradePointAndGrade(total);
+        return { sub, pa1, pa2, sa1, total, grade, point };
+      }
 
-  // ==================== HALF YEARLY ====================
-  if (isHalfYearly) {
+      // ==================== HALF YEARLY ====================
+      if (isHalfYearly) {
 
-    const pa1Weighted = pa1 / 2; // 10%
-    const pa2Weighted = pa2 / 2; // 10%
-    const sa1Weighted = sa1;     // 80 marks already
+        const pa1Weighted = pa1 / 2; // 10%
+        const pa2Weighted = pa2 / 2; // 10%
+        const sa1Weighted = sa1;     // 80 marks already
 
-    const total = pa1Weighted + pa2Weighted + sa1Weighted;
+        const total = pa1Weighted + pa2Weighted + sa1Weighted;
 
-    const { grade, point } = getGradePointAndGrade(total);
+        const { grade, point } = getGradePointAndGrade(total);
 
-    return {
-      sub,
-      pa1: pa1Weighted,
-      pa2: pa2Weighted,
-      sa1: sa1Weighted,
-      total,
-      grade,
-      point
-    };
-  }
+        return {
+          sub,
+          pa1: pa1Weighted,
+          pa2: pa2Weighted,
+          sa1: sa1Weighted,
+          total,
+          grade,
+          point
+        };
+      }
 
-  // ==================== ANNUAL ====================
-  const pa1Weighted = pa1 / 2;
-  const pa2Weighted = pa2 / 2;
-  const sa1Weighted = sa1;
+      // ==================== ANNUAL ====================
+      const pa1Weighted = pa1 / 2;
+      const pa2Weighted = pa2 / 2;
+      const sa1Weighted = sa1;
 
-  const pa3Weighted = pa3 / 2;
-  const pa4Weighted = pa4 / 2;
-  const sa2Weighted = sa2;
+      const pa3Weighted = pa3 / 2;
+      const pa4Weighted = pa4 / 2;
+      const sa2Weighted = sa2;
 
-  // Term wise
-  const term1 = pa1Weighted + pa2Weighted + sa1Weighted;
-  const term2 = pa3Weighted + pa4Weighted + sa2Weighted;
+      // Term wise
+      const term1 = pa1Weighted + pa2Weighted + sa1Weighted;
+      const term2 = pa3Weighted + pa4Weighted + sa2Weighted;
 
-  const finalTotal = (term1 + term2) / 2;
+      const finalTotal = (term1 + term2) / 2;
 
-  const { grade, point } = getGradePointAndGrade(finalTotal);
+      const { grade, point } = getGradePointAndGrade(finalTotal);
 
-  return {
-    sub,
-    pa1: pa1Weighted,
-    pa2: pa2Weighted,
-    sa1: sa1Weighted,
-    pa3: pa3Weighted,
-    pa4: pa4Weighted,
-    sa2: sa2Weighted,
-    total: finalTotal,
-    grade,
-    point
-  };
-});
+      return {
+        sub,
+        pa1: pa1Weighted,
+        pa2: pa2Weighted,
+        sa1: sa1Weighted,
+        pa3: pa3Weighted,
+        pa4: pa4Weighted,
+        sa2: sa2Weighted,
+        total: finalTotal,
+        grade,
+        point
+      };
+    });
 
 
 
@@ -726,7 +726,7 @@ const subjectRows = subjectsArray.map(sub => {
             }}>
 
               {/* LEFT SIDE : Principal Signature */}
-              <div style={{ fontSize: "10pt", display: "flex" ,gap: "20px",marginTop: "10px"}}>
+              <div style={{ fontSize: "10pt", display: "flex", gap: "20px", marginTop: "10px" }}>
                 <div style={{ marginBottom: "40px" }}>
                   Class Teacher Sig._________
                 </div>
@@ -882,41 +882,41 @@ const subjectRows = subjectsArray.map(sub => {
 
       <h2>Student Marks Record</h2>
       <div className="filters">
-  <input
-    type="text"
-    placeholder="🔍 Search Student Name"
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-  />
+        <input
+          type="text"
+          placeholder="🔍 Search Student Name"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
 
-  <input
-    type="number"
-    placeholder="🔍 Search Roll No"
-    value={searchRoll}
-    onChange={(e) => setSearchRoll(e.target.value)}
-  />
+        <input
+          type="number"
+          placeholder="🔍 Search Roll No"
+          value={searchRoll}
+          onChange={(e) => setSearchRoll(e.target.value)}
+        />
 
-  <input
-    type="text"
-    placeholder="🔍 Search Mobile No"
-    value={searchMobile}
-    onChange={(e) => setSearchMobile(e.target.value)}
-  />
+        <input
+          type="text"
+          placeholder="🔍 Search Mobile No"
+          value={searchMobile}
+          onChange={(e) => setSearchMobile(e.target.value)}
+        />
 
-  <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
-    <option value="">All Classes</option>
-    {classOptions.map((cls) => (
-      <option key={cls} value={cls}>
-        {cls}
-      </option>
-    ))}
-  </select>
+        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+          <option value="">All Classes</option>
+          {classOptions.map((cls) => (
+            <option key={cls} value={cls}>
+              {cls}
+            </option>
+          ))}
+        </select>
 
-  <select value={selectedExamType} onChange={(e) => setSelectedExamType(e.target.value)}>
-    <option value="halfYearly">Half Yearly Report</option>
-    <option value="final">Annual Report Card</option>
-  </select>
-</div>
+        <select value={selectedExamType} onChange={(e) => setSelectedExamType(e.target.value)}>
+          <option value="halfYearly">Half Yearly Report</option>
+          <option value="final">Annual Report Card</option>
+        </select>
+      </div>
 
 
       {filteredResults.length === 0 ? (

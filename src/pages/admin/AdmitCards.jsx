@@ -14,7 +14,7 @@ const AdmitCards = () => {
   const navigate = useNavigate();
 
   const [session, setSession] = useState('2025-2026');
-  const [examDates, setExamDates] = useState(' ');
+  const [examDates, setExamDates] = useState('15nov2025 to 30nov2025');
   const [validityNote, setValidityNote] = useState('This admit card is valid for S.A I 2025-26');
   const [customNote, setCustomNote] = useState(
     "Those who will not have their Admit card will not be allowed to sit in the examination."
@@ -74,6 +74,29 @@ const AdmitCards = () => {
     convertLogoToBase64();
   }, []);
 
+const saveExamDates = async () => {
+  try {
+    const res = await fetch(endpoints.settings.saveExamDates, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({ examDates })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Exam dates saved successfully!");
+    } else {
+      alert("Failed to save exam dates!");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error saving exam dates!");
+  }
+};
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -94,6 +117,29 @@ const AdmitCards = () => {
     };
     fetchClasses();
   }, []);
+
+  useEffect(() => {
+  const fetchExamDates = async () => {
+    try {
+      const res = await fetch(endpoints.settings.getExamDates, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.examDates) {
+        setExamDates(data.examDates);
+      }
+    } catch (err) {
+      console.error("Failed to load exam dates", err);
+    }
+  };
+
+  fetchExamDates();
+}, []);
+
 
 const printCard = (student) => {
   if (!logoLoaded || !logoBase64) {
@@ -145,7 +191,7 @@ const printCard = (student) => {
             border: 1px solid #000;
             border-radius: 10px;
             padding: 6px;
-            margin: 1mm;
+            margin: 5mm 1mm;
             box-sizing: border-box;
             background: white;
             display: flex;
@@ -450,7 +496,7 @@ const printCard = (student) => {
               border: 1px solid #000;
               border-radius: 10px;
               padding: 6px;
-              margin: 1mm;
+              margin: 5mm 1mm;
               box-sizing: border-box;
               background: white;
               display: flex;
@@ -776,13 +822,30 @@ const printCard = (student) => {
             />
           </div>
           <div className="control-group">
-            <label>Exam Dates</label>
-            <input
-              type="text"
-              value={examDates}
-              onChange={(e) => setExamDates(e.target.value)}
-            />
-          </div>
+  <label>Exam Dates</label>
+  <input
+    type="text"
+    value={examDates}
+    onChange={(e) => setExamDates(e.target.value)}
+  />
+
+  <button
+    onClick={saveExamDates}
+    style={{
+      padding: "6px 12px",
+      marginTop: "6px",
+      background: "#16a085",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      fontWeight: "600"
+    }}
+  >
+    Save
+  </button>
+</div>
+
           <div className="control-group">
             <label>Validity Note</label>
             <input

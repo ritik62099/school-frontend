@@ -84,5 +84,12 @@ payments: {
     create: api('/api/payments'),
     history: (studentId) => api(`/api/payments/history/${encodeURIComponent(studentId)}`)
   },
+
+settings: {
+  saveExamDates: api('/api/settings/exam-dates'),
+  getExamDates: api('/api/settings/exam-dates'),
+  getExamVisibility: api('/api/settings/exam-visibility'),
+  setExamVisibility: api('/api/settings/exam-visibility'),
+},
  
 };

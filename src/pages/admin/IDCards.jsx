@@ -196,8 +196,8 @@ const IDCardsStudent = () => {
           }
 
           .id-card {
-            width: 67mm;
-            height: 95mm;
+            width: 64mm;
+            height: 98mm;
             background: url('${bgBase64}') no-repeat center center;
             background-size: cover;
             border: 0.3mm solid #003399;
