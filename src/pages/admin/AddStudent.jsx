@@ -17,7 +17,8 @@ const AddStudent = () => {
     aadhar: '',
     photo: '',
     transport: false,
-    transportFee: ''
+    transportFee: '',
+    dob: "",
   });
 
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -135,6 +136,7 @@ const AddStudent = () => {
     uploadData.append('mobile', formData.mobile);
     uploadData.append('address', formData.address);
     uploadData.append('aadhar', formData.aadhar);
+    uploadData.append("dob", formData.dob);
     uploadData.append('transport', formData.transport);
     if (formData.transport && formData.transportFee) {
       uploadData.append('transportFee', formData.transportFee);
@@ -166,7 +168,8 @@ const AddStudent = () => {
           aadhar: '',
           photo: '',
           transport: false,
-          transportFee: ''
+          transportFee: '',
+          dob: "", 
         });
         setPhotoPreview(null);
         setTimeout(() => navigate('/dashboard'), 1800);
@@ -304,6 +307,19 @@ const AddStudent = () => {
               maxLength="10"
             />
           </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Date of Birth</label>
+            <input
+              type="date"
+              name="dob"
+              value={formData.dob}
+              onChange={handleChange}
+              required
+              style={styles.input}
+            />
+          </div>
+
 
           {/* Address */}
           <div style={styles.inputGroup}>

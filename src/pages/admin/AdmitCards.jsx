@@ -492,11 +492,11 @@ const printCard = (student) => {
             }
             .card {
               width: calc(50% - 2mm);
-              height: calc((259mm - 4mm) / 2.9);
+              height: calc((259mm - 4mm) / 2.8);
               border: 1px solid #000;
               border-radius: 10px;
               padding: 6px;
-              margin: 5mm 1mm;
+              margin: 4mm 1mm;
               box-sizing: border-box;
               background: white;
               display: flex;

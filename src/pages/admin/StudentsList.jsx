@@ -105,10 +105,12 @@ const StudentsList = () => {
                 <th>Class</th>
                 <th>Section</th>
                 <th>Roll No</th>
+                <th>DOB</th>       {/* ✅ NEW */}
                 <th>Admission</th>
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {filteredStudents.map((student) => (
                 <tr key={student._id} style={styles.row}>
@@ -123,6 +125,12 @@ const StudentsList = () => {
                   <td>{student.class || "—"}</td>
                   <td>{student.section || "—"}</td>
                   <td>{student.rollNo || "—"}</td>
+                  <td>
+                    {student.dob
+                      ? new Date(student.dob).toLocaleDateString()
+                      : "—"}
+                  </td>
+
                   <td>
                     {student.admissionDate
                       ? new Date(student.admissionDate).toLocaleDateString()
@@ -163,6 +171,8 @@ const StudentsList = () => {
               <div style={styles.cardBody}>
                 <p><strong>Roll No:</strong> {student.rollNo || "—"}</p>
                 <p><strong>Admission:</strong> {student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : "—"}</p>
+                <p><strong>DOB:</strong> {student.dob ? new Date(student.dob).toLocaleDateString() : "—"}</p>
+
               </div>
               <button
                 onClick={() => navigate(`/admin/students/edit/${student._id}`)}

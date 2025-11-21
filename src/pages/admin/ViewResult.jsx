@@ -220,6 +220,17 @@ const ViewResult = () => {
           padding: 4px;
           text-align: center;
         }
+
+        .vertical-header {
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  white-space: nowrap;
+  padding: 6px 2px;
+  min-width: 30px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.75rem;
+}
       </style>
     </head>
     <body>
@@ -244,528 +255,725 @@ const ViewResult = () => {
   };
 
 
-  const renderReportCard = (r, student, examData, subjectsArray, attendanceDisplay, examType) => {
-    const isPrimary = isPrimaryClass(r.class);
-    const isHalfYearly = examType === "halfYearly";
+ 
+//   const renderReportCard = (r, student, examData, subjectsArray, attendanceDisplay, examType) => {
+//   const isPrimary = isPrimaryClass(r.class);
+//   const isHalfYearly = examType === "halfYearly";
 
-    const subjectRows = subjectsArray.map(sub => {
-      const pa1 = examData.pa1?.[sub] || 0;
-      const pa2 = examData.pa2?.[sub] || 0;
-      const sa1 = examData.halfYear?.[sub] || 0;
+//   const subjectRows = subjectsArray.map(sub => {
+//     const pa1 = examData.pa1?.[sub] || 0;
+//     const pa2 = examData.pa2?.[sub] || 0;
+//     const sa1 = examData.halfYear?.[sub] || 0;
 
-      const pa3 = examData.pa3?.[sub] || 0;
-      const pa4 = examData.pa4?.[sub] || 0;
-      const sa2 = examData.final?.[sub] || 0;
+//     const pa3 = examData.pa3?.[sub] || 0;
+//     const pa4 = examData.pa4?.[sub] || 0;
+//     const sa2 = examData.final?.[sub] || 0;
 
-      // ==================== PRIMARY CLASSES ====================
-      if (isPrimary) {
-        const total = pa1 + pa2 + pa2 + sa1;
-        const { grade, point } = getGradePointAndGrade(total);
-        return { sub, pa1, pa2, sa1, total, grade, point };
-      }
+//     if (isPrimary) {
+//       const total = pa1 + pa2 + pa2 + sa1;
+//       const { grade, point } = getGradePointAndGrade(total);
+//       return { sub, pa1, pa2, sa1, total, grade, point, isDrawing: sub.toLowerCase() === "drawing" };
+//     }
 
-      // ==================== HALF YEARLY ====================
-      if (isHalfYearly) {
+//     if (isHalfYearly) {
+//       const term1 = (pa1 / 2) + (pa2 / 2) + sa1;
+//       const { grade, point } = getGradePointAndGrade(term1);
+//       return {
+//         sub,
+//         pa1: pa1 / 2,
+//         pa2: pa2 / 2,
+//         sa1,
+//         term1,
+//         term1Grade: grade,
+//         term1Point: point,
+//         finalTotal: term1,
+//         grade,
+//         point,
+//         isDrawing: sub.toLowerCase() === "drawing"
+//       };
+//     }
 
-        const pa1Weighted = pa1 / 2; // 10%
-        const pa2Weighted = pa2 / 2; // 10%
-        const sa1Weighted = sa1;     // 80 marks already
+//     // Annual: Term-wise grades
+//     const term1 = (pa1 / 2) + (pa2 / 2) + sa1;
+//     const term2 = (pa3 / 2) + (pa4 / 2) + sa2;
+//     const finalTotal = (term1 + term2) / 2;
 
-        const total = pa1Weighted + pa2Weighted + sa1Weighted;
+//     const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
+//     const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
+//     const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
 
-        const { grade, point } = getGradePointAndGrade(total);
+//     return {
+//       sub,
+//       pa1: pa1 / 2,
+//       pa2: pa2 / 2,
+//       sa1,
+//       pa3: pa3 / 2,
+//       pa4: pa4 / 2,
+//       sa2,
+//       term1,
+//       term2,
+//       finalTotal,
+//       term1Grade: g1,
+//       term1Point: p1,
+//       term2Grade: g2,
+//       term2Point: p2,
+//       finalGrade: gf,
+//       finalPoint: pf,
+//       isDrawing: sub.toLowerCase() === "drawing"
+//     };
+//   });
 
-        return {
-          sub,
-          pa1: pa1Weighted,
-          pa2: pa2Weighted,
-          sa1: sa1Weighted,
-          total,
-          grade,
-          point
-        };
-      }
+//   // Totals (exclude Drawing)
+//   let sumT1 = 0, sumT2 = 0, sumF = 0, n = 0;
+//   subjectRows.forEach(r => {
+//     if (r.isDrawing) return;
+//     n++;
+//     if (isPrimary) {
+//       sumF += r.total || 0;
+//     } else {
+//       sumT1 += r.term1 || 0;
+//       sumT2 += r.term2 || 0;
+//       sumF += r.finalTotal || 0;
+//     }
+//   });
 
-      // ==================== ANNUAL ====================
-      const pa1Weighted = pa1 / 2;
-      const pa2Weighted = pa2 / 2;
-      const sa1Weighted = sa1;
+//   const avgT1 = n ? sumT1 / n : 0;
+//   const avgT2 = n ? sumT2 / n : 0;
+//   const avgF = n ? sumF / n : 0;
+//   const percentage = avgF.toFixed(2);
 
-      const pa3Weighted = pa3 / 2;
-      const pa4Weighted = pa4 / 2;
-      const sa2Weighted = sa2;
+//   return (
+//     <>
+//       {/* School Header */}
+//       <div style={{ border: "2px solid #000", padding: "6px", marginBottom: "10px", borderRadius: "6px" }}>
+//         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12pt", fontWeight: "bold", marginBottom: "12px" }}>
+//           <span>Reg. No :- 21912662021926123218</span>
+//           <span>UDISE No :- 10170504508</span>
+//         </div>
+//         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+//           <img src={Logo} alt="Logo" style={{ width: "70px", height: "auto", marginRight: "12px" }} />
+//           <div>
+//             <h1 style={{ fontFamily: 'Algerian, "Times New Roman", serif', fontWeight: "normal", fontSize: "32px", margin: 0 }}>
+//               AMBIKA INTERNATIONAL SCHOOL
+//             </h1>
+//             <p style={{ margin: 0, fontSize: "14pt" }}>Based on CBSE curriculum (Play to Xth)</p>
+//             <p style={{ margin: 0, fontSize: "14pt" }}>Saidpur, Dighwara (Saran), 841207</p>
+//             <p style={{ margin: 0, fontSize: "14pt" }}>Mob. 8797118188</p>
+//           </div>
+//         </div>
+//       </div>
 
-      // Term wise
-      const term1 = pa1Weighted + pa2Weighted + sa1Weighted;
-      const term2 = pa3Weighted + pa4Weighted + sa2Weighted;
+//       {/* Student Details */}
+//       <div style={{ border: "2px solid #000", padding: "6px", borderRadius: "6px", marginBottom: "15px", background: "#fff" }}>
+//         <h3 style={{ textAlign: "center", fontSize: "16pt", margin: "0 auto 8px" }}>
+//           {isHalfYearly ? "REPORT CARD OF S.A.I" : "ANNUAL REPORT CARD"}
+//         </h3>
+//         <div style={{ display: "flex", justifyContent: "space-around", fontSize: "12pt", marginBottom: "10px" }}>
+//           <div><strong>CLASS:</strong> {r.class.toUpperCase()}</div>
+//           <div><strong>SECTION:</strong> A</div>
+//           <div><strong>SESSION:</strong> 2025-26</div>
+//         </div>
+//         <div style={{ textAlign: "center", fontSize: "12pt", fontWeight: "bold", padding: "6px 0", margin: "10px 0", border: "2px solid #000", background: "#e6e6e6", borderRadius: "6px" }}>
+//           STUDENT'S DETAIL
+//         </div>
+//         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12pt", lineHeight: "1.6" }}>
+//           <tbody>
+//             <tr>
+//               <td style={{ width: "50%", verticalAlign: "top", paddingRight: "10px", textAlign: "left", fontWeight: "500" }}>
+//                 <strong>Student's Name:</strong> {student.name}<br />
+//                 <strong>Mother's Name:</strong> {student.motherName || "N/A"}<br />
+//                 <strong>Father's Name:</strong> {student.fatherName || "N/A"}<br />
+//                 <strong>Address:</strong> {student.address || "N/A"}
+//               </td>
+//               <td style={{ width: "50%", verticalAlign: "top", paddingLeft: "10px", textAlign: "left", fontWeight: "500" }}>
+//                 <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
+//                 <strong>Attendance:</strong> {attendanceDisplay}
+//               </td>
+//             </tr>
+//           </tbody>
+//         </table>
+//       </div>
 
-      const finalTotal = (term1 + term2) / 2;
+//       {/* Marks Table */}
+//       <div style={{ border: "2px solid #000", padding: "12px", borderRadius: "6px", marginTop: "15px", background: "#fff" }}>
+//         <h4 style={{ textAlign: "center", fontSize: "14pt", margin: "0 auto 10px", fontWeight: "bold", textDecoration: "underline" }}>
+//           Academic Performance : Scholastic Area (9 Point Scale)
+//         </h4>
+//         <div className="table-container" style={{ marginTop: "10px" }}>
+//           <table className="marks-table">
+//             <thead>
+//               {isPrimary ? (
+//                 <tr>
+//                   <th>SUBJECT</th>
+//                   <th>PA I</th>
+//                   <th>PA II</th>
+//                   <th>PA II</th>
+//                   <th>SA I</th>
+//                   <th>TOTAL</th>
+//                   <th>GRADE POINT</th>
+//                   <th>GRADE</th>
+//                 </tr>
+//               ) : isHalfYearly ? (
+//                 <tr>
+//                   <th>SUBJECT</th>
+//                   <th>PA I</th>
+//                   <th>PA II</th>
+//                   <th>SA I</th>
+//                   <th>TOTAL</th>
+//                   <th>GRADE POINT</th>
+//                   <th>GRADE</th>
+//                 </tr>
+//               ) : (
+//                 <>
+//                   <tr>
+//                     <th rowSpan={2}>SUBJECT</th>
+//                     <th colSpan={5}>First Term (SA I)</th>
+//                     <th colSpan={5}>Second Term (SA II)</th>
+//                     <th rowSpan={2}>Final<br />(100)</th>
+//                     <th rowSpan={2}>Grade<br />Point</th>
+//                     <th rowSpan={2}>Grade</th>
+//                   </tr>
+//                   <tr>
+//                     <th>PA I</th>
+//                     <th>PA II</th>
+//                     <th>SA I</th>
+//                     <th>TOTAL</th>
+//                     <th>GRADE</th>
+//                     <th>PA III</th>
+//                     <th>PA IV</th>
+//                     <th>SA II</th>
+//                     <th>TOTAL</th>
+//                     <th>GRADE</th>
+//                   </tr>
+//                 </>
+//               )}
+//             </thead>
+//             <tbody>
+//               {subjectRows.map(row => (
+//                 <tr key={row.sub}>
+//                   <td>{row.sub.toUpperCase()}</td>
+//                   {isPrimary ? (
+//                     <>
+//                       <td>{row.pa1}</td>
+//                       <td>{row.pa2}</td>
+//                       <td>{row.pa2}</td>
+//                       <td>{row.sa1}</td>
+//                       <td>{typeof row.total === "number" ? row.total.toFixed(1) : row.total}</td>
+//                       <td>{row.point}</td>
+//                       <td>{row.grade}</td>
+//                     </>
+//                   ) : isHalfYearly ? (
+//                     <>
+//                       <td>{row.pa1.toFixed(1)}</td>
+//                       <td>{row.pa2.toFixed(1)}</td>
+//                       <td>{row.sa1.toFixed(1)}</td>
+//                       <td>{row.term1.toFixed(1)}</td>
+//                       <td>{row.term1Point}</td>
+//                       <td>{row.term1Grade}</td>
+//                     </>
+//                   ) : (
+//                     <>
+//                       <td>{row.pa1.toFixed(1)}</td>
+//                       <td>{row.pa2.toFixed(1)}</td>
+//                       <td>{row.sa1.toFixed(1)}</td>
+//                       <td>{row.term1.toFixed(1)}</td>
+//                       <td>{row.term1Grade}</td> {/* ✅ Term 1 Grade */}
 
-      const { grade, point } = getGradePointAndGrade(finalTotal);
+//                       <td>{row.pa3.toFixed(1)}</td>
+//                       <td>{row.pa4.toFixed(1)}</td>
+//                       <td>{row.sa2.toFixed(1)}</td>
+//                       <td>{row.term2.toFixed(1)}</td>
+//                       <td>{row.term2Grade}</td> {/* ✅ Term 2 Grade */}
 
+//                       <td>{row.finalTotal.toFixed(1)}</td>
+//                       <td>{row.finalPoint}</td>
+//                       <td>{row.finalGrade}</td>
+//                     </>
+//                   )}
+//                 </tr>
+//               ))}
+
+//               {/* Total Row */}
+//               <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
+//                 <td>TOTAL (Avg)</td>
+//                 {isPrimary ? (
+//                   <td colSpan="6" style={{ textAlign: "center" }}>{avgF.toFixed(1)}</td>
+//                 ) : isHalfYearly ? (
+//                   <>
+//                     <td colSpan="3"></td>
+//                     <td>{avgT1.toFixed(1)}</td>
+//                     <td>—</td>
+//                     <td>—</td>
+//                   </>
+//                 ) : (
+//                   <>
+//                     <td colSpan="3"></td>
+//                     <td>{avgT1.toFixed(1)}</td>
+//                     <td>—</td>
+
+//                     <td colSpan="3"></td>
+//                     <td>{avgT2.toFixed(1)}</td>
+//                     <td>—</td>
+
+//                     <td>{avgF.toFixed(1)}</td>
+//                     <td>—</td>
+//                     <td>—</td>
+//                   </>
+//                 )}
+//               </tr>
+//             </tbody>
+//           </table>
+//         </div>
+//       </div>
+
+//       {/* Footer */}
+//       <div style={{ display: "flex", justifyContent: "space-between", marginTop: "15px", fontSize: "10pt", gap: "10px", flexWrap: "wrap" }}>
+//         <div style={{ flex: "1 1 30%", minWidth: "180px" }}>
+//           <table className="marks-table" style={{ width: "100%", fontSize: "9pt" }}>
+//             <thead><tr><th>MARKS RANGE</th><th>GRADE</th><th>GRADE POINT</th></tr></thead>
+//             <tbody>
+//               <tr><td>91-100</td><td>A1</td><td>10.0</td></tr>
+//               <tr><td>81-90</td><td>A2</td><td>09.0</td></tr>
+//               <tr><td>71-80</td><td>B1</td><td>08.0</td></tr>
+//               <tr><td>61-70</td><td>B2</td><td>07.0</td></tr>
+//               <tr><td>51-60</td><td>C1</td><td>06.0</td></tr>
+//               <tr><td>41-50</td><td>C2</td><td>05.0</td></tr>
+//               <tr><td>33-40</td><td>D</td><td>04.0</td></tr>
+//               <tr><td>21-32</td><td>E1</td><td></td></tr>
+//               <tr><td>00-20</td><td>E2</td><td></td></tr>
+//             </tbody>
+//           </table>
+//         </div>
+
+//         <div style={{ flex: "1 1 55%", minWidth: "300px", display: "flex", flexDirection: "column", lineHeight: 1.4 }}>
+//           <div>
+//             Students are assessed according to the following :-<br />
+//             Promotion is based on the day-to-day work of the student<br />
+//             Throughout the year and also on the performance in the half<br />
+//             Yearly/Summative examination.<br />
+//             {isHalfYearly ? (
+//               "First Term: PAⅠ(10%) + PAⅡ(10%) + SAⅠ(80%) = 100%"
+//             ) : (
+//               <>
+//                 First Term: PAⅠ(10%) + PAⅡ(10%) + SAⅠ(80%) = 100%<br />
+//                 Second Term: PAⅢ(10%) + PAⅣ(10%) + SAⅡ(80%) = 100%<br />
+//                 Final Result: (First Term + Second Term) ÷ 2 = 100%
+//               </>
+//             )}
+//           </div>
+
+//           <div style={{ display: "flex", justifyContent: "space-between", marginTop: "25px", width: "100%" }}>
+//             <div style={{ fontSize: "10pt", display: "flex", gap: "20px", marginTop: "10px" }}>
+//               <div>Class Teacher Sig._________</div>
+//               <div>Principal Sig.__________</div>
+//             </div>
+//             <div style={{ border: "1px solid black", padding: "3px", width: "140px", fontSize: "10pt" }}>
+//               <div style={{ borderBottom: "1px solid black", padding: "4px 0" }}>
+//                 <strong>Final Avg<br />Marks</strong>
+//                 <div style={{ textAlign: "right" }}>{avgF.toFixed(1)}</div>
+//               </div>
+//               <div style={{ borderBottom: "1px solid black", padding: "4px 0" }}>
+//                 <strong>Percentage</strong>
+//                 <div style={{ textAlign: "right" }}>{percentage}%</div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </>
+//   );
+// };
+
+const renderReportCard = (r, student, examData, subjectsArray, attendanceDisplay, examType) => {
+  const isPrimary = isPrimaryClass(r.class);
+  const isHalfYearly = examType === "halfYearly";
+
+  const subjectRows = subjectsArray.map(sub => {
+    const pa1 = examData.pa1?.[sub] || 0;
+    const pa2 = examData.pa2?.[sub] || 0;
+    const sa1 = examData.halfYear?.[sub] || 0;
+
+    const pa3 = examData.pa3?.[sub] || 0;
+    const pa4 = examData.pa4?.[sub] || 0;
+    const sa2 = examData.final?.[sub] || 0;
+
+    if (isPrimary) {
+      const total = pa1 + pa2 + pa2 + sa1;
+      const { grade, point } = getGradePointAndGrade(total);
+      return { sub, pa1, pa2, sa1, total, grade, point, isDrawing: sub.toLowerCase() === "drawing" };
+    }
+
+    if (isHalfYearly) {
+      const term1 = (pa1 / 2) + (pa2 / 2) + sa1;
+      const { grade, point } = getGradePointAndGrade(term1);
       return {
         sub,
-        pa1: pa1Weighted,
-        pa2: pa2Weighted,
-        sa1: sa1Weighted,
-        pa3: pa3Weighted,
-        pa4: pa4Weighted,
-        sa2: sa2Weighted,
-        total: finalTotal,
+        pa1: pa1 / 2,
+        pa2: pa2 / 2,
+        sa1,
+        term1,
+        term1Grade: grade,
+        term1Point: point,
+        finalTotal: term1,
         grade,
-        point
+        point,
+        isDrawing: sub.toLowerCase() === "drawing"
       };
-    });
+    }
 
+    // Annual: Both terms with individual grades
+    const term1 = (pa1 / 2) + (pa2 / 2) + sa1;
+    const term2 = (pa3 / 2) + (pa4 / 2) + sa2;
+    const finalTotal = (term1 + term2) / 2;
 
+    const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
+    const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
+    const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
 
-    // ===== TOTAL ROW CALCULATION (Drawing ko exclude kiya gaya) =====
-    let totalPA1 = 0;
-    let totalPA2 = 0;
-    let totalSA1 = 0;
-    let totalPA3 = 0;
-    let totalPA4 = 0;
-    let totalSA2 = 0;
-    let totalMainTotal = 0;
+    return {
+      sub,
+      pa1: pa1 / 2,
+      pa2: pa2 / 2,
+      sa1,
+      pa3: pa3 / 2,
+      pa4: pa4 / 2,
+      sa2,
+      term1,
+      term2,
+      finalTotal,
+      term1Grade: g1,
+      term1Point: p1,
+      term2Grade: g2,
+      term2Point: p2,
+      finalGrade: gf,
+      finalPoint: pf,
+      isDrawing: sub.toLowerCase() === "drawing"
+    };
+  });
 
-    subjectRows.forEach(row => {
-      if (row.sub.toLowerCase() === "drawing") return; // ❌ Drawing ko skip
+  // Totals (exclude Drawing)
+  let sumT1 = 0, sumT2 = 0, sumF = 0, n = 0;
+  subjectRows.forEach(row => {
+    if (row.isDrawing) return;
+    n++;
+    if (isPrimary) {
+      sumF += row.total || 0;
+    } else {
+      sumT1 += row.term1 || 0;
+      sumT2 += row.term2 || 0;
+      sumF += row.finalTotal || 0;
+    }
+  });
 
-      totalPA1 += row.pa1 || 0;
-      totalPA2 += row.pa2 || 0;
-      totalSA1 += row.sa1 || 0;
-      totalPA3 += row.pa3 || 0;
-      totalPA4 += row.pa4 || 0;
-      totalSA2 += row.sa2 || 0;
-      totalMainTotal += row.total || 0;
-    });
+  const avgT1 = n ? sumT1 / n : 0;
+  const avgT2 = n ? sumT2 / n : 0;
+  const avgF = n ? sumF / n : 0;
+  const percentage = avgF.toFixed(2);
 
-
-    let grandTotal = 0;
-    let maxPossible = subjectsArray.length * 100;
-    grandTotal = subjectRows.reduce((sum, row) => {
-      if (row.sub.toLowerCase() === "drawing") return sum; // ❌ Skip Drawing
-      return sum + row.total;
-    }, 0);
-    const percentage = ((grandTotal / maxPossible) * 100).toFixed(2);
-
-    return (
-      <>
-
-        <div
-          style={{
-            border: "2px solid #000",
-            padding: "6px",
-            marginBottom: "10px",
-            borderRadius: "6px",
-            width: "100%",
-            boxSizing: "border-box"
-          }}
-        >
-
-          {/* TOP ROW INSIDE BORDER */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "12pt",
-              fontWeight: "bold",
-              marginBottom: "12px"
-            }}
-          >
-            <span>Reg. No :- 21912662021926123218</span>
-            <span>UDISE No :- 10170504508</span>
-          </div>
-
-          {/* LOGO + SCHOOL NAME */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              width: "100%"
-            }}
-          >
-            <img
-              src={Logo}
-              alt="School Logo"
-              style={{
-                width: "70px",
-                height: "auto",
-                marginRight: "12px"
-              }}
-            />
-
-            <div style={{ flexGrow: 1 }}>
-              <h1
-                style={{
-                  fontFamily: 'Algerian, "Times New Roman", serif',
-                  fontWeight: "normal",
-                  fontSize: "32px",
-                  margin: 0
-                }}
-              >
-                AMBIKA INTERNATIONAL SCHOOL
-              </h1>
-
-              <p style={{ margin: 0, fontSize: "14pt" }}>
-                Based on CBSE curriculum (Play to Xth)
-              </p>
-              <p style={{ margin: 0, fontSize: "14pt" }}>
-                Saidpur, Dighwara (Saran), 841207
-              </p>
-              <p style={{ margin: 0, fontSize: "14pt" }}>
-                Mob. 8797118188
-              </p>
-            </div>
-
-          </div>
-
+  return (
+    <>
+      {/* School Header */}
+      <div style={{ border: "2px solid #000", padding: "6px", marginBottom: "10px", borderRadius: "6px", width: "100%", boxSizing: "border-box" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12pt", fontWeight: "bold", marginBottom: "12px" }}>
+          <span>Reg. No :- 21912662021926123218</span>
+          <span>UDISE No :- 10170504508</span>
         </div>
-
-
-
-        <div
-          style={{
-            border: "2px solid #000",
-            padding: "6px",
-            borderRadius: "6px",
-            marginBottom: "15px",
-            background: "#fff"
-          }}
-        >
-
-          <h3
-            style={{
-              width: "100%",
-              textAlign: "center",
-              fontSize: "16pt",
-              margin: "0 auto 8px auto",
-              display: "block"
-            }}
-          >
-            {isHalfYearly ? "REPORT CARD OF S.A.I" : "ANNUAL REPORT CARD"}
-          </h3>
-
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-around",
-              fontSize: "12pt",
-              marginBottom: "10px",
-              width: "100%",
-            }}
-          >
-            <div><strong>CLASS:</strong> {r.class.toUpperCase()}</div>
-            <div><strong>SECTION:</strong> A</div>
-            <div><strong>SESSION:</strong> 2025-26</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", width: "100%" }}>
+          <img src={Logo} alt="School Logo" style={{ width: "70px", height: "auto", marginRight: "12px" }} />
+          <div style={{ flexGrow: 1 }}>
+            <h1 style={{ fontFamily: 'Algerian, "Times New Roman", serif', fontWeight: "normal", fontSize: "32px", margin: 0 }}>
+              AMBIKA INTERNATIONAL SCHOOL
+            </h1>
+            <p style={{ margin: 0, fontSize: "14pt" }}>Based on CBSE curriculum (Play to Xth)</p>
+            <p style={{ margin: 0, fontSize: "14pt" }}>Saidpur, Dighwara (Saran), 841207</p>
+            <p style={{ margin: 0, fontSize: "14pt" }}>Mob. 8797118188</p>
           </div>
+        </div>
+      </div>
 
+      {/* Student Details */}
+      <div style={{ border: "2px solid #000", padding: "6px", borderRadius: "6px", marginBottom: "15px", background: "#fff" }}>
+        <h3 style={{ width: "100%", textAlign: "center", fontSize: "16pt", margin: "0 auto 8px auto" }}>
+          {isHalfYearly ? "REPORT CARD OF S.A.I" : "ANNUAL REPORT CARD"}
+        </h3>
+        <div style={{ display: "flex", justifyContent: "space-around", fontSize: "12pt", marginBottom: "10px", width: "100%" }}>
+          <div><strong>CLASS:</strong> {r.class.toUpperCase()}</div>
+          <div><strong>SECTION:</strong> A</div>
+          <div><strong>SESSION:</strong> 2025-26</div>
+        </div>
+        <div style={{
+          textAlign: "center",
+          fontSize: "12pt",
+          fontWeight: "bold",
+          padding: "6px 0",
+          margin: "10px 0",
+          border: "2px solid #000",
+          background: "#e6e6e6",
+          borderRadius: "6px",
+          letterSpacing: "1px"
+        }}>
+          STUDENT'S DETAIL
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12pt", lineHeight: "1.6" }}>
+          <tbody>
+            <tr>
+              <td style={{ width: "50%", verticalAlign: "top", paddingRight: "10px", textAlign: "left", fontWeight: "500" }}>
+                <strong>Student's Name:</strong> {student.name}<br />
+                <strong>Mother's Name:</strong> {student.motherName || "N/A"}<br />
+                <strong>Father's Name:</strong> {student.fatherName || "N/A"}<br />
+                <strong>Address:</strong> {student.address || "N/A"}
+              </td>
+              <td style={{ width: "50%", verticalAlign: "top", paddingLeft: "10px", textAlign: "left", fontWeight: "500" }}>
+                <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
+                <strong>Attendance:</strong> {attendanceDisplay}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: "12pt",
-              fontWeight: "bold",
-              padding: "6px 0",
-              margin: "10px 0",
-              border: "2px solid #000",
-              background: "#e6e6e6",
-              borderRadius: "6px",
-              letterSpacing: "1px"
-            }}
-          >
-            STUDENT'S DETAIL
-          </div>
+      {/* Marks Table */}
+      <div style={{ border: "2px solid #000", padding: "12px", borderRadius: "6px", marginTop: "15px", background: "#fff" }}>
+        <h4 style={{
+          width: "100%",
+          textAlign: "center",
+          fontSize: "14pt",
+          margin: "0 auto 10px auto",
+          display: "block",
+          fontWeight: "bold",
+          textDecoration: "underline"
+        }}>
+          Academic Performance : Scholastic Area (9 Point Scale)
+        </h4>
 
+        <div className="table-container" style={{ marginTop: "10px" }}>
+          <table className="marks-table">
+            <thead>
+              {isPrimary ? (
+                <tr>
+                  <th>SUBJECT</th>
+                  <th>PA I</th>
+                  <th>PA II</th>
+                  <th>PA II</th>
+                  <th>SA I</th>
+                  <th>TOTAL</th>
+                  <th>GRADE POINT</th>
+                  <th>GRADE</th>
+                </tr>
+              ) : isHalfYearly ? (
+                <tr>
+                  <th>SUBJECT</th>
+                  <th>PA I</th>
+                  <th>PA II</th>
+                  <th>SA I</th>
+                  <th>TOTAL</th>
+                  <th>GRADE POINT</th>
+                  <th>GRADE</th>
+                </tr>
+              ) : (
+                <>
+                  <tr>
+                    <th rowSpan={2}>SUBJECT</th>
+                    <th colSpan={5}>First Term (SA I)</th>
+                    <th colSpan={5}>Second Term (SA II)</th>
+                    <th rowSpan={2}>
+                      <div className="vertical-header">Final (100)</div>
+                    </th>
+                    <th rowSpan={2}>
+                      <div className="vertical-header">Grade Point</div>
+                    </th>
+                    <th rowSpan={2}>
+                      <div className="vertical-header">Grade</div>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>PA I</th>
+                    <th>PA II</th>
+                    <th>SA I</th>
+                    <th>
+                      <div className="vertical-header">TOTAL</div>
+                    </th>
+                    <th>
+                      <div className="vertical-header">GRADE</div>
+                    </th>
+                    <th>PA III</th>
+                    <th>PA IV</th>
+                    <th>SA II</th>
+                    <th>
+                      <div className="vertical-header">TOTAL</div>
+                    </th>
+                    <th>
+                      <div className="vertical-header">GRADE</div>
+                    </th>
+                  </tr>
+                </>
+              )}
+            </thead>
 
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "12pt",   // Font size increased
-              lineHeight: "1.6",  // Better spacing
-            }}
-          >
             <tbody>
-              <tr>
-                <td
-                  style={{
-                    width: "50%",
-                    verticalAlign: "top",
-                    paddingRight: "10px",
-                    textAlign: "left",   // Left aligned
-                    fontWeight: "500"
-                  }}
-                >
-                  <strong>Student's Name:</strong> {student.name}<br />
-                  <strong>Mother's Name:</strong> {student.motherName || "N/A"}<br />
-                  <strong>Father's Name:</strong> {student.fatherName || "N/A"}<br />
-                  <strong>Address:</strong> {student.address || "N/A"}
-                </td>
+              {subjectRows.map(row => (
+                <tr key={row.sub}>
+                  <td>{row.sub.toUpperCase()}</td>
 
-                <td
-                  style={{
-                    width: "50%",
-                    verticalAlign: "top",
-                    paddingLeft: "10px",
-                    textAlign: "left",   // Left aligned
-                    fontWeight: "500"
-                  }}
-                >
-                  <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
-                  {/* <strong>Contact No:</strong> {student.mobile || "N/A"}<br /> */}
-                  <strong>Attendance:</strong> {attendanceDisplay}
-                </td>
+                  {isPrimary ? (
+                    <>
+                      <td>{row.pa1}</td>
+                      <td>{row.pa2}</td>
+                      <td>{row.pa2}</td>
+                      <td>{row.sa1}</td>
+                      <td>{typeof row.total === "number" ? row.total.toFixed(1) : row.total}</td>
+                      <td>{row.point}</td>
+                      <td>{row.grade}</td>
+                    </>
+                  ) : isHalfYearly ? (
+                    <>
+                      <td>{row.pa1.toFixed(1)}</td>
+                      <td>{row.pa2.toFixed(1)}</td>
+                      <td>{row.sa1.toFixed(1)}</td>
+                      <td>{row.term1.toFixed(1)}</td>
+                      <td>{row.term1Point}</td>
+                      <td>{row.term1Grade}</td>
+                    </>
+                  ) : (
+                    <>
+                      <td>{row.pa1.toFixed(1)}</td>
+                      <td>{row.pa2.toFixed(1)}</td>
+                      <td>{row.sa1.toFixed(1)}</td>
+                      <td>{row.term1.toFixed(1)}</td>
+                      <td>{row.term1Grade}</td>
+
+                      <td>{row.pa3.toFixed(1)}</td>
+                      <td>{row.pa4.toFixed(1)}</td>
+                      <td>{row.sa2.toFixed(1)}</td>
+                      <td>{row.term2.toFixed(1)}</td>
+                      <td>{row.term2Grade}</td>
+
+                      <td>{row.finalTotal.toFixed(1)}</td>
+                      <td>{row.finalPoint}</td>
+                      <td>{row.finalGrade}</td>
+                    </>
+                  )}
+                </tr>
+              ))}
+
+              {/* Total Row */}
+              <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
+                <td>TOTAL (Avg)</td>
+                {isPrimary ? (
+                  <td colSpan="6" style={{ textAlign: "center" }}>{avgF.toFixed(1)}</td>
+                ) : isHalfYearly ? (
+                  <>
+                    <td colSpan="3"></td>
+                    <td>{avgT1.toFixed(1)}</td>
+                    <td>—</td>
+                    <td>—</td>
+                  </>
+                ) : (
+                  <>
+                    <td colSpan="3"></td>
+                    <td>{avgT1.toFixed(1)}</td>
+                    <td>—</td>
+                    <td colSpan="3"></td>
+                    <td>{avgT2.toFixed(1)}</td>
+                    <td>—</td>
+                    <td>{avgF.toFixed(1)}</td>
+                    <td>—</td>
+                    <td>—</td>
+                  </>
+                )}
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
 
-
+      {/* Footer: Grading Scale + Notes + Signature */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        marginTop: "15px",
+        fontSize: "10pt",
+        gap: "10px",
+        flexWrap: "wrap"
+      }}>
+        <div style={{ flex: "1 1 30%", minWidth: "180px" }}>
+          <table className="marks-table" style={{ width: "100%", fontSize: "9pt" }}>
+            <thead>
+              <tr>
+                <th>MARKS RANGE</th>
+                <th>GRADE</th>
+                <th>GRADE POINT</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>91-100</td><td>A1</td><td>10.0</td></tr>
+              <tr><td>81-90</td><td>A2</td><td>09.0</td></tr>
+              <tr><td>71-80</td><td>B1</td><td>08.0</td></tr>
+              <tr><td>61-70</td><td>B2</td><td>07.0</td></tr>
+              <tr><td>51-60</td><td>C1</td><td>06.0</td></tr>
+              <tr><td>41-50</td><td>C2</td><td>05.0</td></tr>
+              <tr><td>33-40</td><td>D</td><td>04.0</td></tr>
+              <tr><td>21-32</td><td>E1</td><td></td></tr>
+              <tr><td>00-20</td><td>E2</td><td></td></tr>
+            </tbody>
+          </table>
         </div>
 
-        <div
-          style={{
-            border: "2px solid #000",
-            padding: "12px",
-            borderRadius: "6px",
-            marginTop: "15px",
-            background: "#fff"
-          }}
-        >
-
-          <h4
-            style={{
-              width: "100%",
-              textAlign: "center",
-              fontSize: "14pt",
-              margin: "0 auto 10px auto",
-              display: "block",
-              fontWeight: "bold",
-              textDecoration: "underline"
-            }}
-          >
-            Academic Performance : Scholastic Area (9 Point Scale)
-          </h4>
-
-          <div className="table-container" style={{ marginTop: "10px" }}>
-            <table className="marks-table">
-              <thead>
-                <tr>
-                  <th>SUBJECT</th>
-                  {isPrimary ? (
-                    <>
-                      <th>PA I</th>
-                      <th>PA II</th>
-                      <th>PA II</th>
-                      <th>SA I</th>
-                    </>
-                  ) : isHalfYearly ? (
-                    <>
-                      <th>PA I</th>
-                      <th>PA II</th>
-                      <th>SA I</th>
-                    </>
-                  ) : (
-                    <>
-                      <th>PA I</th>
-                      <th>PA II</th>
-                      <th>SA I</th>
-                      <th>PA III</th>
-                      <th>PA IV</th>
-                      <th>SA II</th>
-                    </>
-                  )}
-                  <th>TOTAL</th>
-                  <th>GRADE<br />POINT</th>
-                  <th>GRADE</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {subjectRows.map((row) => (
-                  <tr key={row.sub}>
-                    <td>{row.sub.toUpperCase()}</td>
-
-                    {isPrimary ? (
-                      <>
-                        <td>{row.pa1}</td>
-                        <td>{row.pa2}</td>
-                        <td>{row.pa2}</td>
-                        <td>{row.sa1}</td>
-                      </>
-                    ) : isHalfYearly ? (
-                      <>
-                        <td>{row.pa1}</td>
-                        <td>{row.pa2}</td>
-                        <td>{row.sa1}</td>
-                      </>
-                    ) : (
-                      <>
-                        <td>{row.pa1}</td>
-                        <td>{row.pa2}</td>
-                        <td>{row.sa1}</td>
-                        <td>{row.pa3}</td>
-                        <td>{row.pa4}</td>
-                        <td>{row.sa2}</td>
-                      </>
-                    )}
-
-                    <td>{typeof row.total === "number" ? row.total.toFixed(1) : row.total}</td>
-                    <td>{row.point}</td>
-                    <td>{row.grade}</td>
-                  </tr>
-                ))}
-
-                {isPrimary && (
-                  <tr>
-                    <td>DRAWING</td>
-                    <td colSpan="8">B</td>
-                  </tr>
-                )}
-
-                {/* ===== TOTAL ROW (Drawing removed) ===== */}
-                <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
-                  <td>TOTAL</td>
-
-                  {isPrimary ? (
-                    <>
-                      <td>{totalPA1}</td>
-                      <td>{totalPA2}</td>
-                      <td>{totalPA2}</td>
-                      <td>{totalSA1}</td>
-                    </>
-                  ) : isHalfYearly ? (
-                    <>
-                      <td>{totalPA1}</td>
-                      <td>{totalPA2}</td>
-                      <td>{totalSA1}</td>
-                    </>
-                  ) : (
-                    <>
-                      <td>{totalPA1}</td>
-                      <td>{totalPA2}</td>
-                      <td>{totalSA1}</td>
-                      <td>{totalPA3}</td>
-                      <td>{totalPA4}</td>
-                      <td>{totalSA2}</td>
-                    </>
-                  )}
-
-                  <td>{totalMainTotal.toFixed(1)}</td>
-                  <td>—</td>
-                  <td>—</td>
-                </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-        </div>
-
-        {/* Combined Section: Grading Scale | Notes | Signature */}
         <div style={{
+          flex: "1 1 55%",
+          minWidth: "300px",
           display: "flex",
-          justifyContent: "space-between",
-          marginTop: "15px",
-          fontSize: "10pt",
-          gap: "10px",
-          flexWrap: "wrap" // for small screens
+          flexDirection: "column",
+          lineHeight: 1.4
         }}>
-          {/* Column 1: Grading Scale */}
-          <div style={{ flex: "1 1 30%", minWidth: "180px" }}>
-            <table className="marks-table" style={{ width: "100%", fontSize: "9pt" }}>
-              <thead>
-                <tr>
-                  <th>MARKS RANGE</th>
-                  <th>GRADE</th>
-                  <th>GRADE POINT</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>91-100</td><td>A1</td><td>10.0</td></tr>
-                <tr><td>81-90</td><td>A2</td><td>09.0</td></tr>
-                <tr><td>71-80</td><td>B1</td><td>08.0</td></tr>
-                <tr><td>61-70</td><td>B2</td><td>07.0</td></tr>
-                <tr><td>51-60</td><td>C1</td><td>06.0</td></tr>
-                <tr><td>41-50</td><td>C2</td><td>05.0</td></tr>
-                <tr><td>33-40</td><td>D</td><td>04.0</td></tr>
-                <tr><td>21-32</td><td>E1</td><td></td></tr>
-                <tr><td>00-20</td><td>E2</td><td></td></tr>
-              </tbody>
-            </table>
+          <div>
+            Students are assessed according to the following :-<br />
+            Promotion is based on the day-to-day work of the student<br />
+            Throughout the year and also on the performance in the half<br />
+            Yearly/Summative examination.<br />
+            {isHalfYearly ? (
+              "First Term: PAⅠ(10%) + PAⅡ(10%) + SAⅠ(80%) = 100%"
+            ) : (
+              <>
+                First Term: PAⅠ(10%) + PAⅡ(10%) + SAⅠ(80%) = 100%<br />
+                Second Term: PAⅢ(10%) + PAⅣ(10%) + SAⅡ(80%) = 100%<br />
+                Final Result: (First Term + Second Term) ÷ 2 = 100%
+              </>
+            )}
           </div>
 
-          {/* Column 2: Notes */}
-
-          {/* Column 2: Notes + Result Box Together */}
           <div style={{
-            flex: "1 1 55%",
-            minWidth: "300px",
             display: "flex",
-            flexDirection: "column",
-            lineHeight: 1.4
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginTop: "25px",
+            width: "100%"
           }}>
-
-            {/* Notes Section */}
-            <div>
-              Students are assessed according to the following :-<br /> Promotion is based on the day-to-day work of the student<br /> Throughout the year and also on the performance in the half<br /> Yearly/Summative examination.<br />
-              First Term : PAⅠ(10%)+PAII(10%)+SAI(80%) =100%<br />
-              {!isHalfYearly && "Second Term : PAIII(10%)+PAIV(10%)+SAII(80%) =100%"}<br />
-              {!isHalfYearly && "Final Result : 50% of 1st Term + 50% of 2nd Term =100%"} </div>
-
-            {/* Row: Principal Left + Result Box Right */}
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              marginTop: "25px",
-              width: "100%"
-            }}>
-
-              {/* LEFT SIDE : Principal Signature */}
-              <div style={{ fontSize: "10pt", display: "flex", gap: "20px", marginTop: "10px" }}>
-                <div style={{ marginBottom: "40px" }}>
-                  Class Teacher Sig._________
-                </div>
-                Principal Sig.__________
-              </div>
-
-              {/* RIGHT SIDE : RESULT BOX */}
-              <div style={{
-                border: "1px solid black",
-                padding: "3px",
-                width: "140px",
-                fontSize: "10pt",
-                height: "fit-content"
-              }}>
-
-                <div style={{ borderBottom: "1px solid black", padding: "4px 0" }}>
-                  <strong>Total obtain<br />marks</strong>
-                  <div style={{ textAlign: "right" }}>{grandTotal}</div>
-                </div>
-
-                <div style={{ borderBottom: "1px solid black", padding: "4px 0" }}>
-                  <strong>Percentage</strong>
-                  <div style={{ textAlign: "right" }}>{percentage}%</div>
-                </div>
-
-              </div>
-
+            <div style={{ fontSize: "10pt", display: "flex", gap: "20px", marginTop: "10px" }}>
+              <div>Class Teacher Sig._________</div>
+              <div>Principal Sig.__________</div>
             </div>
-
+            <div style={{
+              border: "1px solid black",
+              padding: "3px",
+              width: "140px",
+              fontSize: "10pt"
+            }}>
+              <div style={{ borderBottom: "1px solid black", padding: "4px 0" }}>
+                <strong>Final Avg<br />Marks</strong>
+                <div style={{ textAlign: "right" }}>{avgF.toFixed(1)}</div>
+              </div>
+              <div style={{ borderBottom: "1px solid black", padding: "4px 0" }}>
+                <strong>Percentage</strong>
+                <div style={{ textAlign: "right" }}>{percentage}%</div>
+              </div>
+            </div>
           </div>
-
-
-
-
         </div>
-      </>
-    );
-  };
-
+      </div>
+    </>
+  );
+};
   return (
     <div className="view-result-container">
       <style>{`
@@ -867,6 +1075,16 @@ const ViewResult = () => {
   background: #fff;
 }
 
+.vertical-header {
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  white-space: nowrap;
+  padding: 6px 2px;
+  min-width: 30px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.75rem;
+}
 
 
         @media print {

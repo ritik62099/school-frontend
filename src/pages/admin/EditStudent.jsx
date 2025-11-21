@@ -379,7 +379,8 @@ const EditStudent = () => {
     address: '',
     aadhar: '',
     transport: false,
-    transportFee: '' // ✅ Added
+    transportFee: '',
+    dob: "" 
   });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
@@ -410,18 +411,20 @@ const EditStudent = () => {
         const student = await res.json();
 
         setFormData({
-          name: student.name || '',
-          fatherName: student.fatherName || '',
-          motherName: student.motherName || '',
-          class: student.class || '',
-          section: student.section || '',
-          rollNo: student.rollNo || '',
-          mobile: student.mobile || '',
-          address: student.address || '',
-          aadhar: student.aadhar || '',
-          transport: parseBoolean(student.transport),
-          transportFee: student.transportFee || '' // ✅ Added
-        });
+  name: student.name || '',
+  fatherName: student.fatherName || '',
+  motherName: student.motherName || '',
+  class: student.class || '',
+  section: student.section || '',
+  rollNo: student.rollNo || '',
+  mobile: student.mobile || '',
+  address: student.address || '',
+  aadhar: student.aadhar || '',
+  transport: parseBoolean(student.transport),
+  transportFee: student.transportFee || '',
+  dob: student.dob ? student.dob.split("T")[0] : ""   // ✅ ADD THIS
+});
+
 
         setPhotoPreview(student.photo || '');
       } catch (err) {
@@ -555,6 +558,15 @@ const EditStudent = () => {
           <InputField label="Section" name="section" value={formData.section} onChange={handleChange} />
           <InputField label="Roll No" name="rollNo" value={formData.rollNo} onChange={handleChange} type="number" />
           <InputField label="Mobile" name="mobile" value={formData.mobile} onChange={handleChange} type="tel" />
+          <InputField
+  label="Date of Birth"
+  name="dob"
+  type="date"
+  value={formData.dob}
+  onChange={handleChange}
+  required
+/>
+
           <InputField
             label="Uses School Transport"
             name="transport"
