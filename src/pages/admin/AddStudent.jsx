@@ -315,7 +315,7 @@ const AddStudent = () => {
               name="dob"
               value={formData.dob}
               onChange={handleChange}
-              required
+              
               style={styles.input}
             />
           </div>
