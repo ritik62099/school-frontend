@@ -564,7 +564,7 @@ const EditStudent = () => {
   type="date"
   value={formData.dob}
   onChange={handleChange}
-  required
+  
 />
 
           <InputField
