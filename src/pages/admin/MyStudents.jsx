@@ -1,3 +1,6 @@
+
+
+
 // src/pages/teacher/MyStudents.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -9,12 +12,16 @@ const MyStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedClass, setSelectedClass] = useState("");
+  const [classes, setClasses] = useState([]);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
 
   const isMobile = useMemo(() => window.innerWidth <= 768, []);
 
+  // Fetch students
   useEffect(() => {
     const fetchMyStudents = async () => {
       try {
@@ -29,7 +36,14 @@ const MyStudents = () => {
         }
 
         const data = await res.json();
-        setStudents(Array.isArray(data) ? data : []);
+
+        const validData = Array.isArray(data) ? data : [];
+        setStudents(validData);
+
+        // Extract unique classes
+        const classList = [...new Set(validData.map(s => s.class))];
+        setClasses(classList);
+
       } catch (err) {
         console.error("MyStudents fetch error:", err);
         setError(err.message || "Unable to load your students");
@@ -41,7 +55,12 @@ const MyStudents = () => {
     fetchMyStudents();
   }, []);
 
-  const showBottomTab = isMobile && 
+  // Filter students by selected class
+  const filteredStudents = selectedClass
+    ? students.filter(s => s.class === selectedClass)
+    : students;
+
+  const showBottomTab = isMobile &&
     ['/dashboard', '/my-students', '/attendance', '/teachers', '/profile'].includes(location.pathname);
 
   const getScrollContainerHeight = () => {
@@ -106,6 +125,8 @@ const MyStudents = () => {
         minHeight: '100vh',
         paddingBottom: showBottomTab ? '70px' : '2rem'
       }}>
+        
+        {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -133,7 +154,33 @@ const MyStudents = () => {
           </button>
         </div>
 
-        {students.length === 0 ? (
+        {/* Class Filter Dropdown */}
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={{ fontWeight: "600", marginBottom: "6px", display: "block" }}>
+            Filter by Class
+          </label>
+
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value)}
+            style={{
+              padding: "0.6rem",
+              borderRadius: "8px",
+              border: "1px solid #cbd5e1",
+              width: "200px",
+            }}
+          >
+            <option value="">All Classes</option>
+            {classes.map((cls) => (
+              <option key={cls} value={cls}>
+                Class {cls}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Students Table */}
+        {filteredStudents.length === 0 ? (
           <p style={{
             textAlign: 'center',
             marginTop: '2rem',
@@ -141,7 +188,7 @@ const MyStudents = () => {
             color: '#64748b',
             padding: '1rem'
           }}>
-            No students assigned to your classes.
+            No students found for this class.
           </p>
         ) : (
           <div style={{
@@ -163,7 +210,7 @@ const MyStudents = () => {
                 </tr>
               </thead>
               <tbody>
-                {students.map((student) => (
+                {filteredStudents.map((student) => (
                   <tr key={student._id}>
                     <td data-label="Name">{student.name}</td>
                     <td data-label="Class">{student.class} {student.section && `- ${student.section}`}</td>

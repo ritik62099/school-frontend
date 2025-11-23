@@ -118,7 +118,7 @@ const AdminDashboard = () => {
     ...(teacherSummary?.canMarkAnyAttendance
       ? [
           { label: 'Mark Attendance', path: '/attendance', color: '#9b59b6' },
-          { label: 'Add Student', path: '/add-student', color: '#3498db' },
+          // { label: 'Add Student', path: '/add-student', color: '#3498db' },
           // { label: 'View Result', path: '/view-result', color: '#f39c12' },
           { label: 'Attendance Download', path: '/attendance/monthly-report', color: '#f39c12' }
         ]
