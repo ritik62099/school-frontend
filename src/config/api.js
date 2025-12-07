@@ -90,6 +90,11 @@ settings: {
   getExamDates: api('/api/settings/exam-dates'),
   getExamVisibility: api('/api/settings/exam-visibility'),
   setExamVisibility: api('/api/settings/exam-visibility'),
+  saveSession: api('/api/settings/session'),   // ✅
+  getSession: api('/api/settings/session'), 
+  // ⭐ NEW: Admit Card Notes (validity + general)
+  saveAdmitNotes: api('/api/settings/admit-notes'),
+  getAdmitNotes: api('/api/settings/admit-notes'),
 },
  
 };

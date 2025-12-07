@@ -1,3 +1,5 @@
+
+
 // src/pages/admin/AdmitCards.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +13,7 @@ const AdmitCards = () => {
   const [logoBase64, setLogoBase64] = useState('');
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [backendClasses, setBackendClasses] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const navigate = useNavigate();
 
   const [session, setSession] = useState('2025-2026');
@@ -33,14 +36,18 @@ const AdmitCards = () => {
       });
   }, [students, backendClasses]);
 
+  // 🔹 Filter students by class
   useEffect(() => {
     if (!selectedClass) {
       setFilteredStudents(students);
     } else {
       setFilteredStudents(students.filter(s => s.class === selectedClass));
     }
+
+     setSelectedIds([]);
   }, [selectedClass, students]);
 
+  // 🔹 Convert logo to base64 (for printing)
   useEffect(() => {
     const convertLogoToBase64 = async () => {
       try {
@@ -51,7 +58,6 @@ const AdmitCards = () => {
         reader.onloadend = () => {
           const base64Logo = reader.result;
 
-          // ✅ ensure image actually loaded before marking ready
           const img = new Image();
           img.onload = () => {
             setLogoBase64(base64Logo);
@@ -59,7 +65,7 @@ const AdmitCards = () => {
           };
           img.onerror = () => {
             console.error("Logo failed to load visually");
-            setLogoLoaded(true); // allow UI
+            setLogoLoaded(true);
           };
           img.src = base64Logo;
         };
@@ -74,30 +80,7 @@ const AdmitCards = () => {
     convertLogoToBase64();
   }, []);
 
-const saveExamDates = async () => {
-  try {
-    const res = await fetch(endpoints.settings.saveExamDates, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      },
-      body: JSON.stringify({ examDates })
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert("Exam dates saved successfully!");
-    } else {
-      alert("Failed to save exam dates!");
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Error saving exam dates!");
-  }
-};
-
+  // 🔹 Load classes from backend
   useEffect(() => {
     const fetchClasses = async () => {
       const token = localStorage.getItem('token');
@@ -118,289 +101,404 @@ const saveExamDates = async () => {
     fetchClasses();
   }, []);
 
+  // 🔹 Load exam dates from backend
   useEffect(() => {
-  const fetchExamDates = async () => {
-    try {
-      const res = await fetch(endpoints.settings.getExamDates, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+    const fetchExamDates = async () => {
+      try {
+        const res = await fetch(endpoints.settings.getExamDates, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.examDates) {
+          setExamDates(data.examDates);
         }
+      } catch (err) {
+        console.error("Failed to load exam dates", err);
+      }
+    };
+
+    fetchExamDates();
+  }, []);
+
+  // 🔹 Load session from backend
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const res = await fetch(endpoints.settings.getSession, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+
+        const data = await res.json();
+        if (res.ok && data.session) {
+          setSession(data.session);
+        }
+      } catch (err) {
+        console.error("Failed to load session", err);
+      }
+    };
+
+    fetchSession();
+  }, []);
+
+  // 🔹 Load admit notes (validity + custom) from backend
+  useEffect(() => {
+    const fetchAdmitNotes = async () => {
+      try {
+        const res = await fetch(endpoints.settings.getAdmitNotes, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+
+        const data = await res.json();
+        if (res.ok && data.notes) {
+          if (data.notes.validityNote) setValidityNote(data.notes.validityNote);
+          if (data.notes.customNote) setCustomNote(data.notes.customNote);
+        }
+      } catch (err) {
+        console.error("Failed to load admit notes", err);
+      }
+    };
+
+    fetchAdmitNotes();
+  }, []);
+
+  /* ========== SAVE HANDLERS ========== */
+
+  const saveExamDates = async () => {
+    try {
+      const res = await fetch(endpoints.settings.saveExamDates, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ examDates })
       });
 
       const data = await res.json();
 
-      if (res.ok && data.examDates) {
-        setExamDates(data.examDates);
+      if (res.ok) {
+        alert("✅ Exam dates saved successfully!");
+      } else {
+        alert(data.message || "Failed to save exam dates!");
       }
     } catch (err) {
-      console.error("Failed to load exam dates", err);
+      console.error(err);
+      alert("Error saving exam dates!");
     }
   };
 
-  fetchExamDates();
-}, []);
+  const saveSession = async () => {
+    try {
+      const res = await fetch(endpoints.settings.saveSession, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ session })
+      });
 
+      const data = await res.json();
 
-const printCard = (student) => {
-  if (!logoLoaded || !logoBase64) {
-    alert("School logo is still loading. Please wait a few seconds and try again.");
-    return;
-  }
+      if (res.ok) {
+        alert("✅ Session saved successfully!");
+      } else {
+        alert(data.message || "Failed to save session!");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving session!");
+    }
+  };
 
-  const fallbackPhoto = `data:image/svg+xml,${encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="65" height="75" viewBox="0 0 65 75">
-      <rect width="65" height="75" fill="#f0f0f0"/>
-      <text x="50%" y="45%" font-size="10" fill="#aaa" text-anchor="middle">No</text>
-      <text x="50%" y="60%" font-size="10" fill="#aaa" text-anchor="middle">Photo</text>
-    </svg>`)}
-  `;
+  // Validity + Custom note ko ek hi setting me store kar rahe hain
+  const saveAdmitNotes = async () => {
+    try {
+      const res = await fetch(endpoints.settings.saveAdmitNotes, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ validityNote, customNote })
+      });
 
-  const photoUrl =
-    student.photo && student.photo.trim() !== "" ? student.photo : fallbackPhoto;
+      const data = await res.json();
 
-  const printWindow = window.open("", "_blank");
+      if (res.ok) {
+        alert("✅ Admit card notes saved successfully!");
+      } else {
+        alert(data.message || "Failed to save notes!");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving notes!");
+    }
+  };
 
-  printWindow.document.write(`
-  <html>
-    <head>
-      <title>Admit Card - ${student.name}</title>
-
-      <style>
-        @media print {
-          @page { size: A4; margin: 8mm; }
-
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-          }
-
-          .page {
-            width: 210mm;
-            height: 279mm;
-            display: flex;
-            flex-wrap: wrap;
-            align-content: flex-start;
-            justify-content: flex-start;
-            padding: 8mm;
-          }
-
-          .card {
-            width: calc(50% - 2mm);
-            height: calc((259mm - 4mm) / 2.9);
-            border: 1px solid #000;
-            border-radius: 10px;
-            padding: 6px;
-            margin: 5mm 1mm;
-            box-sizing: border-box;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-          }
-
-          .header {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 1.5px solid #000;
-            padding-bottom: 4px;
-          }
-
-          .logo {
-            width: 55px;
-            height: 45px;
-            object-fit: contain;
-            margin-right: 10px;
-          }
-
-          .school-name {
-            color: #e74c3c;
-            font-size: 18px;
-            font-weight: bold;
-            margin: 0;
-            text-align: center;
-          }
-
-          .session {
-            font-size: 12px;
-            margin: 1px 0;
-            text-align: center;
-            color: #27ae60;
-          }
-
-          .admit-title {
-            text-align: center;
-            background: #34495e;
-            color: white;
-            font-weight: bold;
-            border-radius: 20px;
-            padding: 3px 12px;
-            width: fit-content;
-            margin: 5px auto;
-            font-size: 12px;
-          }
-
-          .details-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-top: 6px;
-            padding: 2px 0;
-            flex: 1;
-          }
-
-          .left-details {
-            width: 68%;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-          }
-
-          .right-photo {
-            width: 20%;
-            display: flex;
-            justify-content: flex-end;
-            align-items: flex-start;
-            // padding-left: 6px;
-           
-          }
-
-          .student-photo {
-            width: 100px;
-            height: 90px;
-            border: 1px solid #000;
-            object-fit: cover;
-            border-radius: 5px;
-            margin-right: 10px;
-          }
-
-          .detail-row {
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            margin-bottom: 5px;
-          }
-
-          .detail-row.combined {
-            gap: 16px;
-            font-size: 14px;
-          }
-
-          .label {
-            font-weight: 600;
-            min-width: 45px;
-            font-size: 14px;
-          }
-
-          .value {
-            font-size: 14px;
-            font-weight: 500;
-          }
-
-          .detail-rowss {
-            margin-bottom: 15px;
-          }
-
-          .note {
-            background: #ffffff;
-            border-top: 1.5px solid #000;
-            padding: 4px;
-            font-size: 12px;
-            margin-top: 4px;
-          }
-
-          ul {
-            padding-left: 18px;
-            margin: 4px 0;
-          }
-
-          li {
-            line-height: 1.4;
-          }
-        }
-      </style>
-    </head>
-
-    <body>
-      <div class="page">
-        <div class="card">
-          <div class="header">
-            <img src="${logoBase64}" class="logo" />
-            <div>
-              <h2 class="school-name">AMBIKA INTERNATIONAL SCHOOL</h2>
-              <p class="session">Saidpur, Dighwara (Saran), 841207</p>
-              <p class="session">Session: - ${session}</p>
-            </div>
-          </div>
-
-          <div class="admit-title">Admit Card</div>
-
-          <div class="details-row">
-            <div class="left-details">
-              <div class="detail-row">
-                <span class="label">Name :</span>
-                <span class="value">${student.name}</span>
-              </div>
-
-              <div class="detail-row">
-                <span class="label">Father's Name :</span>
-                <span class="value">Mr. ${student.fatherName}</span>
-              </div>
-
-              <div class="detail-row combined">
-                <span class="value">Class: ${student.class}</span>
-                <span class="value">Roll No: ${student.rollNo}</span>
-                <span class="value">Sec: ${student.section}</span>
-              </div>
-            </div>
-
-            <div class="right-photo">
-              <img src="${photoUrl}" class="student-photo" />
-            </div>
-          </div>
-
-          <div class="detail-rowss">
-            <span class="label">Date of Examination :</span>
-            <span class="value">${examDates}</span>
-          </div>
-
-          <div class="note">
-            <strong>Note:-</strong>
-            <ul>
-              <li>${validityNote}</li>
-              <li>${customNote}</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </body>
-  </html>
-  `);
-
-  printWindow.document.close();
-  printWindow.focus();
-
-  setTimeout(() => {
-    printWindow.print();
-    printWindow.close();
-  }, 500);
+  const toggleSelectStudent = (id) => {
+  setSelectedIds((prev) =>
+    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  );
 };
 
+  /* ========== PRINT FUNCTIONS (unchanged except session/examDates/notes usage) ========== */
 
-  const printAllCards = () => {
+  const printCard = (student) => {
     if (!logoLoaded || !logoBase64) {
       alert("School logo is still loading. Please wait a few seconds and try again.");
       return;
     }
 
-    const studentsToPrint = filteredStudents.length > 0 ? filteredStudents : students;
-    if (studentsToPrint.length === 0) return;
+    const fallbackPhoto = `data:image/svg+xml,${encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="65" height="75" viewBox="0 0 65 75">
+        <rect width="65" height="75" fill="#f0f0f0"/>
+        <text x="50%" y="45%" font-size="10" fill="#aaa" text-anchor="middle">No</text>
+        <text x="50%" y="60%" font-size="10" fill="#aaa" text-anchor="middle">Photo</text>
+      </svg>`)}
+    `;
+
+    const photoUrl =
+      student.photo && student.photo.trim() !== "" ? student.photo : fallbackPhoto;
 
     const printWindow = window.open("", "_blank");
-    let pagesHtml = "";
 
-    // SVG placeholder (always works offline)
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Admit Card - ${student.name}</title>
+          <style>
+            @media print {
+              @page { size: A4; margin: 8mm; }
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                margin: 0;
+                padding: 0;
+              }
+              .page {
+                width: 210mm;
+                height: 279mm;
+                display: flex;
+                flex-wrap: wrap;
+                align-content: flex-start;
+                justify-content: flex-start;
+                padding: 8mm;
+              }
+              .card {
+                width: calc(50% - 2mm);
+                height: calc((259mm - 4mm) / 2.9);
+                border: 1px solid #000;
+                border-radius: 10px;
+                padding: 6px;
+                margin: 5mm 1mm;
+                box-sizing: border-box;
+                background: white;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+              }
+              .header {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-bottom: 1.5px solid #000;
+                padding-bottom: 4px;
+              }
+              .logo {
+                width: 55px;
+                height: 45px;
+                object-fit: contain;
+                margin-right: 10px;
+              }
+              .school-name {
+                color: #e74c3c;
+                font-size: 18px;
+                font-weight: bold;
+                margin: 0;
+                text-align: center;
+              }
+              .session {
+                font-size: 12px;
+                margin: 1px 0;
+                text-align: center;
+                color: #27ae60;
+              }
+              .admit-title {
+                text-align: center;
+                background: #34495e;
+                color: white;
+                font-weight: bold;
+                border-radius: 20px;
+                padding: 3px 12px;
+                width: fit-content;
+                margin: 5px auto;
+                font-size: 12px;
+              }
+              .details-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-top: 6px;
+                padding: 2px 0;
+                flex: 1;
+              }
+              .left-details {
+                width: 68%;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+              }
+              .right-photo {
+                width: 20%;
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-start;
+              }
+              .student-photo {
+                width: 100px;
+                height: 90px;
+                border: 1px solid #000;
+                object-fit: cover;
+                border-radius: 5px;
+                margin-right: 10px;
+              }
+              .detail-row {
+                display: flex;
+                align-items: center;
+                font-size: 14px;
+                margin-bottom: 5px;
+              }
+              .detail-row.combined {
+                gap: 16px;
+                font-size: 14px;
+              }
+              .label {
+                font-weight: 600;
+                min-width: 45px;
+                font-size: 14px;
+              }
+              .value {
+                font-size: 14px;
+                font-weight: 500;
+              }
+              .detail-rowss {
+                margin-bottom: 15px;
+              }
+              .note {
+                background: #ffffff;
+                border-top: 1.5px solid #000;
+                padding: 4px;
+                font-size: 12px;
+                margin-top: 4px;
+              }
+              ul {
+                padding-left: 18px;
+                margin: 4px 0;
+              }
+              li {
+                line-height: 1.4;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <div class="card">
+              <div class="header">
+                <img src="${logoBase64}" class="logo" />
+                <div>
+                  <h2 class="school-name">AMBIKA INTERNATIONAL SCHOOL</h2>
+                  <p class="session">Saidpur, Dighwara (Saran), 841207</p>
+                  <p class="session">Session: - ${session}</p>
+                </div>
+              </div>
+
+              <div class="admit-title">Admit Card</div>
+
+              <div class="details-row">
+                <div class="left-details">
+                  <div class="detail-row">
+                    <span class="label">Name :</span>
+                    <span class="value">${student.name}</span>
+                  </div>
+
+                  <div class="detail-row">
+                    <span class="label">Father's Name :</span>
+                    <span class="value">Mr. ${student.fatherName || ""}</span>
+                  </div>
+
+                  <div class="detail-row combined">
+                    <span class="value">Class: ${student.class}</span>
+                    <span class="value">Roll No: ${student.rollNo}</span>
+                    <span class="value">Sec: ${student.section || ""}</span>
+                  </div>
+                </div>
+
+                <div class="right-photo">
+                  <img src="${photoUrl}" class="student-photo" />
+                </div>
+              </div>
+
+              <div class="detail-rowss">
+                <span class="label">Date of Examination :</span>
+                <span class="value">${examDates}</span>
+              </div>
+
+              <div class="note">
+                <strong>Note:-</strong>
+                <ul>
+                  <li>${validityNote}</li>
+                  <li>${customNote}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
+
+  const printAllCards = () => {
+  if (!logoLoaded || !logoBase64) {
+    alert("School logo is still loading. Please wait a few seconds and try again.");
+    return;
+  }
+
+  // ✅ Base list: filter applied ho toh filteredStudents, warna sab students
+  const baseList = filteredStudents.length > 0 ? filteredStudents : students;
+
+  // ✅ Agar checkboxes se kuch select kiya hai → sirf unhi ko print karo
+  const studentsToPrint =
+    selectedIds.length > 0
+      ? baseList.filter((s) => selectedIds.includes(s._id))
+      : baseList;
+
+  if (studentsToPrint.length === 0) {
+    alert("No students selected to print.");
+    return;
+  }
+
+  const printWindow = window.open("", "_blank");
+  let pagesHtml = "";
+  // ...aba tumhara baaki code same reh sakta hai...
+
+
     const noPhotoSvg = encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="65" height="75" viewBox="0 0 65 75">
       <rect width="65" height="75" fill="#f0f0f0"/>
@@ -446,15 +544,16 @@ const printCard = (student) => {
               <span class="values">Roll No: ${student.rollNo || "N/A"}</span>
               <span class="values">Sec: ${student.section || "N/A"}</span>
             </div>
-            </div>
-            <div class="right-photo">
+          </div>
+          <div class="right-photo">
             <img src="${photoUrl}" class="student-photo" />
-            </div>
-            </div>
-            <div class="detail-rowss">
-              <span class="label">Date of Examination :</span>
-              <span class="value">${examDates}</span>
-            </div>
+          </div>
+        </div>
+
+        <div class="detail-rowss">
+          <span class="label">Date of Examination :</span>
+          <span class="value">${examDates}</span>
+        </div>
 
         <div class="note">
           <strong>Note:-</strong>
@@ -567,7 +666,7 @@ const printCard = (student) => {
               border: 1px solid #000;
               object-fit: cover;
               border-radius: 5px;
-             margin-right : 15px;
+              margin-right : 15px;
             }
             .detail-row {
               display: flex;
@@ -575,40 +674,34 @@ const printCard = (student) => {
               font-size: 14px;
               margin-bottom: 5px;
             }
-   .detail-row.combined {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  gap: 30px;
-  width: 100%;
-}
-
-.values {
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
+            .detail-row.combined {
+              display: flex;
+              flex-direction: row;
+              justify-content: flex-start;
+              gap: 30px;
+              width: 100%;
+            }
+            .values {
+              font-size: 13px;
+              font-weight: 600;
+              white-space: nowrap;
+            }
             .label {
               font-weight: 600;
               min-width: 50px;
               font-size: 14px;
-              
             }
             .labels {
               font-weight: 600;
               min-width: 100px;
               font-size: 14px;
-              
             }
-            
             .value {
               font-size: 14px;
               font-weight: 500;
             }
-
             .detail-rowss{
-            margin-bottom: 15px;
+              margin-bottom: 15px;
             }
             .note {
               background: #ffffffff;
@@ -636,12 +729,28 @@ const printCard = (student) => {
     printWindow.document.close();
     printWindow.focus();
 
-    // Wait a bit for images to load before printing (optional but helpful)
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
     }, 800);
   };
+   const baseList = filteredStudents.length > 0 ? filteredStudents : students;
+
+  const studentsToPrintForButton =
+    selectedIds.length > 0
+      ? baseList.filter((s) => selectedIds.includes(s._id))
+      : baseList;
+
+  const canPrint =
+    studentsToPrintForButton.length > 0 && logoLoaded && !!logoBase64;
+
+  if (loading || !logoLoaded) {
+    return (
+      <div style={{ textAlign: 'center', padding: '3rem', fontSize: '1.2rem', color: '#7f8c8d' }}>
+        Loading admit cards...
+      </div>
+    );
+  }
 
   if (loading || !logoLoaded) {
     return (
@@ -652,7 +761,14 @@ const printCard = (student) => {
   }
 
   return (
-    <div style={{ padding: '1.5rem', fontFamily: 'Poppins, Arial, sans-serif', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+    <div
+      style={{
+        padding: '1.5rem',
+        fontFamily: 'Poppins, Arial, sans-serif',
+        backgroundColor: '#f8f9fa',
+        minHeight: '100vh',
+      }}
+    >
       <style>{`
         .page-title {
           text-align: center;
@@ -813,6 +929,7 @@ const printCard = (student) => {
       <div className="controls-section">
         <h3 className="controls-title">Admit Card Details</h3>
         <div className="controls-grid">
+          {/* SESSION + SAVE BUTTON */}
           <div className="control-group">
             <label>Session</label>
             <input
@@ -820,32 +937,49 @@ const printCard = (student) => {
               value={session}
               onChange={(e) => setSession(e.target.value)}
             />
+            <button
+              onClick={saveSession}
+              style={{
+                padding: "6px 12px",
+                marginTop: "6px",
+                background: "#16a085",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "600",
+              }}
+            >
+              Save
+            </button>
           </div>
+
+          {/* EXAM DATES + SAVE BUTTON (already tha) */}
           <div className="control-group">
-  <label>Exam Dates</label>
-  <input
-    type="text"
-    value={examDates}
-    onChange={(e) => setExamDates(e.target.value)}
-  />
+            <label>Exam Dates</label>
+            <input
+              type="text"
+              value={examDates}
+              onChange={(e) => setExamDates(e.target.value)}
+            />
+            <button
+              onClick={saveExamDates}
+              style={{
+                padding: "6px 12px",
+                marginTop: "6px",
+                background: "#16a085",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "600",
+              }}
+            >
+              Save
+            </button>
+          </div>
 
-  <button
-    onClick={saveExamDates}
-    style={{
-      padding: "6px 12px",
-      marginTop: "6px",
-      background: "#16a085",
-      color: "white",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontWeight: "600"
-    }}
-  >
-    Save
-  </button>
-</div>
-
+          {/* VALIDITY NOTE + SAVE BUTTON */}
           <div className="control-group">
             <label>Validity Note</label>
             <input
@@ -853,26 +987,61 @@ const printCard = (student) => {
               value={validityNote}
               onChange={(e) => setValidityNote(e.target.value)}
             />
+            <button
+              onClick={saveAdmitNotes}
+              style={{
+                padding: "6px 12px",
+                marginTop: "6px",
+                background: "#16a085",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "600",
+              }}
+            >
+              Save
+            </button>
           </div>
+
+          {/* GENERAL NOTE + SAVE BUTTON */}
           <div className="control-group">
             <label>General Note</label>
             <input
               type="text"
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
-
             />
+            <button
+              onClick={saveAdmitNotes}
+              style={{
+                padding: "6px 12px",
+                marginTop: "6px",
+                background: "#16a085",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "600",
+              }}
+            >
+              Save
+            </button>
           </div>
-
         </div>
       </div>
 
       <div className="filter-section">
         <label>Filter by Class:</label>
-        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+        <select
+          value={selectedClass}
+          onChange={(e) => setSelectedClass(e.target.value)}
+        >
           <option value="">All Classes</option>
-          {classOptions.map(cls => (
-            <option key={cls} value={cls}>{cls}</option>
+          {classOptions.map((cls) => (
+            <option key={cls} value={cls}>
+              {cls}
+            </option>
           ))}
         </select>
       </div>
@@ -882,12 +1051,15 @@ const printCard = (student) => {
           ← Back to Dashboard
         </button>
         <button
-          onClick={printAllCards}
-          disabled={filteredStudents.length === 0 || !logoLoaded || !logoBase64}
-          className="btn btn-print"
-        >
-          🖨️ Print All ({filteredStudents.length})
-        </button>
+  onClick={printAllCards}
+  disabled={!canPrint}
+  className="btn btn-print"
+>
+  🖨️ {selectedIds.length > 0
+    ? `Print Selected (${studentsToPrintForButton.length})`
+    : `Print All (${studentsToPrintForButton.length})`}
+</button>
+
       </div>
 
       {filteredStudents.length === 0 ? (
@@ -897,21 +1069,41 @@ const printCard = (student) => {
       ) : (
         <div className="card-grid">
           {filteredStudents.map((student) => (
+  <div key={student._id} className="student-card">
 
-            <div key={student._id} className="student-card">
-              <div className="student-name">{student.name}</div>
-              <div className="student-detail"><strong>Class:</strong> {student.class}</div>
-              <div className="student-detail"><strong>Roll No:</strong> {student.rollNo}</div>
-              <div className="student-detail"><strong>Section:</strong> {student.section || 'N/A'}</div>
-              <button
-                onClick={() => printCard(student)}
-                disabled={!logoLoaded || !logoBase64}
-                className="print-single-btn"
-              >
-                Print Single Card
-              </button>
-            </div>
-          ))}
+    {/* ✅ Checkbox for selecting this student */}
+    <div style={{ textAlign: "left", marginBottom: "0.3rem" }}>
+      <label style={{ fontSize: "0.85rem", cursor: "pointer" }}>
+        <input
+          type="checkbox"
+          checked={selectedIds.includes(student._id)}
+          onChange={() => toggleSelectStudent(student._id)}
+          style={{ marginRight: "6px" }}
+        />
+        Select for print
+      </label>
+    </div>
+
+    <div className="student-name">{student.name}</div>
+    <div className="student-detail">
+      <strong>Class:</strong> {student.class}
+    </div>
+    <div className="student-detail">
+      <strong>Roll No:</strong> {student.rollNo}
+    </div>
+    <div className="student-detail">
+      <strong>Section:</strong> {student.section || "N/A"}
+    </div>
+    <button
+      onClick={() => printCard(student)}
+      disabled={!logoLoaded || !logoBase64}
+      className="print-single-btn"
+    >
+      Print Single Card
+    </button>
+  </div>
+))}
+
         </div>
       )}
     </div>

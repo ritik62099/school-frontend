@@ -1,13 +1,34 @@
 
+
 // src/pages/admin/IDCardsStudent.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { endpoints } from '../../config/api';
 import Logo from "../../assets/logo.png";
 import BackgroundImage from "../../assets/back.png";
 import { useStudents } from '../../hooks/useStudents';
 
 const SCHOOL_LOGO_URL = Logo;
+
+// Helper → Split students into groups of 9 (for each A4 page)
+const chunkForNine = (arr) => {
+  const pages = [];
+  for (let i = 0; i < arr.length; i += 9) {
+    pages.push(arr.slice(i, i + 9));
+  }
+  return pages;
+};
+
+// Button style helper
+const btnStyle = (bg, mt = '0') => ({
+  marginTop: mt,
+  background: bg,
+  color: 'white',
+  border: 'none',
+  padding: '6px 10px',
+  borderRadius: '4px',
+  cursor: 'pointer',
+  fontSize: '12px'
+});
 
 const IDCardsStudent = () => {
   const [filteredStudents, setFilteredStudents] = useState([]);
@@ -17,33 +38,47 @@ const IDCardsStudent = () => {
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [backendClasses, setBackendClasses] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const navigate = useNavigate();
+  const [sessionText, setSessionText] = useState(() => {
+    return localStorage.getItem("school_session") || "2024-25";
+  });
+
 
   const { students, loading } = useStudents();
 
   // ✅ Generate class options
   const classOptions = useMemo(() => {
     const studentClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
+    const order = [
+      "Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
+      "6th", "7th", "8th", "9th", "10th", "11th", "12th"
+    ];
+
     return backendClasses
       .filter(cls => studentClasses.includes(cls))
       .sort((a, b) => {
-        const order = ["Nursery", "LKG", "UKG", "1st", "2nd", "3rd", "4th", "5th",
-          "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
-        return (order.indexOf(a) - order.indexOf(b)) || a.localeCompare(b);
+        const diff = order.indexOf(a) - order.indexOf(b);
+        return diff || a.localeCompare(b);
       });
   }, [students, backendClasses]);
 
   // ✅ Filter by class
   useEffect(() => {
-    if (!selectedClass) setFilteredStudents(students);
-    else setFilteredStudents(students.filter(s => s.class === selectedClass));
+    if (!selectedClass) {
+      // ❌ No class selected → show nothing
+      setFilteredStudents([]);
+    } else {
+      // ✅ Class selected → show only that class
+      setFilteredStudents(students.filter(s => s.class === selectedClass));
+    }
   }, [selectedClass, students]);
+
 
   // ✅ Fetch classes
   useEffect(() => {
     const fetchClasses = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
+
       try {
         const res = await fetch(endpoints.classes.list, {
           headers: { Authorization: `Bearer ${token}` }
@@ -56,6 +91,7 @@ const IDCardsStudent = () => {
         console.error('Failed to load classes', err);
       }
     };
+
     fetchClasses();
   }, []);
 
@@ -73,9 +109,11 @@ const IDCardsStudent = () => {
         reader.readAsDataURL(blob);
       } catch (err) {
         console.error("Error loading logo:", err);
+        // Even on error, allow UI (buttons) to show
         setLogoLoaded(true);
       }
     };
+
     convertLogoToBase64();
   }, []);
 
@@ -92,253 +130,56 @@ const IDCardsStudent = () => {
         console.error("Error loading background image:", err);
       }
     };
+
     convertBackgroundToBase64();
   }, []);
 
   // ✅ Print Single Student
-  const printIDCard = (student) => generatePrint([student]);
+  const printIDCard = (student) => generatePrint([student], sessionText);
+
 
   // ✅ Print Selected Students
   const printSelected = () => {
-    const studentsToPrint = filteredStudents.filter(s => selectedStudents.includes(s._id));
+    const studentsToPrint = filteredStudents.filter(s =>
+      selectedStudents.includes(s._id)
+    );
+
     if (studentsToPrint.length === 0) {
       alert("Please select at least one student.");
       return;
     }
-    generatePrint(studentsToPrint);
+
+    generatePrint(studentsToPrint, sessionText);
   };
 
   // ✅ Print All Students
   const printAll = () => {
-    if (filteredStudents.length === 0) return alert("No students found!");
-    generatePrint(filteredStudents);
+    if (filteredStudents.length === 0) {
+      alert("No students found!");
+      return;
+    }
+    generatePrint(filteredStudents, sessionText);
   };
 
+  const saveSession = () => {
+    localStorage.setItem("school_session", sessionText);
+    alert("✔ Session Saved Successfully!");
+  };
 
-  // const generatePrint = (studentsList) => {
-  //   if (!logoLoaded || !logoBase64 || !bgBase64) {
-  //     alert("Images are still loading. Please wait...");
-  //     return;
-  //   }
+  const generatePrint = (studentsList, sessionForPrint) => {
+    if (!logoLoaded || !logoBase64 || !bgBase64) {
+      alert("Images are still loading. Please wait...");
+      return;
+    }
 
-  //   const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
 
-  //   const cardsHtml = studentsList.map(student => `
-  //   <div class="id-card">
-  //     <div class="header">
-  //       <img src="${logoBase64}" alt="School Logo" />
-  //       <div class="school-name">AMBIKA <br> INTERNATIONAL SCHOOL</div>
-  //       <div class="school-address">SAIDPUR, DIGHWARA (SARAN)</div>
-  //     </div>
-  //     <div class="photo">
-  //       <img src="${student.photo || 'https://via.placeholder.com/100'}" alt="Student Photo" />
-  //     </div>
-  //     <div class="info">
-  //       <div class="info-row"><span class="label">NAME</span> : ${student.name || 'N/A'}</div>
-  //       <div class="info-row"><span class="label">FATHER</span> : ${student.fatherName || 'N/A'}</div>
-  //       <div class="info-row-between">
-  //       <div><b>CLASS</b> : ${student.class || 'N/A'}</div>
-  //       <div><b>ROLL</b> : ${student.rollNo || 'N/A'}</div>
-  //     </div>
+    if (!printWindow) {
+      alert("Please allow pop-ups to print the ID cards.");
+      return;
+    }
 
-
-  //       <div class="info-row"><span class="label">MOB</span> : ${student.mobile || 'N/A'}</div>
-  //       <div class="info-row"><span class="label">DOB</span> : ${student.dob ? new Date(student.dob).toLocaleDateString() : 'N/A'
-  //     }</div>
-  //       <div class="info-row"><span class="label">ADD</span> : ${student.address?.substring(0, 18) || 'N/A'}</div>
-
-  //     </div>
-  //     <div class="footer">
-  //       <div class="sign"></div>
-  //       <div>PRINCIPAL</div>
-  //     </div>
-  //   </div>
-  // `).join('');
-
-  //   printWindow.document.write(`
-  //   <html>
-  //     <head>
-  //       <title>Student ID Cards</title>
-  //       <style>
-  //         * {
-  //           margin: 0;
-  //           padding: 0;
-  //           box-sizing: border-box;
-  //         }
-
-  //         @media print {
-  //           @page {
-  //             size: A4;
-  //             margin: 5mm; /* Small margin for printer safety */
-  //           }
-  //           body {
-  //             -webkit-print-color-adjust: exact !important;
-  //             print-color-adjust: exact !important;
-  //             break-before: auto;
-  //           }
-  //           .id-card {
-  //             page-break-inside: avoid;
-  //           }
-  //           /* Force new page every 9 cards */
-  //           .page-break {
-  //             page-break-after: always;
-  //           }
-  //         }
-
-  //         body {
-  //           font-family: Arial, sans-serif;
-  //           background: white;
-  //           padding: 5mm;
-  //           display: flex;
-  //           flex-direction: column;
-  //           gap: 2mm;
-  //         }
-
-  //         .card-page {
-  //           display: grid;
-  //           grid-template-columns: repeat(3, 62mm);
-  //           grid-template-rows: repeat(3, 88mm);
-  //           gap: 10mm;
-  //           width: 210mm; /* A4 width minus margins */
-  //           margin: 0 auto;
-  //         }
-
-  //         .id-card {
-  //           width: 64mm;
-  //           height: 98mm;
-  //           background: url('${bgBase64}') no-repeat center center;
-  //           background-size: cover;
-  //           border: 0.3mm solid #003399;
-  //           border-radius: 2mm;
-  //           padding: 2.5mm;
-  //           position: relative;
-  //           font-size: 3.8mm;
-  //           display: flex;
-  //           flex-direction: column;
-            
-  //         }
-
-  //         .header {
-  //           text-align: center;
-  //           color: #003399;
-  //           font-weight: bold;
-  //           line-height: 1.1;
-  //           margin-bottom: 2mm;
-  //         }
-  //         .header img {
-  //           width: 12mm;
-  //           height: auto;
-  //           margin-bottom: 1mm;
-  //         }
-  //         .school-name { font-size: 4.2mm; }
-  //         .school-address { font-size: 2.5mm; }
-
-  //         .photo {
-  //           display: flex;
-  //           justify-content: center;
-  //           margin: 1mm 0;
-  //         }
-  //         .photo img {
-  //           width: 20mm;
-  //           height: 20mm;
-  //           // border-radius: 50%;
-  //           border: 0.3mm solid #003399;
-  //           object-fit: cover;
-  //         }
-
-  //         .info {
-  //           flex: 1;
-  //           display: flex;
-  //           flex-direction: column;
-  //           justify-content: center;
-  //           gap: 0.8mm;
-  //         }
-
-  //         .info-row {
-  //           display: flex;
-  //           align-items: baseline;
-  //         }
-
-  //         .info-row-between {
-  //           display: flex;
-  //           justify-content: space-between;
-  //           width: 100%;
-  //           marginRight: '15px'
-  //         }
-
-  //         .label {
-  //           display: inline-block;
-  //           width: 12mm;
-  //           font-weight: bold;
-  //           flex-shrink: 0;
-  //         }
-
-  //         .footer {
-  //           position: absolute;
-  //           bottom: 2.5mm;
-  //           left: 0;
-  //           right: 0;
-  //           text-align: center;
-  //           font-size: 2.4mm;
-  //         }
-  //         .sign {
-  //           width: 20mm;
-  //           margin: 0 auto 0.5mm;
-  //           border-top: 0.2mm solid #000;
-  //         }
-  //       </style>
-  //     </head>
-  //     <body>
-  //       ${chunkArray(studentsList, 9).map(chunk => `
-  //         <div class="card-page">
-  //           ${chunk.map(student => `
-  //             <div class="id-card">
-  //               <div class="header">
-  //                 <img src="${logoBase64}" alt="School Logo" />
-  //                 <div class="school-name">AMBIKA <br> INTERNATIONAL SCHOOL</div>
-  //                 <div class="school-address">SAIDPUR, DIGHWARA (SARAN)</div>
-  //               </div>
-  //               <div class="photo">
-  //                 <img src="${student.photo || 'https://via.placeholder.com/100'}" alt="Student Photo" />
-  //               </div>
-  //               <div class="info">
-  //                 <div class="info-row"><span class="label">NAME</span> : ${student.name || 'N/A'}</div>
-  //                 <div class="info-row"><span class="label">FATHER</span> : ${student.fatherName || 'N/A'}</div>
-  //                 <div class="info-row"><span class="label">CLASS</span> : ${student.class || 'N/A'}</div>
-  //                 <div class="info-row"><span class="label">ROLL</span> : ${student.rollNo || 'N/A'}</div>
-  //                 <div class="info-row"><span class="label">MOB</span> : ${student.mobile || 'N/A'}</div>
-  //                 <div class="info-row"><span class="label">ADD</span> : ${student.address?.substring(0, 18) || 'N/A'}</div>
-  //                 <div class="info-row"><span class="label">DOB</span> : ${student.dob ? new Date(student.dob).toLocaleDateString() : 'N/A'
-  //                 }</div>
-
-  //               </div>
-  //               <div class="footer">
-  //                 <div class="sign"></div>
-  //                 <div>PRINCIPAL</div>
-  //               </div>
-  //             </div>
-  //           `).join('')}
-  //         </div>
-  //       `).join('')}
-  //     </body>
-  //   </html>
-  // `);
-
-  //   printWindow.document.close();
-  //   printWindow.focus();
-  //   printWindow.print();
-  //   printWindow.close();
-  // };
-
-  const generatePrint = (studentsList) => {
-  if (!logoLoaded || !logoBase64 || !bgBase64) {
-    alert("Images are still loading. Please wait...");
-    return;
-  }
-
-  const printWindow = window.open("", "_blank");
-
-  printWindow.document.write(`
+    printWindow.document.write(`
     <html>
       <head>
         <title>ID Card Print</title>
@@ -363,43 +204,70 @@ const IDCardsStudent = () => {
           }
 
           .page {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, auto);
-  row-gap: 4px;   /* TOP-BOTTOM gap reduce */
-  column-gap: 10px;
-}
-
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, auto);
+            row-gap: 20px;
+            column-gap: 10px;
+            page-break-after: always;
+          }
 
           .id-card {
             background-image: url('${bgBase64}');
             background-size: cover;
             background-position: center;
-            width: 241px;
-            height: 360px;
+            width: 205px;
+            height: 322px;
             border: 1px solid #003399;
             border-radius: 6px;
-            padding: 6px;
+            padding: 4px;
             position: relative;
           }
 
           .header {
-            text-align: center;
-            color: #003399;
-            font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 5px;
+            color: #ffffff;
+            width: 100%;
+            margin-bottom: 4px;
+            position: relative;
           }
 
-          .header img {
-            width: 40px;
-            margin-right: 6px;
+          .header-logo {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            position: absolute;
+            left: 1px;
+            margin-bottom: 6px;
           }
 
-          .school-title {
+          .school-text {
+            text-align: center;
+            line-height: 1;
+            position: relative;
+            right: -14px;
+          }
+
+          .school-text .line-1 {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-top: 8px;
+          }
+
+          .school-text .line-2 {
             font-size: 11px;
-            line-height: 1.1;
+            font-weight: 700;
+            margin-top: -1px;
+          }
+
+          .school-text .line-3,
+          .school-text .line-4 {
+            font-size: 9px;
+            margin-top: 2px;
           }
 
           .photo {
@@ -409,140 +277,175 @@ const IDCardsStudent = () => {
           }
 
           .photo img {
-            width: 120px;
-            height: 130px;
+            width: 90px;
+            height: 95px;
             border: 1px solid #003399;
             object-fit: cover;
+            border-radius: 10px;
+          }
+
+          .session {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 2px;
+            color: #000000;
           }
 
           .student-name {
             text-align: center;
-            background: #fad904ff;
-            margin-top: 8px;
-            padding: 2px;
+            background-color: #76c4f7ff;
             font-weight: bold;
             font-size: 13px;
+            margin-top: 2px;
+            padding: 2px 0;
             border-radius: 4px;
+            color: #ffffffcf;
           }
 
           .info {
-            font-size: 12px;
-            margin-top: 10px;
-            padding: 0 10px;
-            color: white;
-          }
+  font-size: 12px;
+  margin-top: 6px;
+  text-align: left;
+  padding: 0 10px;
+  color: #030303ff;
+}
 
-          .detail-item {
-            margin-bottom: 8px;
-          }
+.detail-item {
+  margin-bottom: 4px;
+}
+
+.mob-row {
+  display: flex;
+  justify-content: space-between;
+  margin-right: 15px;
+  margin-bottom: 4px;
+}
+
+.transport-badge {
+  font-weight: bold;
+  font-size: 10px;
+}
 
           .flex-between {
             display: flex;
             justify-content: space-between;
             margin-right: 15px;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
           }
 
           .footer {
             position: absolute;
-            bottom: 10px;
-            left: 0;
+            bottom: 6px;
+            left: 4px;
             width: 93%;
-            padding: 0 8px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            padding: 0 8px;
             font-size: 10px;
+          }
+
+          .footer-left {
             font-weight: bold;
           }
 
-          .sign-line {
+          .footer-sign {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+
+          .footer-sign-line {
             border-top: 1px solid black;
             width: 50px;
-            margin: auto;
           }
         </style>
       </head>
 
       <body>
-        ${chunkForNine(studentsList).map(page =>
-          `
-          <div class="page">
-            ${page.map(student => `
-              <div class="id-card">
-                
-                <div class="header">
-                  <img src="${logoBase64}" />
-                  <div class="school-title">
-                    <div style="font-size: 10px;">AMBIKA INTERNATIONAL SCHOOL</div>
-                    <span style="font-size:9px; color:#555">SAIDPUR, DIGHWARA</span><br>
-                    <span style="font-size:9px; color:#555">SARAN, BIHAR - 841207</span>
+        ${chunkForNine(studentsList).map(page => `
+            <div class="page">
+              ${page.map(student => `
+                  <div class="id-card">
+                    <div class="header">
+                      <img class="header-logo" src="${logoBase64}" alt="logo" />
+                      <div class="school-text">
+                        <div class="line-1">AMBIKA</div>
+                        <div class="line-2">INTERNATIONAL SCHOOL</div>
+                        <div class="line-3">SAIDPUR, DIGHWARA</div>
+                        <div class="line-4">SARAN, BIHAR - 841207</div>
+                      </div>
+                    </div>
+
+                    <div class="photo">
+                      <img src="${student.photo || 'https://via.placeholder.com/100'}" alt="Student" />
+                    </div>
+
+  <div class="session">
+  ${sessionForPrint || "2024-25"}
+</div>
+
+
+                    <div class="student-name">
+                      ${student.name || 'N/A'}
+                    </div>
+
+                    <div class="info">
+                      <div class="detail-item">
+                        <b>FATHER</b> : ${student.fatherName || "N/A"}
+                      </div>
+
+                      <div class="flex-between">
+                        <div><b>CLASS</b> : ${student.class || "N/A"}</div>
+                        <div><b>ROLL</b> : ${student.rollNo || "N/A"}</div>
+                      </div>
+
+                      <div class="detail-item mob-row">
+  <span><b>MOB</b> : ${student.mobile || "N/A"}</span>
+  ${student.transport
+        ? '<span class="transport-badge">BUS</span>'
+        : ''
+      }
+</div>
+
+
+                      <div class="detail-item">
+                        <b>DOB</b> : ${student.dob
+        ? new Date(student.dob).toLocaleDateString()
+        : "N/A"
+      }
+                      </div>
+
+                      <div class="detail-item">
+                        <b>ADD</b> : ${student.address?.substring(0, 15) || "N/A"}
+                      </div>
+                    </div>
+
+                    <div class="footer">
+                      <div class="footer-left">
+                        Mob: 6203080946
+                      </div>
+                      <div class="footer-sign">
+                        <div class="footer-sign-line"></div>
+                        <div>SECRETARY</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                <div class="photo">
-                  <img src="${student.photo || 'https://via.placeholder.com/100'}" />
-                </div>
-
-                <div class="student-name">${student.name}</div>
-
-                <div class="info">
-                  <div class="detail-item"><b>FATHER</b> : ${student.fatherName || "N/A"}</div>
-
-                  <div class="flex-between">
-                    <div><b>CLASS</b> : ${student.class || "N/A"}</div>
-                    <div><b>ROLL</b> : ${student.rollNo || "N/A"}</div>
-                  </div>
-
-                  <div class="detail-item"><b>MOB</b> : ${student.mobile || "N/A"}</div>
-
-                  <div class="detail-item">
-                    <b>DOB</b> : ${student.dob ? new Date(student.dob).toLocaleDateString() : "N/A"}
-                  </div>
-
-                  <div class="detail-item"><b>ADD</b> : ${student.address?.substring(0, 15) || "N/A"}</div>
-                </div>
-
-                <div class="footer">
-                  <div>Mob: 6203080946</div>
-                  <div style="text-align:center;">
-                    <div class="sign-line"></div>
-                    PRINCIPAL
-                  </div>
-                </div>
-
-              </div>
-            `).join('')}
-          </div>
-          `
-        ).join('')}
+                `).join('')
+      }
+            </div>
+          `).join('')
+      }
       </body>
     </html>
   `);
 
-   printWindow.document.close();
+    printWindow.document.close();
     printWindow.focus();
     printWindow.print();
     printWindow.close();
-};
-
-
-// Helper → Split students into groups of 9
-const chunkForNine = (arr) => {
-  const pages = [];
-  for (let i = 0; i < arr.length; i += 9) {
-    pages.push(arr.slice(i, i + 9));
-  }
-  return pages;
-};
-
-
-  // Helper to split array into chunks of max 9
-  const chunkArray = (arr, size) => {
-    const chunks = [];
-    for (let i = 0; i < arr.length; i += size) {
-      chunks.push(arr.slice(i, i + size));
-    }
-    return chunks;
   };
 
   // ✅ Select checkbox toggle
@@ -552,8 +455,14 @@ const chunkForNine = (arr) => {
     );
   };
 
-  // ✅ UI Section
-  if (loading || !logoLoaded || !bgBase64) return <div style={{ textAlign: 'center', marginTop: '2rem' }}>Loading...</div>;
+  // ✅ Loading state
+  if (loading || !logoLoaded || !bgBase64) {
+    return (
+      <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <>
@@ -561,98 +470,268 @@ const chunkForNine = (arr) => {
         <h2>Student ID Cards (with Background)</h2>
 
         {/* Filter Section */}
-        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            marginBottom: '1rem',
+            display: 'flex',
+            gap: '1rem',
+            alignItems: 'center',
+            flexWrap: 'wrap'
+          }}
+        >
           <label><b>Filter by Class:</b></label>
-          <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
-            <option value="">All</option>
-            {classOptions.map(cls => <option key={cls} value={cls}>{cls}</option>)}
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value)}
+          >
+            <option value="">Select Class</option>   {/* ⭐ Ab "All" nahi, sirf placeholder */}
+            {classOptions.map(cls => (
+              <option key={cls} value={cls}>
+                {cls}
+              </option>
+            ))}
           </select>
-          <button onClick={printAll} style={btnStyle('#2ecc71')}>🖨️ Print All</button>
-          <button onClick={printSelected} style={btnStyle('#3498db')}>🖨️ Print Selected ({selectedStudents.length})</button>
+
+
+          {/* ⭐ Session Input + Save Button */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <label><b>Session:</b></label>
+            <input
+              type="text"
+              value={sessionText}
+              onChange={(e) => setSessionText(e.target.value)}
+              placeholder="2024-25"
+              style={{
+                padding: "5px 8px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                width: "90px",
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
+            />
+
+            <button
+              onClick={saveSession}
+              style={btnStyle('#f39c12')}
+            >
+              💾 Save
+            </button>
+          </div>
+
+          <button onClick={printAll} style={btnStyle('#2ecc71')}>
+            🖨️ Print All
+          </button>
+
+          <button onClick={printSelected} style={btnStyle('#3498db')}>
+            🖨️ Print Selected ({selectedStudents.length})
+          </button>
         </div>
+
 
         {/* Card Grid */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
           {filteredStudents.map(student => (
-            <div key={student._id} style={{ textAlign: 'center', border: selectedStudents.includes(student._id) ? '2px solid #3498db' : 'none', borderRadius: '6px', padding: '4px' }}>
+            <div
+              key={student._id}
+              style={{
+                textAlign: 'center',
+                border: selectedStudents.includes(student._id)
+                  ? '2px solid #3498db'
+                  : 'none',
+                borderRadius: '6px',
+                padding: '4px'
+              }}
+            >
               <input
                 type="checkbox"
                 checked={selectedStudents.includes(student._id)}
                 onChange={() => toggleSelect(student._id)}
                 style={{ marginBottom: '4px' }}
               />
-              <div style={{
-                backgroundImage: `url(${bgBase64})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                border: '1px solid #003399',
-                borderRadius: '6px',
-                width: '241px',
-                height: '370px',
-                padding: '4px',
-                position: 'relative'
-              }}>
-                <div style={{ textAlign: 'center', color: '#003399', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-                  <img src={logoBase64} alt="logo" style={{ width: '40px', marginBottom: '8px', marginTop: '6px' }} />
-                  <div style={{ fontSize: '10px', fontWeight: 'bold' }}>
-                    <div style={{ fontSize: '11px', marginLeft: '4px' }}>AMBIKA INTERNATIONAL SCHOOL</div>
-                    <div style={{ fontSize: '9px', color: '#555' }}>SAIDPUR, DIGHWARA</div>
-                    <div style={{ fontSize: '9px', color: '#555' }}>SARAN, BIHAR - 841207</div>
+
+              <div
+                style={{
+                  backgroundImage: `url(${bgBase64})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: '1px solid #003399',
+                  borderRadius: '6px',
+                  width: '205px',
+                  height: '322px',
+                  padding: '4px',
+                  position: 'relative'
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "5px",
+                    color: "#fff",
+                    width: "100%",
+                    marginBottom: "4px"
+                  }}
+                >
+                  {/* LOGO LEFT */}
+                  <img
+                    src={logoBase64}
+                    alt="logo"
+                    style={{
+                      width: "42px",
+                      height: "42px",
+                      objectFit: "contain",
+                      marginBottom: "6px",
+                      position: "absolute",
+                      left: "3px"   // 👈 LOGO shifted left
+
+                    }}
+                  />
+
+                  {/* TEXT — NOW CENTERED */}
+                  <div style={{ textAlign: "center", lineHeight: "1", right: "-10px", position: "relative" }}>
+                    <div style={{
+                      fontSize: "16px",
+                      fontWeight: "800",
+                      letterSpacing: "1px",
+                      marginTop: "8px"
+                    }}>
+                      AMBIKA
+                    </div>
+
+                    <div style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      marginTop: "-1px"
+                    }}>
+                      INTERNATIONAL SCHOOL
+                    </div>
+
+                    <div style={{ fontSize: "9px", marginTop: "2px" }}>
+                      SAIDPUR, DIGHWARA
+                    </div>
+
+                    <div style={{ fontSize: "9px" }}>
+                      SARAN, BIHAR - 841207
+                    </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    marginTop: '8px'
+                  }}
+                >
                   <img
                     src={student.photo || 'https://via.placeholder.com/100'}
                     alt="Student"
                     style={{
-                      width: '120px',
-                      height: '130px',
+                      width: '90px',
+                      height: '95px',
                       border: '1px solid #003399',
-                      objectFit: 'cover'
+                      objectFit: 'cover',
+                      borderRadius: '10px'
                     }}
                   />
                 </div>
 
-                {/* Student Name Under Photo */}
+                {/* SESSION BELOW IMAGE */}
                 <div
                   style={{
                     textAlign: 'center',
-                    backgroundColor: '#fad904ff',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    marginTop: '2px',
+                    color: '#000000ff'
+                  }}
+                >
+                  {sessionText || "2024-25"}
+                </div>
+
+
+                {/* Student Name Under Photo */}
+                < div
+                  style={{
+                    textAlign: 'center',
+                    backgroundColor: '#76c4f7ff',
                     fontWeight: 'bold',
                     fontSize: '13px',
-                    marginTop: '8px',
+                    marginTop: '4px',
                     padding: '2px 0',
-                    borderRadius: '4px'
+                    borderRadius: '4px',
+                    color: '#ffffffcf'
+
                   }}
                 >
                   {student.name || 'N/A'}
                 </div>
 
+                <div
+                  style={{
+                    fontSize: '12px',
+                    marginTop: '6px',
+                    textAlign: 'left',
+                    padding: '0 10px',
+                    color: '#030303ff'
 
-                <div style={{ fontSize: '12px', marginTop: '10px', textAlign: 'left', padding: '0 10px', color: '#ffffffff' }}>
-                  <div className="detail-item"><b>FATHER</b> : {student.fatherName || 'N/A'}</div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
-                    marginRight: '15px'
-                  }}>
+                  }}
+                >
+                  <div className="detail-item">
+                    <b>FATHER</b> : {student.fatherName || 'N/A'}
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '6px',
+                      marginRight: '15px'
+                    }}
+                  >
                     <div><b>CLASS</b> : {student.class || 'N/A'}</div>
                     <div><b>ROLL</b> : {student.rollNo || 'N/A'}</div>
                   </div>
 
-                  <div className="detail-item"><b>MOB</b> : {student.mobile || 'N/A'}</div>
-                  <div className="detail-item"><b>DOB</b> : {
-                    student.dob ? new Date(student.dob).toLocaleDateString() : 'N/A'
-                  }</div>
-                  <div className="detail-item"><b>ADD</b> : {student.address?.substring(0, 15) || 'N/A'}</div>
+                  <div
+                    className="detail-item"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginRight: '15px',
+                    }}
+                  >
+                    <span>
+                      <b>MOB</b> : {student.mobile || 'N/A'}
+                    </span>
+
+                    {student.transport && (
+                      <span style={{ fontWeight: 'bold', fontSize: '11px' }}>
+                        BUS
+                      </span>
+                    )}
+                  </div>
 
 
+                  <div className="detail-item">
+                    <b>DOB</b> : {
+                      student.dob
+                        ? new Date(student.dob).toLocaleDateString()
+                        : 'N/A'
+                    }
+                  </div>
+
+                  <div className="detail-item">
+                    <b>ADD</b> : {student.address?.substring(0, 15) || 'N/A'}
+                  </div>
                 </div>
+
                 <div
                   style={{
                     position: "absolute",
-                    bottom: "10px",
+                    bottom: "8px",
                     left: "0",
                     width: "93%",
                     display: "flex",
@@ -662,12 +741,10 @@ const chunkForNine = (arr) => {
                     fontSize: "10px",
                   }}
                 >
-                  {/* LEFT SIDE — SCHOOL MOBILE */}
                   <div style={{ fontWeight: "bold" }}>
                     Mob: 6203080946
                   </div>
 
-                  {/* RIGHT SIDE — PRINCIPAL SIGNATURE */}
                   <div
                     style={{
                       textAlign: "center",
@@ -680,43 +757,33 @@ const chunkForNine = (arr) => {
                       style={{
                         borderTop: "1px solid black",
                         width: "50px",
-                        // marginBottom: "2px",
                       }}
                     ></div>
-                    <div>PRINCIPAL</div>
+                    <div>SECRETARY</div>
                   </div>
                 </div>
-
-
               </div>
-              <button onClick={() => printIDCard(student)} style={btnStyle('#16a085', '0.5rem')}>Print ID</button>
-            </div>
+
+              <button
+                onClick={() => printIDCard(student)}
+                style={btnStyle('#16a085', '0.5rem')}
+              >
+                Print ID
+              </button>
+            </div >
           ))}
-        </div>
-      </div>
+        </div >
+      </div >
 
       <style>
         {`
-        .detail-item {
-          margin-bottom: 8px;
-        }
-      `}
+          .detail-item {
+            margin-bottom: 6px;
+          }
+        `}
       </style>
-
     </>
   );
-
 };
-
-const btnStyle = (bg, mt = '0') => ({
-  marginTop: mt,
-  background: bg,
-  color: 'white',
-  border: 'none',
-  padding: '6px 10px',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontSize: '12px'
-});
 
 export default IDCardsStudent;

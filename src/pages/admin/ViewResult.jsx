@@ -1,10 +1,10 @@
 
+
 // src/pages/teacher/ViewResult.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import html2pdf from "html2pdf.js";
 import Logo from "../../assets/logo.png";
 import { endpoints } from "../../config/api";
-
 
 const ViewResult = () => {
   const [results, setResults] = useState([]);
@@ -19,6 +19,44 @@ const ViewResult = () => {
   const [classSubjectMap, setClassSubjectMap] = useState({});
   const [searchRoll, setSearchRoll] = useState("");
   const [searchMobile, setSearchMobile] = useState("");
+  const [session, setSession] = useState("");
+
+  const saveSession = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Unauthorized");
+      return;
+    }
+
+    if (!session.trim()) {
+      alert("Please enter session (e.g. 2025-26)");
+      return;
+    }
+
+    try {
+      const res = await fetch(endpoints.settings.saveSession, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ session }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.message || "Failed to save session");
+        return;
+      }
+
+      alert("Session saved successfully");
+    } catch (err) {
+      console.error("Error saving session:", err);
+      alert("Server error while saving session");
+    }
+  };
+
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -52,6 +90,21 @@ const ViewResult = () => {
       })
       .then((mapping) => setClassSubjectMap(mapping))
       .catch((err) => console.error("Error fetching class-subject mapping:", err));
+
+
+    fetch(endpoints.settings.getSession, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          console.error("Failed to fetch session, status:", res.status);
+          return;
+        }
+        const data = await res.json();
+        setSession(data.session || "");
+      })
+      .catch((err) => console.error("Error fetching session:", err));
+
   }, []);
 
   useEffect(() => {
@@ -64,14 +117,14 @@ const ViewResult = () => {
         if (!studentId) continue;
         try {
           const res = await fetch(endpoints.attendance.studentTotal(studentId), {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
             const data = await res.json();
             attMap[studentId] = {
               present: data.totalPresentDays,
               total: data.totalSchoolDays,
-              percentage: data.percentage
+              percentage: data.percentage,
             };
           }
         } catch (err) {
@@ -86,45 +139,34 @@ const ViewResult = () => {
   useEffect(() => {
     let filtered = results;
 
-    // Only classes assigned to teacher
     if (assignedClasses.length > 0) {
       filtered = filtered.filter((r) => assignedClasses.includes(r.class));
     }
 
-    // Name Search
     if (searchTerm) {
       filtered = filtered.filter((r) =>
         r.studentId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Roll Search
     if (searchRoll) {
       filtered = filtered.filter((r) =>
         String(r.studentId?.rollNo || "").includes(searchRoll)
       );
     }
 
-    // Mobile Search
     if (searchMobile) {
       filtered = filtered.filter((r) =>
         String(r.studentId?.mobile || "").includes(searchMobile)
       );
     }
 
-    // Class Filter
     if (selectedClass) {
       filtered = filtered.filter((r) => r.class === selectedClass);
     }
 
     setFilteredResults(filtered);
   }, [searchTerm, searchRoll, searchMobile, selectedClass, results, assignedClasses]);
-
-
-  if (loading) return <h3 style={{ textAlign: "center", padding: "2rem" }}>Loading results...</h3>;
-  if (error) return <h3 style={{ textAlign: "center", color: "red", padding: "2rem" }}>{error}</h3>;
-
-  const classOptions = [...new Set(filteredResults.map((r) => r.class))];
 
   const isPrimaryClass = (className) => {
     const lower = String(className || "").toLowerCase().trim();
@@ -147,15 +189,16 @@ const ViewResult = () => {
     const element = document.getElementById(`report-card-${studentId}-${examType}`);
     if (!element) return;
 
-    const logo = element.querySelector('img');
+    const logo = element.querySelector("img");
     if (logo) {
-      logo.style.width = '60px';
-      logo.style.height = 'auto';
+      logo.style.width = "60px";
+      logo.style.height = "auto";
     }
 
     const opt = {
       margin: 0.4,
-      filename: `${name.replace(/\s+/g, "_")}_${examType === "halfYearly" ? "HalfYearly" : "Annual"}_ReportCard.pdf`,
+      filename: `${name.replace(/\s+/g, "_")}_${examType === "halfYearly" ? "HalfYearly" : "Annual"
+        }_ReportCard.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
@@ -164,21 +207,18 @@ const ViewResult = () => {
     html2pdf().from(element).set(opt).save();
   };
 
-
-
   const printReportCard = (studentId, examType) => {
     const element = document.getElementById(`report-card-${studentId}-${examType}`);
     if (!element) return;
 
     const clone = element.cloneNode(true);
-    const logo = clone.querySelector('img');
+    const logo = clone.querySelector("img");
     if (logo) {
-      logo.style.width = '100px';
-      logo.style.height = 'auto';
-
+      logo.style.width = "100px";
+      logo.style.height = "auto";
     }
 
-    const printWin = window.open('', '_blank');
+    const printWin = window.open("", "_blank");
 
     printWin.document.write(`
   <html>
@@ -190,6 +230,31 @@ const ViewResult = () => {
           margin: 0;
         }
 
+        body, table {
+  font-size: 14px !important; /* default 11–12 hota hai, ye bada karega */
+}
+
+/* subject row spacing */
+.marks-table th, .marks-table td {
+  padding: 6px 5px;          /* space bhi badha diya */
+  font-size: 14px !important;
+}
+
+/* headings bigger */
+h1,h3,h4 {
+  font-size: 22px !important;
+}
+
+/* Final marks & name section visibly larger */
+strong {
+  font-size: 15px !important;
+}
+
+        table th:first-child,
+table td:first-child {
+  width: 125px;
+  font-weight: bold;
+}
         html, body {
           height: 100%;
           width: 100%;
@@ -198,12 +263,12 @@ const ViewResult = () => {
         }
 
         .print-page {
-          height: 297mm;
-          width: 210mm;
-          padding: 12mm;
-          box-sizing: border-box;
-          overflow: hidden;
-        }
+  height: 297mm;
+  width: 210mm;
+  padding: 5mm 10mm;  /* ⬅ Top padding kam kar diya */
+  box-sizing: border-box;
+  overflow: hidden;
+}
 
         .report-border-wrapper {
           border: 5px double #000 !important;
@@ -212,56 +277,162 @@ const ViewResult = () => {
         }
 
         table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        th, td {
-          border: 1px solid #000;
-          padding: 4px;
-          text-align: center;
-        }
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;           /* print ke liye chhota font */
+  table-layout: fixed;
+}
+th, td {
+  border: 1px solid #000;
+  padding: 0px 0px;         /* ← Height kam hogi */
+  line-height: 1.1;         /* ← Text compact hogga */
+  font-size: 13px;          /* Jyada chota chahiye to 12 bhi kar sakte ho */
+}
 
-        .vertical-header {
+.vertical-header {
   writing-mode: vertical-lr;
   text-orientation: mixed;
-  white-space: nowrap;
-  padding: 6px 2px;
-  min-width: 30px;
+  white-space: nowrap2
+  padding: 3px 1px;
+  min-width: 18px;
   text-align: center;
   font-weight: bold;
-  font-size: 0.75rem;
+  font-size: 8px;
 }
+
       </style>
     </head>
     <body>
       <div class="print-page">
         ${clone.outerHTML}
       </div>
+      <script>
+        window.onload = function () {
+          window.focus();
+          window.print();
+        };
+      </script>
     </body>
   </html>
 `);
 
-
     printWin.document.close();
-    printWin.print();
   };
 
   const getStudentFromRecord = (record) => {
     if (!record.studentId) return null;
-    if (typeof record.studentId === 'object' && record.studentId !== null) {
+    if (typeof record.studentId === "object" && record.studentId !== null) {
       return record.studentId;
     }
     return null;
   };
 
+  // ---------- AVERAGE CALC + POSITION (TOP 3) – HOOKS SE PEHLE NAHI, BUT USEMEMO PEHLE  ----------
 
+  const computeAverageForRecord = (r, examType) => {
+    const subjectsArray = classSubjectMap[r.class] || [];
+    if (!subjectsArray.length) return 0;
 
+    const isPrimary = isPrimaryClass(r.class);
+    const examData = r.exams || {};
 
-  const renderReportCard = (r, student, examData, subjectsArray, attendanceDisplay, examType) => {
+    let sumT1 = 0,
+      sumT2 = 0,
+      sumF = 0,
+      n = 0;
+
+    subjectsArray.forEach((sub) => {
+      const lowerSub = String(sub || "").toLowerCase();
+      const isDrawing = lowerSub === "drawing";
+
+      const pa1 = examData.pa1?.[sub] || 0;
+      const pa2 = examData.pa2?.[sub] || 0;
+      const sa1 = examData.halfYear?.[sub] || 0;
+      const pa3 = examData.pa3?.[sub] || 0;
+      const pa4 = examData.pa4?.[sub] || 0;
+      const sa2 = examData.final?.[sub] || 0;
+
+      if (isPrimary) {
+        const total = pa1 + pa2 + sa1;
+        if (!isDrawing) {
+          sumF += total;
+          n++;
+        }
+      } else if (examType === "halfYearly") {
+        const term1 = pa1 / 2 + pa2 / 2 + sa1;
+        if (!isDrawing) {
+          sumT1 += term1;
+          sumF += term1;
+          n++;
+        }
+      } else {
+        const term1 = pa1 / 2 + pa2 / 2 + sa1;
+        const term2 = pa3 / 2 + pa4 / 2 + sa2;
+        const finalTotal = (term1 + term2) / 2;
+        if (!isDrawing) {
+          sumT1 += term1;
+          sumT2 += term2;
+          sumF += finalTotal;
+          n++;
+        }
+      }
+    });
+
+    if (!n) return 0;
+    const avgF = sumF / n;
+    return avgF;
+  };
+
+  const positionMap = useMemo(() => {
+    const map = {};
+    if (!filteredResults.length) return map;
+
+    const byClass = {};
+
+    filteredResults.forEach((r) => {
+      if (!r.class) return;
+      const avg = computeAverageForRecord(r, selectedExamType);
+      if (!byClass[r.class]) byClass[r.class] = [];
+      byClass[r.class].push({ recordId: r._id, avg });
+    });
+
+    Object.keys(byClass).forEach((cls) => {
+      const arr = byClass[cls]
+        .filter((x) => x.avg > 0)
+        .sort((a, b) => b.avg - a.avg);
+
+      arr.slice(0, 3).forEach((item, index) => {
+        map[item.recordId] = index + 1; // 1,2,3
+      });
+    });
+
+    return map;
+  }, [filteredResults, selectedExamType, classSubjectMap]);
+
+  // ---------- AB HOOKS KE BAAD LOADING/ERROR RETURN KAR SAKTE HAIN ----------
+
+  if (loading)
+    return <h3 style={{ textAlign: "center", padding: "2rem" }}>Loading results...</h3>;
+  if (error)
+    return (
+      <h3 style={{ textAlign: "center", color: "red", padding: "2rem" }}>{error}</h3>
+    );
+
+  const classOptions = [...new Set(filteredResults.map((r) => r.class))];
+
+  const renderReportCard = (
+    r,
+    student,
+    examData,
+    subjectsArray,
+    attendanceDisplay,
+    examType,
+    position
+  ) => {
     const isPrimary = isPrimaryClass(r.class);
     const isHalfYearly = examType === "halfYearly";
 
-    const subjectRows = subjectsArray.map(sub => {
+    const subjectRows = subjectsArray.map((sub) => {
       const pa1 = examData.pa1?.[sub] || 0;
       const pa2 = examData.pa2?.[sub] || 0;
       const sa1 = examData.halfYear?.[sub] || 0;
@@ -270,15 +441,16 @@ const ViewResult = () => {
       const pa4 = examData.pa4?.[sub] || 0;
       const sa2 = examData.final?.[sub] || 0;
 
+      const isDrawing = sub.toLowerCase() === "drawing";
+
       if (isPrimary) {
-        // const total = pa1 + pa2 + pa2 + sa1;
         const total = pa1 + pa2 + sa1;
         const { grade, point } = getGradePointAndGrade(total);
-        return { sub, pa1, pa2, sa1, total, grade, point, isDrawing: sub.toLowerCase() === "drawing" };
+        return { sub, pa1, pa2, sa1, total, grade, point, isDrawing };
       }
 
       if (isHalfYearly) {
-        const term1 = (pa1 / 2) + (pa2 / 2) + sa1;
+        const term1 = pa1 / 2 + pa2 / 2 + sa1;
         const { grade, point } = getGradePointAndGrade(term1);
         return {
           sub,
@@ -291,13 +463,12 @@ const ViewResult = () => {
           finalTotal: term1,
           grade,
           point,
-          isDrawing: sub.toLowerCase() === "drawing"
+          isDrawing,
         };
       }
 
-      // Annual: Both terms with individual grades
-      const term1 = (pa1 / 2) + (pa2 / 2) + sa1;
-      const term2 = (pa3 / 2) + (pa4 / 2) + sa2;
+      const term1 = pa1 / 2 + pa2 / 2 + sa1;
+      const term2 = pa3 / 2 + pa4 / 2 + sa2;
       const finalTotal = (term1 + term2) / 2;
 
       const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
@@ -321,14 +492,21 @@ const ViewResult = () => {
         term2Point: p2,
         finalGrade: gf,
         finalPoint: pf,
-        isDrawing: sub.toLowerCase() === "drawing"
+        isDrawing,
       };
     });
 
-    // Totals (exclude Drawing)
-    let sumT1 = 0, sumT2 = 0, sumF = 0, n = 0;
-    subjectRows.forEach(row => {
-      if (row.isDrawing) return;
+    // Drawing alag array me
+    const mainRows = subjectRows.filter((r) => !r.isDrawing);
+    const drawingRows = subjectRows.filter((r) => r.isDrawing);
+
+    // Totals sirf main subjects se
+    let sumT1 = 0,
+      sumT2 = 0,
+      sumF = 0,
+      n = 0;
+
+    mainRows.forEach((row) => {
       n++;
       if (isPrimary) {
         sumF += row.total || 0;
@@ -344,79 +522,237 @@ const ViewResult = () => {
     const avgF = n ? sumF / n : 0;
     const percentage = avgF.toFixed(2);
 
+
+    const positionLabel =
+      position === 1 ? "1st" : position === 2 ? "2nd" : position === 3 ? "3rd" : null;
+
     return (
       <>
         {/* School Header */}
-        <div style={{ border: "2px solid #000", padding: "6px", marginBottom: "10px", borderRadius: "6px", width: "100%", boxSizing: "border-box" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12pt", fontWeight: "bold", marginBottom: "12px" }}>
+        <div
+          style={{
+            border: "2px solid #000",
+            padding: "6px",
+            marginBottom: "10px",
+            borderRadius: "6px",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "12pt",
+              fontWeight: "bold",
+              marginBottom: "12px",
+            }}
+          >
             <span>Reg. No :- 21912662021926123218</span>
             <span>UDISE No :- 10170504508</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", width: "100%" }}>
-            <img src={Logo} alt="School Logo" style={{ width: "70px", height: "auto", marginRight: "12px" }} />
-            <div style={{ flexGrow: 1 }}>
-              <h1 style={{ fontFamily: 'Algerian, "Times New Roman", serif', fontWeight: "normal", fontSize: "32px", margin: 0 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "80px 1fr 80px", // left logo, center text, right empty
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            {/* LEFT: Logo */}
+            <div style={{ display: "flex", justifyContent: "flex-start" }}>
+              <img
+                src={Logo}
+                alt="School Logo"
+                style={{ width: "70px", height: "auto" }}
+              />
+            </div>
+
+            {/* CENTER: Full-width text (ab logo se independent center hoga) */}
+            <div style={{ textAlign: "center", width: "100%", marginLeft: "40px" }}>
+              <h1
+                style={{
+                  fontFamily: 'Algerian, "Times New Roman", serif',
+                  fontWeight: "normal",
+                  fontSize: "34px",
+                  letterSpacing: "2px",
+                  textTransform: "uppercase",
+                  margin: 0,
+                }}
+              >
                 AMBIKA INTERNATIONAL SCHOOL
               </h1>
-              <p style={{ margin: 0, fontSize: "14pt" }}>Based on CBSE curriculum (Play to Xth)</p>
-              <p style={{ margin: 0, fontSize: "14pt" }}>Saidpur, Dighwara (Saran), 841207</p>
+              <p style={{ margin: 0, fontSize: "15pt", fontWeight: 600 }}>
+                Based on CBSE curriculum (Play to Xth)
+              </p>
+              <p style={{ margin: 0, fontSize: "14pt" }}>
+                Saidpur, Dighwara (Saran), 841207
+              </p>
               <p style={{ margin: 0, fontSize: "14pt" }}>Mob. 8797118188</p>
             </div>
+
+            <div />
           </div>
+
+
         </div>
 
         {/* Student Details */}
-        <div style={{ border: "2px solid #000", padding: "6px", borderRadius: "6px", marginBottom: "15px", background: "#fff" }}>
-          <h3 style={{ width: "100%", textAlign: "center", fontSize: "16pt", margin: "0 auto 8px auto" }}>
+        <div
+          style={{
+            border: "2px solid #000",
+            padding: "6px",
+            borderRadius: "6px",
+            marginBottom: "10px",
+            background: "#fff",
+          }}
+        >
+          <h3
+            style={{
+              width: "100%",
+              textAlign: "center",
+              fontSize: "16pt",
+              margin: "0 auto 8px auto",
+            }}
+          >
             {isHalfYearly ? "REPORT CARD OF S.A.I" : "ANNUAL REPORT CARD"}
           </h3>
-          <div style={{ display: "flex", justifyContent: "space-around", fontSize: "12pt", marginBottom: "10px", width: "100%" }}>
-            <div><strong>CLASS:</strong> {r.class.toUpperCase()}</div>
-            <div><strong>SECTION:</strong> A</div>
-            <div><strong>SESSION:</strong> 2025-26</div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-around",
+              fontSize: "12pt",
+              marginBottom: "10px",
+              width: "100%",
+            }}
+          >
+            <div>
+              <strong>CLASS:</strong> {r.class.toUpperCase()}
+            </div>
+            <div>
+              <strong>SECTION:</strong> A
+            </div>
+            <div>
+              <strong>SESSION:</strong> {session || "2025-26"}
+            </div>
           </div>
-          <div style={{
-            textAlign: "center",
-            fontSize: "12pt",
-            fontWeight: "bold",
-            padding: "6px 0",
-            margin: "10px 0",
-            border: "2px solid #000",
-            background: "#e6e6e6",
-            borderRadius: "6px",
-            letterSpacing: "1px"
-          }}>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "12pt",
+              fontWeight: "bold",
+              padding: "6px 0",
+              margin: "10px 0",
+              border: "2px solid #000",
+              background: "#e6e6e6",
+              borderRadius: "6px",
+              letterSpacing: "1px",
+            }}
+          >
             STUDENT'S DETAIL
           </div>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12pt", lineHeight: "1.6" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "12pt",
+              lineHeight: "1.6",
+              padding: "4px",
+            }}
+          >
             <tbody>
               <tr>
-                <td style={{ width: "50%", verticalAlign: "top", paddingRight: "10px", textAlign: "left", fontWeight: "500" }}>
-                  <strong>Student's Name:</strong> {student.name}<br />
-                  <strong>Mother's Name:</strong> {student.motherName || "N/A"}<br />
-                  <strong>Father's Name:</strong> {student.fatherName || "N/A"}<br />
+                {/* LEFT DETAILS */}
+                <td
+                  style={{
+                    width: "40%",
+                    verticalAlign: "top",
+                    paddingRight: "10px",
+                    textAlign: "left",
+                    fontWeight: "500",
+                  }}
+                >
+                  <strong>Student's Name:</strong> {student.name}
+                  <br />
+                  <strong>Mother's Name:</strong> {student.motherName || "N/A"}
+                  <br />
+                  <strong>Father's Name:</strong> {student.fatherName || "N/A"}
+                  <br />
                   <strong>Address:</strong> {student.address || "N/A"}
                 </td>
-                <td style={{ width: "50%", verticalAlign: "top", paddingLeft: "10px", textAlign: "left", fontWeight: "500" }}>
-                  <strong>Roll No:</strong> {student.rollNo || "N/A"}<br />
+
+               
+<td
+  style={{
+    width: "20%",
+    verticalAlign: "top",
+    textAlign: "center",
+  }}
+>
+  <div
+    style={{
+      width: "90px",
+      height: "80px",
+      border: "1px solid #000",
+      margin: "0 auto",
+    }}
+  >
+    <img
+      src={student.photo || "https://via.placeholder.com/100"}
+      alt="Student"
+      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+    />
+  </div>
+</td>
+
+
+                {/* RIGHT DETAILS */}
+                <td
+                  style={{
+                    width: "40%",
+                    verticalAlign: "top",
+                    paddingLeft: "10px",
+                    textAlign: "left",
+                    fontWeight: "500",
+                  }}
+                >
+                  <strong>Roll No:</strong> {student.rollNo || "N/A"}
+                  <br />
                   <strong>Attendance:</strong> {attendanceDisplay}
+                  {positionLabel && (
+                    <>
+                      <br />
+                      <strong>Position:</strong> {positionLabel}
+                    </>
+                  )}
                 </td>
               </tr>
             </tbody>
+
           </table>
         </div>
 
         {/* Marks Table */}
-        <div style={{ border: "2px solid #000", padding: "12px", borderRadius: "6px", marginTop: "15px", background: "#fff" }}>
-          <h4 style={{
-            width: "100%",
-            textAlign: "center",
-            fontSize: "14pt",
-            margin: "0 auto 10px auto",
-            display: "block",
-            fontWeight: "bold",
-            textDecoration: "underline"
-          }}>
+        <div
+          style={{
+            border: "2px solid #000",
+            padding: "12px",
+            borderRadius: "6px",
+            marginTop: "10px",
+            background: "#fff",
+          }}
+        >
+          <h4
+            style={{
+              width: "100%",
+              textAlign: "center",
+              fontSize: "14pt",
+              margin: "0 auto 10px auto",
+              display: "block",
+              fontWeight: "bold",
+              textDecoration: "underline",
+            }}
+          >
             Academic Performance : Scholastic Area (9 Point Scale)
           </h4>
 
@@ -449,17 +785,10 @@ const ViewResult = () => {
                       <th rowSpan={2}>SUBJECT</th>
                       <th colSpan={5}>First Term (SA I)</th>
                       <th colSpan={5}>Second Term (SA II)</th>
-                      <th rowSpan={2}>
-                        <div className="vertical-header">Final (100)</div>
-                      </th>
-                      <th rowSpan={2}>
-                        <div className="vertical-header">Grade Point</div>
-                      </th>
-                      <th rowSpan={2}>
-                        <div className="vertical-header">Grade</div>
-                      </th>
+                      <th colSpan={5}>Final Result</th>
                     </tr>
                     <tr>
+                      {/* First Term */}
                       <th>PA I</th>
                       <th>PA II</th>
                       <th>SA I</th>
@@ -469,6 +798,8 @@ const ViewResult = () => {
                       <th>
                         <div className="vertical-header">GRADE</div>
                       </th>
+
+                      {/* Second Term */}
                       <th>PA III</th>
                       <th>PA IV</th>
                       <th>SA II</th>
@@ -478,13 +809,33 @@ const ViewResult = () => {
                       <th>
                         <div className="vertical-header">GRADE</div>
                       </th>
+
+                      {/* Final Block */}
+                      <th>
+                        <div className="vertical-header">First Term</div>
+                      </th>
+                      <th>
+                        <div className="vertical-header">Second Term</div>
+                      </th>
+                      <th>
+                        <div className="vertical-header">Final (100)</div>
+                      </th>
+                      <th>
+                        <div className="vertical-header">Grade Point</div>
+                      </th>
+                      <th>
+                        <div className="vertical-header">Grade</div>
+                      </th>
                     </tr>
                   </>
                 )}
+
               </thead>
 
+
               <tbody>
-                {subjectRows.map(row => (
+                {/* Main subjects (Drawing ke bina) */}
+                {mainRows.map((row) => (
                   <tr key={row.sub}>
                     <td>{row.sub.toUpperCase()}</td>
 
@@ -493,9 +844,14 @@ const ViewResult = () => {
                         <td>{row.pa1}</td>
                         <td>{row.pa2}</td>
                         <td>{row.sa1}</td>
-                        <td>{typeof row.total === "number" ? row.total.toFixed(1) : row.total}</td>
-                        <td>{row.point}</td>
-                        <td>{row.grade}</td>
+                        <td>
+                          {typeof row.total === "number"
+                            ? row.total.toFixed(1)
+                            : row.total}
+                        </td>
+                        {/* Drawing ke liye grade/point blank */}
+                        <td>{row.isDrawing ? "" : row.point}</td>
+                        <td>{row.isDrawing ? "" : row.grade}</td>
                       </>
                     ) : isHalfYearly ? (
                       <>
@@ -503,36 +859,44 @@ const ViewResult = () => {
                         <td>{row.pa2.toFixed(1)}</td>
                         <td>{row.sa1.toFixed(1)}</td>
                         <td>{row.term1.toFixed(1)}</td>
-                        <td>{row.term1Point}</td>
-                        <td>{row.term1Grade}</td>
+                        {/* Drawing ke liye grade/point blank */}
+                        <td>{row.isDrawing ? "" : row.term1Point}</td>
+                        <td>{row.isDrawing ? "" : row.term1Grade}</td>
                       </>
                     ) : (
                       <>
+                        {/* First Term */}
                         <td>{row.pa1.toFixed(1)}</td>
                         <td>{row.pa2.toFixed(1)}</td>
                         <td>{row.sa1.toFixed(1)}</td>
                         <td>{row.term1.toFixed(1)}</td>
-                        <td>{row.term1Grade}</td>
+                        <td>{row.isDrawing ? "" : row.term1Grade}</td>
 
+                        {/* Second Term */}
                         <td>{row.pa3.toFixed(1)}</td>
                         <td>{row.pa4.toFixed(1)}</td>
                         <td>{row.sa2.toFixed(1)}</td>
                         <td>{row.term2.toFixed(1)}</td>
-                        <td>{row.term2Grade}</td>
+                        <td>{row.isDrawing ? "" : row.term2Grade}</td>
 
+                        {/* Final Block */}
+                        <td>{row.term1.toFixed(1)}</td>
+                        <td>{row.term2.toFixed(1)}</td>
                         <td>{row.finalTotal.toFixed(1)}</td>
-                        <td>{row.finalPoint}</td>
-                        <td>{row.finalGrade}</td>
+                        <td>{row.isDrawing ? "" : row.finalPoint}</td>
+                        <td>{row.isDrawing ? "" : row.finalGrade}</td>
                       </>
                     )}
                   </tr>
                 ))}
 
-                {/* Total Row */}
+                {/* Total Row – sirf main subjects ka */}
                 <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
                   <td>TOTAL (Avg)</td>
                   {isPrimary ? (
-                    <td colSpan="6" style={{ textAlign: "center" }}>{avgF.toFixed(1)}</td>
+                    <td colSpan="6" style={{ textAlign: "center" }}>
+                      {avgF.toFixed(1)}
+                    </td>
                   ) : isHalfYearly ? (
                     <>
                       <td colSpan="3"></td>
@@ -542,35 +906,96 @@ const ViewResult = () => {
                     </>
                   ) : (
                     <>
+                      {/* First Term block */}
                       <td colSpan="3"></td>
                       <td>{avgT1.toFixed(1)}</td>
                       <td>—</td>
 
+                      {/* Second Term block */}
                       <td colSpan="3"></td>
                       <td>{avgT2.toFixed(1)}</td>
                       <td>—</td>
 
+                      {/* Final block: First term, second term, final */}
+                      <td>{avgT1.toFixed(1)}</td>
+                      <td>{avgT2.toFixed(1)}</td>
                       <td>{avgF.toFixed(1)}</td>
                       <td>—</td>
                       <td>—</td>
-
                     </>
                   )}
                 </tr>
+
+                {/* Drawing rows – totals ke baad, bina grade/GP ke */}
+                {drawingRows.map((row) => (
+                  <tr key={row.sub + "-drawing"}>
+                    <td>{row.sub.toUpperCase()}</td>
+
+                    {isPrimary ? (
+                      <>
+                        <td>{row.pa1}</td>
+                        <td>{row.pa2}</td>
+                        <td>{row.sa1}</td>
+                        <td>
+                          {typeof row.total === "number"
+                            ? row.total.toFixed(1)
+                            : row.total}
+                        </td>
+                        <td></td>
+                        <td></td>
+                      </>
+                    ) : isHalfYearly ? (
+                      <>
+                        <td>{row.pa1.toFixed(1)}</td>
+                        <td>{row.pa2.toFixed(1)}</td>
+                        <td>{row.sa1.toFixed(1)}</td>
+                        <td>{row.term1.toFixed(1)}</td>
+                        <td></td>
+                        <td></td>
+                      </>
+                    ) : (
+                      <>
+                        {/* First Term */}
+                        <td>{row.pa1.toFixed(1)}</td>
+                        <td>{row.pa2.toFixed(1)}</td>
+                        <td>{row.sa1.toFixed(1)}</td>
+                        <td>{row.term1.toFixed(1)}</td>
+                        <td></td>
+
+                        {/* Second Term */}
+                        <td>{row.pa3.toFixed(1)}</td>
+                        <td>{row.pa4.toFixed(1)}</td>
+                        <td>{row.sa2.toFixed(1)}</td>
+                        <td>{row.term2.toFixed(1)}</td>
+                        <td></td>
+
+                        {/* Final block */}
+                        <td>{row.term1.toFixed(1)}</td>
+                        <td>{row.term2.toFixed(1)}</td>
+                        <td>{row.finalTotal.toFixed(1)}</td>
+                        <td></td>
+                        <td></td>
+                      </>
+                    )}
+                  </tr>
+                ))}
               </tbody>
+
             </table>
           </div>
         </div>
 
         {/* Footer: Grading Scale + Notes + Signature */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "15px",
-          fontSize: "10pt",
-          gap: "10px",
-          flexWrap: "wrap"
-        }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: "15px",
+            fontSize: "10pt",
+            gap: "10px",
+            flexWrap: "wrap",
+          }}
+        >
           <div style={{ flex: "1 1 30%", minWidth: "180px" }}>
             <table className="marks-table" style={{ width: "100%", fontSize: "9pt" }}>
               <thead>
@@ -581,64 +1006,127 @@ const ViewResult = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr><td>91-100</td><td>A1</td><td>10.0</td></tr>
-                <tr><td>81-90</td><td>A2</td><td>09.0</td></tr>
-                <tr><td>71-80</td><td>B1</td><td>08.0</td></tr>
-                <tr><td>61-70</td><td>B2</td><td>07.0</td></tr>
-                <tr><td>51-60</td><td>C1</td><td>06.0</td></tr>
-                <tr><td>41-50</td><td>C2</td><td>05.0</td></tr>
-                <tr><td>33-40</td><td>D</td><td>04.0</td></tr>
-                <tr><td>21-32</td><td>E1</td><td></td></tr>
-                <tr><td>00-20</td><td>E2</td><td></td></tr>
+                <tr>
+                  <td>91-100</td>
+                  <td>A1</td>
+                  <td>10.0</td>
+                </tr>
+                <tr>
+                  <td>81-90</td>
+                  <td>A2</td>
+                  <td>09.0</td>
+                </tr>
+                <tr>
+                  <td>71-80</td>
+                  <td>B1</td>
+                  <td>08.0</td>
+                </tr>
+                <tr>
+                  <td>61-70</td>
+                  <td>B2</td>
+                  <td>07.0</td>
+                </tr>
+                <tr>
+                  <td>51-60</td>
+                  <td>C1</td>
+                  <td>06.0</td>
+                </tr>
+                <tr>
+                  <td>41-50</td>
+                  <td>C2</td>
+                  <td>05.0</td>
+                </tr>
+                <tr>
+                  <td>33-40</td>
+                  <td>D</td>
+                  <td>04.0</td>
+                </tr>
+                <tr>
+                  <td>21-32</td>
+                  <td>E1</td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td>00-20</td>
+                  <td>E2</td>
+                  <td></td>
+                </tr>
               </tbody>
             </table>
           </div>
 
-          <div style={{
-            flex: "1 1 55%",
-            minWidth: "300px",
-            display: "flex",
-            flexDirection: "column",
-            lineHeight: 1.4
-          }}>
+          <div
+            style={{
+              flex: "1 1 55%",
+              minWidth: "300px",
+              display: "flex",
+              flexDirection: "column",
+              lineHeight: 1.4,
+            }}
+          >
             <div>
               Students are assessed according to the following :-<br />
-              Promotion is based on the day-to-day work of the student<br />
-              Throughout the year and also on the performance in the half<br />
-              Yearly/Summative examination.<br />
-              {isHalfYearly ? (
-                "First Term: PAⅠ(10%) + PAⅡ(10%) + SAⅠ(80%) = 100%"
-              ) : (
-                <>
-                  First Term: PAⅠ(10%) + PAⅡ(10%) + SAⅠ(80%) = 100%<br />
-                  Second Term: PAⅢ(10%) + PAⅣ(10%) + SAⅡ(80%) = 100%<br />
-                  Final Result: (First Term + Second Term) ÷ 2 = 100%
-                </>
-              )}
+              Promotion is based on the day-to-day work of the student
+              <br />
+              Throughout the year and also on the performance in the half
+              <br />
+              Yearly/Summative examination.
+              <br />
+              First Term: PAⅠ(10%) + PAⅡ(10%) + SAⅠ(80%) = 100%
+              <br />
+              Second Term: PAⅢ(10%) + PAⅣ(10%) + SAⅡ(80%) = 100%
+              <br />
+              Final Result: (First Term + Second Term) ÷ 2 = 100%
+
             </div>
 
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              marginTop: "25px",
-              width: "100%"
-            }}>
-              <div style={{ fontSize: "10pt", display: "flex", gap: "20px", marginTop: "10px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginTop: "25px",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "10pt",
+                  display: "flex",
+                  gap: "20px",
+                  marginTop: "10px",
+                }}
+              >
                 <div>Class Teacher Sig._________</div>
                 <div>Principal Sig.__________</div>
               </div>
-              <div style={{
-                border: "1px solid black",
-                padding: "3px",
-                width: "140px",
-                fontSize: "10pt"
-              }}>
-                <div style={{ borderBottom: "1px solid black", padding: "4px 0" }}>
-                  <strong>Final Avg<br />Marks</strong>
+              <div
+                style={{
+                  border: "1px solid black",
+                  padding: "3px",
+                  width: "140px",
+                  fontSize: "10pt",
+                }}
+              >
+                <div
+                  style={{
+                    borderBottom: "1px solid black",
+                    padding: "4px 0",
+                  }}
+                >
+                  <strong>
+                    Final Avg
+                    <br />
+                    Marks
+                  </strong>
                   <div style={{ textAlign: "right" }}>{avgF.toFixed(1)}</div>
                 </div>
-                <div style={{ borderBottom: "1px solid black", padding: "4px 0" }}>
+                <div
+                  style={{
+                    borderBottom: "1px solid black",
+                    padding: "4px 0",
+                  }}
+                >
                   <strong>Percentage</strong>
                   <div style={{ textAlign: "right" }}>{percentage}%</div>
                 </div>
@@ -649,6 +1137,7 @@ const ViewResult = () => {
       </>
     );
   };
+
   return (
     <div className="view-result-container">
       <style>{`
@@ -657,6 +1146,11 @@ const ViewResult = () => {
           background: #f9f9f9;
           font-family: "Times New Roman", serif;
         }
+            .marks-table th:first-child,
+  .marks-table td:first-child {
+    width: 125px;      /* Thoda wide karna ho to 160 ya 180 bhi rakh sakte ho */
+    font-weight: bold;
+  }
         h2 {
           text-align: center;
           color: #2c3e50;
@@ -689,42 +1183,35 @@ const ViewResult = () => {
           border-radius: 8px;
           box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         }
-        .header {
-          display: flex;
-          align-items: center;
-          border-bottom: 2px solid #000;
-          margin-bottom: 10px;
-        }
-        .header img {
-          width: 60px;
-          height: auto;
-          margin-right: 10px;
-        }
-        .header h1 {
-          margin: 0;
-          font-size: 1.3rem;
-        }
-        .header p {
-          margin: 0;
-          font-size: 0.9rem;
-          color: #555;
-        }
         .table-container {
           overflow-x: auto;
           width: 100%;
           margin: 10px 0;
         }
         .marks-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.75rem;
-        }
-        .marks-table th,
-        .marks-table td {
-          padding: 6px 4px;
-          border: 1px solid #000;
-          text-align: center;
-        }
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.65rem;      /* chhota font taaki sab andar aa jaye */
+  table-layout: fixed;     /* columns equal width me fit honge */
+}
+.marks-table th,
+.marks-table td {
+  padding: 3px 2px;        /* kam padding */
+  border: 1px solid #000;
+  text-align: center;
+  word-wrap: break-word;
+}
+.vertical-header {
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  white-space: nowrap;
+  padding: 4px 1px;
+  min-width: 20px;         /* 30 se 20 kiya */
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.6rem;       /* aur thoda chhota */
+}
+
         .action-buttons {
           margin-top: 12px;
           display: flex;
@@ -743,37 +1230,56 @@ const ViewResult = () => {
         .action-buttons button:hover {
           background: #2980b9;
         }
-          .report-border-wrapper {
-  border: 5px double #000;
-  padding: 12px;
-  border-radius: 6px;
-  background: #fff;
-}
-
-.vertical-header {
-  writing-mode: vertical-lr;
-  text-orientation: mixed;
-  white-space: nowrap;
-  padding: 6px 2px;
-  min-width: 30px;
-  text-align: center;
-  font-weight: bold;
-  font-size: 0.75rem;
-}
-
-
-        @media print {
-  
-          body { background: white !important; }
-          .report-border-wrapper {
-    border: 5px double #000 !important;
-   
-  }
-    
+        .report-border-wrapper {
+          border: 5px double #000;
+          padding: 12px;
+          border-radius: 6px;
+          background: #fff;
         }
+        
       `}</style>
 
       <h2>Student Marks Record</h2>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          justifyContent: "center",
+          marginBottom: "10px",
+          marginTop: "-5px",
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Session (e.g. 2025-26)"
+          value={session}
+          onChange={(e) => setSession(e.target.value)}
+          style={{
+            padding: "6px 10px",
+            border: "1px solid #888",
+            borderRadius: "6px",
+            fontSize: "14px",
+            width: "180px",
+            textAlign: "center",
+          }}
+        />
+
+        <button
+          onClick={saveSession}
+          style={{
+            padding: "6px 14px",
+            background: "#27ae60",
+            color: "#fff",
+            border: "none",
+            borderRadius: "6px",
+            fontSize: "14px",
+            cursor: "pointer",
+          }}
+        >
+          💾 Save Session
+        </button>
+      </div>
       <div className="filters">
         <input
           type="text"
@@ -796,7 +1302,10 @@ const ViewResult = () => {
           onChange={(e) => setSearchMobile(e.target.value)}
         />
 
-        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+        <select
+          value={selectedClass}
+          onChange={(e) => setSelectedClass(e.target.value)}
+        >
           <option value="">All Classes</option>
           {classOptions.map((cls) => (
             <option key={cls} value={cls}>
@@ -805,15 +1314,25 @@ const ViewResult = () => {
           ))}
         </select>
 
-        <select value={selectedExamType} onChange={(e) => setSelectedExamType(e.target.value)}>
+        <select
+          value={selectedExamType}
+          onChange={(e) => setSelectedExamType(e.target.value)}
+        >
           <option value="halfYearly">Half Yearly Report</option>
           <option value="final">Annual Report Card</option>
         </select>
       </div>
 
-
       {filteredResults.length === 0 ? (
-        <p style={{ textAlign: "center", color: "#7f8c8d", padding: "1.5rem" }}>No matching results found.</p>
+        <p
+          style={{
+            textAlign: "center",
+            color: "#7f8c8d",
+            padding: "1.5rem",
+          }}
+        >
+          No matching results found.
+        </p>
       ) : (
         <div className="report-cards-grid">
           {filteredResults.map((r) => {
@@ -830,21 +1349,45 @@ const ViewResult = () => {
                 ? `${student.attendance} / 115`
                 : "—";
 
+            const position = positionMap[r._id];
+
             return (
-              <div key={`${r._id}-${selectedExamType}`} className="report-card">
+              <div
+                key={`${r._id}-${selectedExamType}`}
+                className="report-card"
+              >
                 <div
                   id={`report-card-${r._id}-${selectedExamType}`}
                   className="report-border-wrapper"
                 >
-
-                  {renderReportCard(r, student, examData, subjectsArray, attendanceDisplay, selectedExamType)}
+                  {renderReportCard(
+                    r,
+                    student,
+                    examData,
+                    subjectsArray,
+                    attendanceDisplay,
+                    selectedExamType,
+                    position
+                  )}
                 </div>
 
                 <div className="action-buttons">
-                  <button onClick={() => downloadReportCard(r._id, student.name, selectedExamType)}>
+                  <button
+                    onClick={() =>
+                      downloadReportCard(
+                        r._id,
+                        student.name,
+                        selectedExamType
+                      )
+                    }
+                  >
                     📥 Download PDF
                   </button>
-                  <button onClick={() => printReportCard(r._id, selectedExamType)}>
+                  <button
+                    onClick={() =>
+                      printReportCard(r._id, selectedExamType)
+                    }
+                  >
                     🖨️ Print
                   </button>
                 </div>

@@ -110,6 +110,7 @@ const AdminDashboard = () => {
     { label: 'Periodic Result', path: '/periodic-result', color: '#2563eb' },
     { label: 'Exam Controls', path: '/exam-controls', color: '#b91c1c' },
     { label: 'Attendance Overview', path: '/admin/attendance-overview', color: '#3b82f6' },
+    { label: 'Add Marks', path: '/add-marks', color: '#e74c3c' },
   ];
 
   const teacherButtons = [

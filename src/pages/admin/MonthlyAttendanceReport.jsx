@@ -2,26 +2,43 @@
 
 // src/pages/teacher/MonthlyAttendanceReport.jsx
 import React, { useState, useEffect } from 'react';
-import { saveAs } from 'file-saver';
 import { endpoints } from '../../config/api';
 
 const MonthlyAttendanceReport = () => {
-  const [report, setReport] = useState([]);
-  const [studentInfo, setStudentInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [assignedStudents, setAssignedStudents] = useState([]);
+  const [eligibleClasses, setEligibleClasses] = useState([]);
+
   const [formData, setFormData] = useState({
     class: '',
-    studentId: '',
     year: new Date().getFullYear().toString(),
     month: String(new Date().getMonth() + 1).padStart(2, '0'),
   });
 
-  const [assignedStudents, setAssignedStudents] = useState([]);
-  const [eligibleClasses, setEligibleClasses] = useState([]);
-  const [eligibleStudents, setEligibleStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // 🔹 Step 1: Fetch ONLY students assigned to the teacher
+  // Class-wise data
+  const [classStudents, setClassStudents] = useState([]); // selected class ke students
+  const [daysInMonth, setDaysInMonth] = useState(0);
+
+  /**
+   * studentMonthlyData:
+   * {
+   *   [studentId]: {
+   *      report: [{date, present, isSchoolClosed}],
+   *      byDay: {1:'P'|'A'|'H'|'-', 2:..., ...},
+   *      presentDays: number,
+   *      workingDays: number,
+   *      percentage: string
+   *   }
+   * }
+   */
+  const [studentMonthlyData, setStudentMonthlyData] = useState({});
+
+  // Detail view (row click)
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+
+  // 🔹 Step 1: fetch teacher ke assigned students
   useEffect(() => {
     const fetchAssignedStudents = async () => {
       const token = localStorage.getItem('token');
@@ -42,105 +59,173 @@ const MonthlyAttendanceReport = () => {
     fetchAssignedStudents();
   }, []);
 
-  // 🔹 Step 2: Filter classes & students based on "canMarkAttendance"
+  // 🔹 Step 2: teacher ke teachingAssignments se allowed classes (canMarkAttendance==true)
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'teacher') {
-      // Non-teachers shouldn't be here, but handle gracefully
       setEligibleClasses([]);
-      setEligibleStudents([]);
       return;
     }
 
-    // Get assignments where teacher can mark attendance
     const attendanceAssignments = (user.teachingAssignments || []).filter(
       (a) => a.canMarkAttendance === true
     );
 
     const classes = [...new Set(attendanceAssignments.map((a) => a.class))];
-    const students = assignedStudents.filter((stu) =>
-      attendanceAssignments.some((a) => a.class === stu.class)
-    );
-
     setEligibleClasses(classes);
-    setEligibleStudents(students);
-  }, [assignedStudents]);
-
-  // 🔹 Filter students by selected class (only from eligible ones)
-  const filteredStudents = formData.class
-    ? eligibleStudents.filter((s) => s.class === formData.class)
-    : [];
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => {
-      if (name === 'class') {
-        return { ...prev, class: value, studentId: '' };
-      }
-      return { ...prev, [name]: value };
-    });
+    setError('');
+    setSelectedStudentId(null);
+    setClassStudents([]);
+    setStudentMonthlyData({});
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = async (e) => {
+  const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate(); // month: 1..12
+
+  // 🔹 Class ka monthly Excel-style report generate
+  const handleGenerateReport = async (e) => {
     e.preventDefault();
-    if (!formData.studentId) {
-      setError('Please select a student');
+
+    if (!formData.class) {
+      setError('Please select a class');
       return;
     }
-    setLoading(true);
-    setError('');
 
     try {
-      const url = endpoints.attendance.studentMonthly(
-        formData.studentId,
-        formData.year,
-        formData.month
+      setLoading(true);
+      setError('');
+      setSelectedStudentId(null);
+      setStudentMonthlyData({});
+
+      const { class: className, year, month } = formData;
+      const token = localStorage.getItem('token');
+
+      const yearNum = parseInt(year, 10);
+      const monthNum = parseInt(month, 10);
+      const totalDays = getDaysInMonth(yearNum, monthNum);
+      setDaysInMonth(totalDays);
+
+      // 1. Filter only students of that class from assignedStudents
+      const studentsInClass = assignedStudents.filter(
+        (s) => s.class === className
       );
 
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Failed to load report');
+      if (studentsInClass.length === 0) {
+        setError('No students found in this class for you.');
+        setClassStudents([]);
+        return;
       }
 
-      const data = await res.json();
-      setStudentInfo(data.student);
-      setReport(data.report);
+      setClassStudents(studentsInClass);
+
+      const resultData = {};
+
+      // 2. For each student → call student-monthly API
+      await Promise.all(
+        studentsInClass.map(async (stu) => {
+          try {
+            const url = endpoints.attendance.studentMonthly(
+              stu._id,
+              year,
+              month
+            );
+
+            const res = await fetch(url, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!res.ok) {
+              return;
+            }
+
+            const data = await res.json();
+            const report = data.report || [];
+
+            // Present / working totals
+            const workingDays = report.filter((r) => !r.isSchoolClosed).length;
+            const presentDays = report.filter(
+              (r) => !r.isSchoolClosed && r.present
+            ).length;
+            const percentage =
+              workingDays > 0
+                ? ((presentDays / workingDays) * 100).toFixed(2)
+                : '0.00';
+
+            // byDay: 1..daysInMonth → 'P' / 'A' / 'H' / '-'
+            const byDay = {};
+            for (let day = 1; day <= totalDays; day++) {
+              const dateStr = `${yearNum}-${String(monthNum).padStart(
+                2,
+                '0'
+              )}-${String(day).padStart(2, '0')}`;
+
+              const row = report.find((r) => r.date === dateStr);
+
+              if (!row) {
+                byDay[day] = '-'; // attendance hi nahi
+              } else if (row.isSchoolClosed) {
+                byDay[day] = 'H'; // Holiday
+              } else {
+                byDay[day] = row.present ? 'P' : 'A';
+              }
+            }
+
+            resultData[stu._id] = {
+              report,
+              byDay,
+              presentDays,
+              workingDays,
+              percentage,
+            };
+          } catch (err) {
+            console.error('Error loading monthly data for', stu._id, err);
+          }
+        })
+      );
+
+      setStudentMonthlyData(resultData);
     } catch (err) {
-      setError(err.message || 'Failed to load report');
+      console.error(err);
+      setError('Failed to generate report');
     } finally {
       setLoading(false);
     }
   };
 
-  const downloadCSV = () => {
-    if (report.length === 0 || !studentInfo) return;
+  const monthLabel = new Date(
+    Number(formData.year),
+    Number(formData.month) - 1
+  ).toLocaleString('default', { month: 'long' });
 
-    const headers = ['Date', 'Student Name', 'Class', 'Roll No', 'Status'];
-    const csvContent = [
-      headers.join(','),
-      ...report.map((row) =>
-        [
-          row.date,
-          `"${studentInfo.name}"`,
-          studentInfo.class,
-          studentInfo.rollNo,
-          row.present ? 'Present' : 'Absent',
-        ].join(',')
-      ),
-    ].join('\n');
+  // Detail: clicked student ka daily list
+  const selectedStudent =
+    selectedStudentId &&
+    classStudents.find((s) => s._id === selectedStudentId);
+  const selectedDetails =
+    selectedStudentId &&
+    studentMonthlyData[selectedStudentId] &&
+    studentMonthlyData[selectedStudentId].report
+      ? studentMonthlyData[selectedStudentId].report
+      : null;
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    saveAs(
-      blob,
-      `attendance-${studentInfo.name}-${formData.year}-${formData.month}.csv`
-    );
-  };
+  const selectedSummary =
+    selectedStudentId && studentMonthlyData[selectedStudentId]
+      ? {
+          presentDays: studentMonthlyData[selectedStudentId].presentDays,
+          workingDays: studentMonthlyData[selectedStudentId].workingDays,
+          percentage: studentMonthlyData[selectedStudentId].percentage,
+        }
+      : null;
 
-  // 🔹 Handle case: no eligible classes
+  // 🔹 No class permission
   if (eligibleClasses.length === 0 && assignedStudents.length > 0) {
     return (
       <div
@@ -153,61 +238,44 @@ const MonthlyAttendanceReport = () => {
         }}
       >
         <h2>Attendance Report Access Denied</h2>
+        <p>❌ You are not authorized to view attendance reports for any class.</p>
         <p>
-          ❌ You are not authorized to view attendance reports for any class.
-        </p>
-        <p>
-          Please contact the admin to assign <strong>attendance marking</strong>{' '}
-          permission for your classes.
+          Please contact the admin to assign{' '}
+          <strong>attendance marking</strong> permission for your classes.
         </p>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ padding: '1rem', maxWidth: '1200px', margin: '0 auto' }}>
       <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-        Student Monthly Attendance Report
+        Class Monthly Attendance (Excel Style View)
       </h2>
 
+      {/* FILTER FORM */}
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleGenerateReport}
         style={{
           display: 'flex',
           gap: '1rem',
           flexWrap: 'wrap',
           marginBottom: '1.5rem',
+          alignItems: 'center',
         }}
       >
-        {/* Class Dropdown — ONLY eligible classes */}
+        {/* Class */}
         <select
           name="class"
           value={formData.class}
           onChange={handleChange}
           required
-          style={{ padding: '0.5rem', flex: 1, minWidth: '150px' }}
+          style={{ padding: '0.5rem', minWidth: '150px' }}
         >
           <option value="">Select Class</option>
           {eligibleClasses.map((cls) => (
             <option key={cls} value={cls}>
               {cls}
-            </option>
-          ))}
-        </select>
-
-        {/* Student Dropdown — ONLY eligible students in selected class */}
-        <select
-          name="studentId"
-          value={formData.studentId}
-          onChange={handleChange}
-          required
-          disabled={!formData.class}
-          style={{ padding: '0.5rem', flex: 1, minWidth: '180px' }}
-        >
-          <option value="">Select Student</option>
-          {filteredStudents.map((stu) => (
-            <option key={stu._id} value={stu._id}>
-              {stu.name} (Roll: {stu.rollNo})
             </option>
           ))}
         </select>
@@ -219,7 +287,7 @@ const MonthlyAttendanceReport = () => {
           value={formData.year}
           onChange={handleChange}
           min="2020"
-          max="2030"
+          max="2035"
           required
           style={{ padding: '0.5rem', width: '100px' }}
         />
@@ -230,13 +298,10 @@ const MonthlyAttendanceReport = () => {
           value={formData.month}
           onChange={handleChange}
           required
-          style={{ padding: '0.5rem', width: '120px' }}
+          style={{ padding: '0.5rem', width: '140px' }}
         >
           {Array.from({ length: 12 }, (_, i) => (
-            <option
-              key={i + 1}
-              value={String(i + 1).padStart(2, '0')}
-            >
+            <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
               {new Date(0, i).toLocaleString('default', { month: 'long' })}
             </option>
           ))}
@@ -251,7 +316,7 @@ const MonthlyAttendanceReport = () => {
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            minWidth: '120px',
+            minWidth: '140px',
           }}
         >
           {loading ? 'Loading...' : 'Generate Report'}
@@ -259,86 +324,294 @@ const MonthlyAttendanceReport = () => {
       </form>
 
       {error && (
-        <div style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>
+        <div
+          style={{
+            color: 'red',
+            marginBottom: '1rem',
+            textAlign: 'center',
+          }}
+        >
           {error}
         </div>
       )}
 
-      {studentInfo && report.length > 0 && (
-        <>
-          <div
-            style={{
-              textAlign: 'center',
-              marginBottom: '1rem',
-              fontSize: '1.1rem',
-              padding: '0.8rem',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px',
-            }}
-          >
-            <strong>{studentInfo.name}</strong> — Class: {studentInfo.class}, Roll: {studentInfo.rollNo}
-          </div>
-
-          <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
-            <button
-              onClick={downloadCSV}
+      {/* EXCEL STYLE TABLE */}
+      {classStudents.length > 0 &&
+        Object.keys(studentMonthlyData).length > 0 && (
+          <>
+            <div
               style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#27ae60',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.95rem',
+                marginBottom: '0.5rem',
+                fontWeight: 600,
               }}
             >
-              📥 Download CSV
-            </button>
-          </div>
+              Class: {formData.class} | Month: {monthLabel} {formData.year}
+            </div>
 
-          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #eee' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
+            <div
+              style={{
+                overflowX: 'auto',
+                borderRadius: '8px',
+                border: '1px solid #ddd',
+                marginBottom: '1.5rem',
+              }}
+            >
+              <table
+                style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '0.85rem',
+                  minWidth: '900px',
+                }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f1f1' }}>
+                    <th style={headerCellStyle}>Roll</th>
+                    <th style={headerCellStyle}>Name</th>
+                    {/* NEW TOTAL COLUMNS */}
+                    <th style={headerCellStyle}>P</th>
+                    <th style={headerCellStyle}>W</th>
+                    <th style={headerCellStyle}>%</th>
+                    {/* Days columns */}
+                    {Array.from({ length: daysInMonth }, (_, i) => (
+                      <th key={i + 1} style={headerCellStyle}>
+                        {i + 1}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {classStudents.map((stu) => {
+                    const stuData = studentMonthlyData[stu._id];
+                    const byDay = stuData ? stuData.byDay : {};
+                    const presentDays = stuData ? stuData.presentDays : 0;
+                    const workingDays = stuData ? stuData.workingDays : 0;
+                    const percentage = stuData ? stuData.percentage : '0.00';
+
+                    return (
+                      <tr
+                        key={stu._id}
+                        onClick={() => setSelectedStudentId(stu._id)}
+                        style={{
+                          cursor: 'pointer',
+                          backgroundColor:
+                            selectedStudentId === stu._id ? '#e8f6ff' : 'white',
+                        }}
+                      >
+                        <td style={bodyCellStyle}>{stu.rollNo}</td>
+                        <td style={{ ...bodyCellStyle, fontWeight: 600 }}>
+                          {stu.name}
+                        </td>
+
+                        {/* TOTALS */}
+                        <td
+                          style={{
+                            ...bodyCellStyle,
+                            textAlign: 'center',
+                            fontWeight: 'bold',
+                            backgroundColor: '#d4edda',
+                          }}
+                        >
+                          {presentDays}
+                        </td>
+                        <td
+                          style={{
+                            ...bodyCellStyle,
+                            textAlign: 'center',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          {workingDays}
+                        </td>
+                        <td
+                          style={{
+                            ...bodyCellStyle,
+                            textAlign: 'center',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          {percentage}%
+                        </td>
+
+                        {/* Per-day cells */}
+                        {Array.from({ length: daysInMonth }, (_, i) => {
+                          const day = i + 1;
+                          const val = byDay ? byDay[day] : '-';
+                          let bg = 'white';
+                          if (val === 'P') bg = '#d4edda'; // green-ish
+                          else if (val === 'A') bg = '#f8d7da'; // red-ish
+                          else if (val === 'H') bg = '#fff3cd'; // yellow-ish
+                          else if (val === '-') bg = '#f9f9f9';
+
+                          return (
+                            <td
+                              key={day}
+                              style={{
+                                ...bodyCellStyle,
+                                backgroundColor: bg,
+                                textAlign: 'center',
+                                fontWeight:
+                                  val === 'P' || val === 'A' ? 'bold' : 'normal',
+                              }}
+                            >
+                              {val}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Legend */}
+            <div
+              style={{
+                fontSize: '0.85rem',
+                marginBottom: '1rem',
+                display: 'flex',
+                gap: '1rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <span>
+                <strong>P</strong> = Present
+              </span>
+              <span>
+                <strong>A</strong> = Absent
+              </span>
+              <span>
+                <strong>H</strong> = Holiday / School Closed
+              </span>
+              <span>
+                <strong>-</strong> = Attendance not marked
+              </span>
+              <span>
+                <strong>Column P</strong> = Total Present Days
+              </span>
+              <span>
+                <strong>Column W</strong> = Total Working Days
+              </span>
+              <span>
+                <strong>%</strong> = (P / W) × 100
+              </span>
+              <span style={{ marginLeft: 'auto', fontStyle: 'italic' }}>
+                (Click on any row to see full daily detail)
+              </span>
+            </div>
+          </>
+        )}
+
+      {/* DETAIL BELOW: clicked student ka har din ka status list + totals */}
+      {selectedStudent && selectedDetails && (
+        <div
+          style={{
+            marginTop: '1rem',
+            padding: '1rem',
+            borderRadius: '8px',
+            border: '1px solid #ddd',
+            backgroundColor: '#fafafa',
+          }}
+        >
+          <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>
+            Daily Detail — {selectedStudent.name} (Roll: {selectedStudent.rollNo})
+          </h3>
+          <p style={{ marginTop: 0, fontSize: '0.9rem' }}>
+            Class: {selectedStudent.class} | Month: {monthLabel} {formData.year}
+          </p>
+
+          {selectedSummary && (
+            <p style={{ marginTop: '0.3rem', fontSize: '0.9rem' }}>
+              <strong>Total Present:</strong> {selectedSummary.presentDays} |{' '}
+              <strong>Working Days:</strong> {selectedSummary.workingDays} |{' '}
+              <strong>Percentage:</strong> {selectedSummary.percentage}%
+            </p>
+          )}
+
+          <div
+            style={{
+              maxHeight: '260px',
+              overflowY: 'auto',
+              borderRadius: '6px',
+              border: '1px solid #e0e0e0',
+              backgroundColor: 'white',
+              marginTop: '0.5rem',
+            }}
+          >
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: '0.9rem',
+              }}
+            >
               <thead>
                 <tr style={{ backgroundColor: '#f1f1f1' }}>
-                  <th style={tableHeaderStyle}>Date</th>
-                  <th style={tableHeaderStyle}>Status</th>
+                  <th style={headerCellStyle}>Date</th>
+                  <th style={headerCellStyle}>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {report.map((row, i) => (
-                  <tr key={i} style={i % 2 === 0 ? { backgroundColor: '#fafafa' } : {}}>
-                    <td style={tableCellStyle}>{row.date}</td>
-                    <td
-                      style={{
-                        ...tableCellStyle,
-                        color: row.present ? 'green' : 'red',
-                        fontWeight: 'bold',
-                      }}
+                {selectedDetails.map((row, idx) => {
+                  let label = '';
+                  let color = '';
+                  if (row.isSchoolClosed) {
+                    label = '🏫 Holiday / School Closed';
+                    color = '#555';
+                  } else if (row.present) {
+                    label = '✅ Present';
+                    color = 'green';
+                  } else {
+                    label = '❌ Absent';
+                    color = 'red';
+                  }
+
+                  return (
+                    <tr
+                      key={idx}
+                      style={
+                        idx % 2 === 0
+                          ? { backgroundColor: '#fafafa' }
+                          : { backgroundColor: 'white' }
+                      }
                     >
-                      {row.present ? '✅ Present' : '❌ Absent'}
-                    </td>
-                  </tr>
-                ))}
+                      <td style={bodyCellStyle}>{row.date}</td>
+                      <td
+                        style={{
+                          ...bodyCellStyle,
+                          color,
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {label}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
 };
 
-const tableHeaderStyle = {
-  padding: '0.75rem',
+const headerCellStyle = {
+  padding: '0.5rem',
   textAlign: 'center',
   fontWeight: 'bold',
   borderBottom: '2px solid #ddd',
+  borderRight: '1px solid #eee',
+  whiteSpace: 'nowrap',
 };
 
-const tableCellStyle = {
-  padding: '0.6rem',
-  textAlign: 'center',
+const bodyCellStyle = {
+  padding: '0.4rem',
   borderBottom: '1px solid #eee',
+  borderRight: '1px solid #f3f3f3',
+  textAlign: 'left',
 };
 
 export default MonthlyAttendanceReport;
