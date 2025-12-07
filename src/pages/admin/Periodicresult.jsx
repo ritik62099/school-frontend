@@ -46,15 +46,15 @@ const ViewPAResults = () => {
   const getExamStorageKey = (examKey) => {
     switch (examKey) {
       case "sa1":
-        return "halfYear";   // DB me ye naam hai
+        return "halfYear"; // DB me ye naam hai
       case "sa2":
-        return "final";      // DB me ye naam hai
+        return "final"; // DB me ye naam hai
       default:
-        return examKey;      // pa1, pa2, pa3, pa4
+        return examKey; // pa1, pa2, pa3, pa4
     }
   };
 
-  // exam per-subject max marks (PA = 20, SA = 80 – yaha change kar sakte ho)
+  // exam per-subject max marks (PA = 20, SA = 80)
   const getPerSubjectMax = (examKey) => {
     if (examKey === "sa1" || examKey === "sa2") return 80;
     return 20;
@@ -66,7 +66,7 @@ const ViewPAResults = () => {
     if (!element) return;
 
     const win = window.open("", "_blank");
-    const logoUrl = Logo; // Vite bundler se path
+    const logoUrl = Logo; // bundler se resolve hoga
 
     const html = `
       <html>
@@ -79,34 +79,46 @@ const ViewPAResults = () => {
               margin: 0;
               padding: 0;
             }
+
             .school-header {
               border: 1px solid #000;
               margin: 8px;
               padding: 4px 12px 8px;
+              background: #fff;
             }
+
             .header-top-line {
               display: flex;
               justify-content: space-between;
               font-size: 12px;
               margin-bottom: 4px;
             }
+
+            /* HEADER MAIN: LOGO LEFT, TEXT CENTER */
             .header-main {
-              display: flex;
+              display: grid;
+              grid-template-columns: 100px auto 100px;
               align-items: center;
-              justify-content: center;
-              gap: 16px;
             }
+
             .school-logo {
               width: 70px;
               height: 70px;
               object-fit: contain;
+              justify-self: start;
             }
-            .school-text { text-align: center; }
+
+            .school-text {
+              text-align: center;
+              justify-self: center;
+            }
+
             .school-name {
               font-size: 22px;
               font-weight: bold;
               letter-spacing: 1px;
             }
+
             .school-sub,
             .school-address,
             .school-phone {
@@ -115,7 +127,7 @@ const ViewPAResults = () => {
 
             .print-content {
               padding: 0 12px 16px;
-              margin-top: 110px;
+              margin-top: 130px;
             }
 
             .report-title {
@@ -125,6 +137,7 @@ const ViewPAResults = () => {
               margin: 4px 0 8px;
               text-transform: uppercase;
             }
+
             .class-title {
               text-align: center;
               margin-bottom: 10px;
@@ -135,20 +148,28 @@ const ViewPAResults = () => {
               width: 100%;
               border-collapse: collapse;
               font-size: 12px;
+              page-break-inside: auto;
             }
+
             th, td {
               border: 1px solid #000;
               padding: 4px;
               text-align: center;
             }
+
             th { font-weight: bold; }
 
+            /* IMPORTANT: table header har page par repeat */
             thead {
               display: table-header-group;
+            }
+            tfoot {
+              display: table-footer-group;
             }
 
             @media print {
               body { margin: 0; }
+
               .school-header {
                 position: fixed;
                 top: 0;
@@ -157,10 +178,14 @@ const ViewPAResults = () => {
                 z-index: 999;
                 border-bottom: 1px solid #000;
               }
+
               .print-content {
-                margin-top: 120px;
+                margin-top: 140px;
               }
-              @page { margin: 12mm; }
+
+              @page {
+                margin: 10mm;
+              }
             }
           </style>
         </head>
@@ -178,6 +203,7 @@ const ViewPAResults = () => {
                 <div class="school-address">Saidpur, Dighwara (Saran), 841207</div>
                 <div class="school-phone">Mob. 8797118188</div>
               </div>
+              <div></div> <!-- right side empty column for perfect centering -->
             </div>
           </div>
 
@@ -210,9 +236,11 @@ const ViewPAResults = () => {
     if (!student) return false;
 
     return (
-      (searchClass === "" || r.class.toLowerCase().includes(searchClass.toLowerCase())) &&
+      (searchClass === "" ||
+        r.class.toLowerCase().includes(searchClass.toLowerCase())) &&
       (searchRoll === "" || student.rollNo?.toString().includes(searchRoll)) &&
-      (searchName === "" || student.name.toLowerCase().includes(searchName.toLowerCase()))
+      (searchName === "" ||
+        student.name.toLowerCase().includes(searchName.toLowerCase()))
     );
   });
 
@@ -280,7 +308,8 @@ const ViewPAResults = () => {
 
             {classOptions.map((cls) => {
               // sirf wahi class jisme searchClass match kare
-              if (!cls.toLowerCase().includes(searchClass.toLowerCase())) return null;
+              if (!cls.toLowerCase().includes(searchClass.toLowerCase()))
+                return null;
 
               const students = filteredResults
                 .filter((r) => r.class === cls)
@@ -335,8 +364,12 @@ const ViewPAResults = () => {
                               {marks.map((m, idx) => (
                                 <td key={idx}>{m}</td>
                               ))}
-                              <td><b>{total}</b></td>
-                              <td><b>{percent}%</b></td>
+                              <td>
+                                <b>{total}</b>
+                              </td>
+                              <td>
+                                <b>{percent}%</b>
+                              </td>
                             </tr>
                           );
                         })}

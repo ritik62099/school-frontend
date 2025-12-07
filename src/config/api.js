@@ -32,6 +32,7 @@ export const endpoints = {
     delete: (id) => api(`/api/teachers/${id}`),
     assign: (id) => api(`/api/teachers/${id}/assign`),
     attendanceAccess: (id) => api(`/api/teachers/${id}/attendance-access`),
+    resetPassword: (id) => api(`/api/teachers/${id}/password`),
   },
   students: {
   list: api('/api/students'),
