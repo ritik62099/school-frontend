@@ -105,12 +105,13 @@ const AdminDashboard = () => {
     { label: 'ID Cards', path: '/id-cards', color: '#16a085' },
     { label: 'View Result', path: '/view-result', color: '#f39c12' },
     { label: 'Manage Class Subjects', path: '/class-subjects', color: '#8e44ad' },
-    { label: 'Class-wise Fees', path: '/class-fees', color: '#0d9488' },
-    { label: 'Student Payments', path: '/student-payments', color: '#7e22ce' },
+    // { label: 'Class-wise Fees', path: '/class-fees', color: '#0d9488' },
+    // { label: 'Student Payments', path: '/student-payments', color: '#7e22ce' },
     { label: 'Periodic Result', path: '/periodic-result', color: '#2563eb' },
     { label: 'Exam Controls', path: '/exam-controls', color: '#b91c1c' },
     { label: 'Attendance Overview', path: '/admin/attendance-overview', color: '#3b82f6' },
     { label: 'Add Marks', path: '/add-marks', color: '#e74c3c' },
+    { label: 'School Attendance Summary', path: '/admin/school-attendance-summary', color: '#0ea5e9' },
   ];
 
   const teacherButtons = [

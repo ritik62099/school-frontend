@@ -29,6 +29,9 @@ const AddStudent = () => {
 
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const isAdmin = currentUser?.role === 'admin';
+  const handleBackClick = () => {
+    navigate(-1); // ek step piche
+  };
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -184,10 +187,20 @@ const AddStudent = () => {
     }
   };
 
-  return (
+    return (
     <div style={styles.pageContainer}>
       <div style={styles.card}>
-        <h2 style={styles.title}>Add New Student</h2>
+        <div style={styles.headerRow}>
+          <button
+            type="button"
+            onClick={handleBackClick}
+            style={styles.backButton}
+          >
+            ← Back
+          </button>
+          <h2 style={styles.title}>Add New Student</h2>
+        </div>
+
 
         {message && (
           <div style={{
@@ -423,6 +436,23 @@ const AddStudent = () => {
 };
 
 const styles = {
+    headerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    marginBottom: '1.25rem',
+    flexWrap: 'wrap',
+  },
+  backButton: {
+    padding: '0.4rem 0.9rem',
+    borderRadius: '999px',
+    border: '1px solid #d1d5db',
+    backgroundColor: '#2563eb',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    color: 'white',
+  },
+
   pageContainer: {
     display: 'flex',
     justifyContent: 'center',

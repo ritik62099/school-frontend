@@ -5,7 +5,8 @@ import React, { useEffect, useState } from "react";
 import Logo from "../../assets/logo.png";
 import { endpoints } from "../../config/api";
 
-const ViewPAResults = () => {
+const ViewPAResults = ({ onBack }) => {
+
   const [results, setResults] = useState([]);
   const [classSubjectMap, setClassSubjectMap] = useState({});
   const [assignedClasses, setAssignedClasses] = useState([]);
@@ -16,6 +17,13 @@ const ViewPAResults = () => {
   const [searchRoll, setSearchRoll] = useState("");
   const [searchName, setSearchName] = useState("");
   const [selectedPA, setSelectedPA] = useState("pa1");
+
+   const handleBackClick = () => {
+    if (typeof onBack === "function") onBack();
+    else window.history.back();
+  };
+
+
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -102,7 +110,7 @@ const ViewPAResults = () => {
             }
 
             .school-logo {
-              width: 70px;
+              width: 80px;
               height: 70px;
               object-fit: contain;
               justify-self: start;
@@ -122,7 +130,7 @@ const ViewPAResults = () => {
             .school-sub,
             .school-address,
             .school-phone {
-              font-size: 12px;
+              font-size: 20px;
             }
 
             .print-content {
@@ -244,9 +252,15 @@ const ViewPAResults = () => {
     );
   });
 
-  return (
-    <div style={{ padding: "20px" }}>
-      <h2 style={{ textAlign: "center" }}>📘 Periodic Assessment Results</h2>
+ return (
+  <div style={{ padding: "20px" }}>
+    <div style={styles.topBar}>
+      <button style={styles.backBtn} onClick={handleBackClick}>
+        ← Back
+      </button>
+      <h2 style={styles.heading}>📘 Periodic Assessment Results</h2>
+    </div>
+
 
       {/* FILTER BAR */}
       <div
@@ -428,6 +442,29 @@ const styles = {
     borderRadius: "5px",
     cursor: "pointer",
   },
+    topBar: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "15px",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  backBtn: {
+    padding: "6px 14px",
+    borderRadius: "20px",
+    border: "1px solid #d1d5db",
+    background: "#2563eb",
+    cursor: "pointer",
+    fontSize: "14px",
+    color: "white",
+  },
+  heading: {
+    margin: 0,
+    textAlign: "center",
+    flex: 1,
+  },
+
 };
 
 export default ViewPAResults;

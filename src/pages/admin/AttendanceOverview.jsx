@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { endpoints } from "../../config/api";
 
-const AttendanceOverview = () => {
+const AttendanceOverview = ({ onBack }) => {
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,6 +22,11 @@ const AttendanceOverview = () => {
   // Detail view
   const [selectedStudentId, setSelectedStudentId] = useState(null);
 
+
+  const handleBackClick = () => {
+  if (typeof onBack === "function") onBack();
+  else window.history.back();
+};
   // Load all classes
   useEffect(() => {
     const loadClasses = async () => {
@@ -203,7 +208,14 @@ const AttendanceOverview = () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.heading}>Class Attendance Overview (Excel Style)</h2>
+      <div style={styles.topBar}>
+  <button style={styles.backBtn} onClick={handleBackClick}>
+    ← Back
+  </button>
+
+  <h2 style={styles.heading}>Class Attendance Overview (Excel Style)</h2>
+</div>
+
 
       {/* CLASS + YEAR + MONTH + SEARCH BUTTON */}
       <div style={styles.form}>
@@ -608,6 +620,24 @@ const bodyCellStyle = {
 const styles = {
   container: { padding: "20px", maxWidth: "1200px", margin: "0 auto" },
   heading: { textAlign: "center", marginBottom: "20px" },
+  topBar: {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  marginBottom: "15px",
+  flexWrap: "wrap",
+},
+
+backBtn: {
+  padding: "6px 14px",
+  borderRadius: "20px",
+  border: "1px solid #d1d5db",
+  background: "#2563eb",
+  cursor: "pointer",
+  fontSize: "14px",
+  color: "white",
+},
+
   form: {
     display: "flex",
     flexWrap: "wrap",

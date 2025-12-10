@@ -7,6 +7,60 @@ import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Logo from '../../assets/user.png';
 
+const styles = {
+  container: {
+    width: '100%',
+    maxWidth: '420px',
+    margin: '0 auto',
+    padding: '24px 16px',
+    boxSizing: 'border-box',
+  },
+  logoWrapper: {
+    textAlign: 'center',
+    marginBottom: '10px',
+  },
+  logoImg: {
+    width: '60px',
+    maxWidth: '100%',
+  },
+  title: {
+    fontSize: '1.8rem',
+    fontWeight: 700,
+    color: '#2c3e50',
+    textAlign: 'center',
+    margin: 0,
+  },
+  error: {
+    marginTop: '14px',
+    marginBottom: '10px',
+    padding: '8px 10px',
+    borderRadius: '6px',
+    background: '#ffe5e5',
+    color: '#c0392b',
+    fontSize: '0.9rem',
+  },
+  form: {
+    marginTop: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  button: {
+    width: '100%',
+  },
+  switchText: {
+    marginTop: '18px',
+    textAlign: 'center',
+    fontSize: '0.9rem',
+    color: '#7f8c8d',
+  },
+  link: {
+    color: '#3498db',
+    fontWeight: 600,
+    textDecoration: 'none',
+  },
+};
+
 const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -35,47 +89,53 @@ const Signup = () => {
       title="Join Us!"
       illustrationText="Create an account to get started."
     >
-      <div className="logo" style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-        <img src={Logo} alt="User Icon" style={{ width: '60px' }} />
+      <div style={styles.container}>
+        
+        <div style={styles.logoWrapper}>
+          <img src={Logo} alt="User Icon" style={styles.logoImg} />
+        </div>
+
+        <h1 style={styles.title}>Sign Up</h1>
+
+        {error && <div style={styles.error}>{error}</div>}
+
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <Input
+            type="text"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            style={{ width: '100%' }}
+          />
+          <Input
+            type="email"
+            placeholder="Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ width: '100%' }}
+          />
+          <Input
+            type="password"
+            placeholder="Password (min 6 chars)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            style={{ width: '100%' }}
+          />
+
+          <Button disabled={loading} style={styles.button}>
+            {loading ? 'Signing up...' : 'Sign Up'}
+          </Button>
+        </form>
+
+        <p style={styles.switchText}>
+          Already have an account?{' '}
+          <Link to="/login" style={styles.link}>Login</Link>
+        </p>
       </div>
-      <h1 style={{ fontSize: '1.8rem', fontWeight: '700', color: '#2c3e50', textAlign: 'center', margin: 0 }}>
-        Sign Up
-      </h1>
-
-      {error && <div className="alert-error">{error}</div>}
-
-      <form onSubmit={handleSubmit}>
-        <Input
-          type="text"
-          placeholder="Full Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <Input
-          type="email"
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <Input
-          type="password"
-          placeholder="Password (min 6 chars)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-        />
-        <Button disabled={loading}>
-          {loading ? 'Signing up...' : 'Sign Up'}
-        </Button>
-      </form>
-
-      <p className="switch-text">
-        Already have an account?{' '}
-        <Link to="/login" className="auth-link">Login</Link>
-      </p>
     </AuthLayout>
   );
 };

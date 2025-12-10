@@ -30,7 +30,7 @@ const btnStyle = (bg, mt = '0') => ({
   fontSize: '12px'
 });
 
-const IDCardsStudent = () => {
+const IDCardsStudent = ({ onBack }) => {
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [logoBase64, setLogoBase64] = useState('');
@@ -41,6 +41,15 @@ const IDCardsStudent = () => {
   const [sessionText, setSessionText] = useState(() => {
     return localStorage.getItem("school_session") || "2024-25";
   });
+
+    const handleBackClick = () => {
+    if (typeof onBack === "function") {
+      onBack();
+    } else {
+      window.history.back();
+    }
+  };
+
 
 
   const { students, loading } = useStudents();
@@ -255,13 +264,17 @@ const IDCardsStudent = () => {
             font-size: 16px;
             font-weight: 800;
             letter-spacing: 1px;
-            margin-top: 8px;
+            margin-top: 4px;
           }
+            .line-1{
+            margin-bottom: 2px;
+            }
 
           .school-text .line-2 {
             font-size: 11px;
             font-weight: 700;
             margin-top: -1px;
+            margin-left: 12px;
           }
 
           .school-text .line-3,
@@ -273,7 +286,7 @@ const IDCardsStudent = () => {
           .photo {
             display: flex;
             justify-content: center;
-            margin-top: 8px;
+            margin-top: 4px;
           }
 
           .photo img {
@@ -305,21 +318,21 @@ const IDCardsStudent = () => {
 
           .info {
   font-size: 12px;
-  margin-top: 6px;
+  margin-top: 3px;
   text-align: left;
   padding: 0 10px;
   color: #030303ff;
 }
 
 .detail-item {
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .mob-row {
   display: flex;
   justify-content: space-between;
   margin-right: 15px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .transport-badge {
@@ -336,7 +349,7 @@ const IDCardsStudent = () => {
 
           .footer {
             position: absolute;
-            bottom: 6px;
+            bottom: 4px;
             left: 4px;
             width: 93%;
             display: flex;
@@ -359,7 +372,8 @@ const IDCardsStudent = () => {
 
           .footer-sign-line {
             border-top: 1px solid black;
-            width: 50px;
+            width: 60px;
+            margin-bottom:1px;
           }
         </style>
       </head>
@@ -375,7 +389,7 @@ const IDCardsStudent = () => {
                         <div class="line-1">AMBIKA</div>
                         <div class="line-2">INTERNATIONAL SCHOOL</div>
                         <div class="line-3">SAIDPUR, DIGHWARA</div>
-                        <div class="line-4">SARAN, BIHAR - 841207</div>
+                        <div class="line-4">SARAN (841207)</div>
                       </div>
                     </div>
 
@@ -393,14 +407,18 @@ const IDCardsStudent = () => {
                     </div>
 
                     <div class="info">
-                      <div class="detail-item">
-                        <b>FATHER</b> : ${student.fatherName || "N/A"}
-                      </div>
+                      <div class="detail-item" style="display:flex;">
+    <b style="min-width:60px;">FATHER :</b>
+    <span style="flex:1; text-wrap:wrap; line-height:14px;">
+      ${student.fatherName || "N/A"}
+    </span>
+</div>
 
                       <div class="flex-between">
                         <div><b>CLASS</b> : ${student.class || "N/A"}</div>
                         <div><b>ROLL</b> : ${student.rollNo || "N/A"}</div>
                       </div>
+
 
                       <div class="detail-item mob-row">
   <span><b>MOB</b> : ${student.mobile || "N/A"}</span>
@@ -427,10 +445,12 @@ const IDCardsStudent = () => {
                       <div class="footer-left">
                         Mob: 6203080946
                       </div>
-                      <div class="footer-sign">
-                        <div class="footer-sign-line"></div>
-                        <div>SECRETARY</div>
-                      </div>
+                     <div class="footer-sign">
+  <div style=" margin-bottom:1px; font-size: 9px; color:red">SONAL KR</div>
+  <div class="footer-sign-line"></div>
+  <div>SECRETARY</div>
+</div>
+
                     </div>
                   </div>
                 `).join('')
@@ -464,10 +484,37 @@ const IDCardsStudent = () => {
     );
   }
 
-  return (
+   return (
     <>
       <div style={{ padding: '2rem' }}>
-        <h2>Student ID Cards (with Background)</h2>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleBackClick}
+            style={{
+              padding: "6px 14px",
+              borderRadius: "20px",
+              border: "1px solid #d1d5db",
+              background: "#2563eb",
+              cursor: "pointer",
+              fontSize: "14px",
+              color: "white"
+            }}
+          >
+            ← Back
+          </button>
+
+          <h2 style={{ margin: 0 }}>Student ID Cards (with Background)</h2>
+        </div>
+
 
         {/* Filter Section */}
         <div

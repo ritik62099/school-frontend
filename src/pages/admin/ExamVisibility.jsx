@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { endpoints } from "../../config/api";
 
-const ExamVisibility = () => {
+const ExamVisibility = ({ onBack }) => {
   const [exams, setExams] = useState({
     pa1: true,
     pa2: true,
@@ -19,6 +19,11 @@ const ExamVisibility = () => {
     halfYear: "SA1 (Half Year)",
     final: "SA2 (Final)",
   };
+
+  const handleBackClick = () => {
+  if (typeof onBack === "function") onBack();
+  else window.history.back();
+};
 
   // Load settings from backend
   useEffect(() => {
@@ -65,7 +70,11 @@ const ExamVisibility = () => {
   return (
     <div style={styles.wrapper}>
       <div style={styles.card}>
-        <h2 style={styles.title}>Manage Exam Visibility</h2>
+        <div style={styles.topBar}>
+  <button style={styles.backBtn} onClick={handleBackClick}>← Back</button>
+  <h2 style={styles.title}>Manage Exam Visibility</h2>
+</div>
+
 
         {Object.keys(examLabels).map((key) => (
           <div key={key} style={styles.row}>
@@ -100,6 +109,25 @@ const styles = {
     minHeight: "100vh",
     padding: "20px",
   },
+
+  topBar: {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  marginBottom: "20px",
+  flexWrap: "wrap",
+},
+
+backBtn: {
+  padding: "6px 14px",
+  borderRadius: "20px",
+  border: "1px solid #d1d5db",
+  background: "#2563eb",
+  cursor: "pointer",
+  fontSize: "14px",
+  color: "white",
+},
+
   card: {
     width: "100%",
     maxWidth: "500px",

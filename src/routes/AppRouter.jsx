@@ -28,6 +28,7 @@ import StudentPaymentForm from '../pages/admin/StudentPaymentForm';
 import Periodic from '../pages/admin/Periodicresult';
 import ExamControls from '../pages/admin/ExamVisibility';
 import AttendanceOverview from '../pages/admin/AttendanceOverview';
+import SchoolAttendanceSummary from '../pages/admin/SchoolAttendanceSummary';
 
 const AppRouter = () => {
   return (
@@ -76,6 +77,9 @@ const AppRouter = () => {
       
       <Route path="/attendance" element={
         <ProtectedRoute><Attendance /></ProtectedRoute>
+      } />
+      <Route path="/admin/school-attendance-summary" element={
+        <ProtectedRoute><SchoolAttendanceSummary /></ProtectedRoute>
       } />
 
       <Route path="/admin/attendance-overview" element={

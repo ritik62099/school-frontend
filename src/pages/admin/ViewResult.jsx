@@ -6,7 +6,8 @@ import html2pdf from "html2pdf.js";
 import Logo from "../../assets/logo.png";
 import { endpoints } from "../../config/api";
 
-const ViewResult = () => {
+const ViewResult = ({ onBack }) => {
+
   const [results, setResults] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +21,15 @@ const ViewResult = () => {
   const [searchRoll, setSearchRoll] = useState("");
   const [searchMobile, setSearchMobile] = useState("");
   const [session, setSession] = useState("");
+
+    const handleBackClick = () => {
+    if (typeof onBack === "function") {
+      onBack();
+    } else {
+      window.history.back();
+    }
+  };
+
 
   const saveSession = async () => {
     const token = localStorage.getItem("token");
@@ -252,7 +262,7 @@ strong {
 
         table th:first-child,
 table td:first-child {
-  width: 125px;
+  width: 75px;
   font-weight: bold;
 }
         html, body {
@@ -265,10 +275,17 @@ table td:first-child {
         .print-page {
   height: 297mm;
   width: 210mm;
-  padding: 5mm 10mm;  /* ⬅ Top padding kam kar diya */
+  padding: 6mm 10mm 5mm 10mm;  /* ⬅ Top padding kam kar diya */
   box-sizing: border-box;
   overflow: hidden;
 }
+
+.grade-scale-table th,
+.grade-scale-table td {
+  padding: 1px 2px;   /* pehle 3px 2px tha, ab height kam ho jayegi */
+  line-height: 1.1;   /* text tight ho jayega */
+}
+
 
         .report-border-wrapper {
           border: 5px double #000 !important;
@@ -283,22 +300,27 @@ table td:first-child {
   table-layout: fixed;
 }
 th, td {
-  border: 1px solid #000;
+  border: 1px solid #000000ff;
   padding: 0px 0px;         /* ← Height kam hogi */
   line-height: 1.1;         /* ← Text compact hogga */
   font-size: 13px;          /* Jyada chota chahiye to 12 bhi kar sakte ho */
+ 
 }
 
+
 .vertical-header {
-  writing-mode: vertical-lr;
-  text-orientation: mixed;
-  white-space: nowrap2
+  display: inline-block;
+  transform: rotate(-90deg);        /* print me bhi right rotate */
+  transform-origin: center center;
+  white-space: nowrap;
   padding: 3px 1px;
   min-width: 18px;
   text-align: center;
   font-weight: bold;
   font-size: 8px;
 }
+
+
 
       </style>
     </head>
@@ -501,27 +523,88 @@ th, td {
     const drawingRows = subjectRows.filter((r) => r.isDrawing);
 
     // Totals sirf main subjects se
+       // Totals sirf main subjects se
     let sumT1 = 0,
       sumT2 = 0,
       sumF = 0,
       n = 0;
 
+    // Column-wise totals
+    let totalPa1 = 0,
+      totalPa2 = 0,
+      totalPa3 = 0,
+      totalPa4 = 0,
+      totalSa1 = 0,
+      totalSa2 = 0,
+      totalTerm1 = 0,
+      totalTerm2 = 0,
+      totalFinal = 0;
+
     mainRows.forEach((row) => {
       n++;
+
+      // PRIMARY (sirf PA1, PA2, SA1, Total)
       if (isPrimary) {
-        sumF += row.total || 0;
-      } else {
+        totalPa1 += row.pa1 || 0;
+        totalPa2 += row.pa2 || 0;
+        totalSa1 += row.sa1 || 0;
+        totalFinal += row.total || 0;
+
+        sumF += row.total || 0; // avg aur percentage ke liye
+      }
+      // HALF YEARLY
+      else if (isHalfYearly) {
+        totalPa1 += row.pa1 || 0;
+        totalPa2 += row.pa2 || 0;
+        totalSa1 += row.sa1 || 0;
+        totalTerm1 += row.term1 || 0;
+
+        sumT1 += row.term1 || 0;
+        sumF += row.term1 || 0; // yahi final माना hai half yearly me
+      }
+      // FINAL (DONO TERM)
+      else {
+        totalPa1 += row.pa1 || 0;
+        totalPa2 += row.pa2 || 0;
+        totalSa1 += row.sa1 || 0;
+        totalTerm1 += row.term1 || 0;
+
+        totalPa3 += row.pa3 || 0;
+        totalPa4 += row.pa4 || 0;
+        totalSa2 += row.sa2 || 0;
+        totalTerm2 += row.term2 || 0;
+
+        totalFinal += row.finalTotal || 0;
+
         sumT1 += row.term1 || 0;
         sumT2 += row.term2 || 0;
         sumF += row.finalTotal || 0;
       }
     });
 
+        // (agar kahin use karna ho to rakh sakte ho)
     const avgT1 = n ? sumT1 / n : 0;
     const avgT2 = n ? sumT2 / n : 0;
     const avgF = n ? sumF / n : 0;
-    const percentage = avgF.toFixed(2);
 
+    // ✅ Final Marks (total of all subjects) + Percentage
+    let finalMarks = 0;
+
+    if (isPrimary) {
+      // Primary classes: totalFinal = sab subjects ke total ka sum
+      finalMarks = totalFinal;
+    } else if (isHalfYearly) {
+      // Half yearly: sirf First Term ka total
+      finalMarks = totalTerm1;
+    } else {
+      // Annual: finalTotal (100) ka sum
+      finalMarks = totalFinal;
+    }
+
+    const maxMarks = n * 100; // har subject 100 marks maana hai
+    const percentage = maxMarks
+      ? ((finalMarks / maxMarks) * 100).toFixed(2)
+      : "0.00";
 
     const positionLabel =
       position === 1 ? "1st" : position === 2 ? "2nd" : position === 3 ? "3rd" : null;
@@ -575,7 +658,7 @@ th, td {
                   fontFamily: 'Algerian, "Times New Roman", serif',
                   fontWeight: "normal",
                   fontSize: "34px",
-                  letterSpacing: "2px",
+                  letterSpacing: "4px",
                   textTransform: "uppercase",
                   margin: 0,
                 }}
@@ -651,85 +734,95 @@ th, td {
           >
             STUDENT'S DETAIL
           </div>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "12pt",
-              lineHeight: "1.6",
-              padding: "4px",
-            }}
-          >
-            <tbody>
-              <tr>
-                {/* LEFT DETAILS */}
-                <td
-                  style={{
-                    width: "40%",
-                    verticalAlign: "top",
-                    paddingRight: "10px",
-                    textAlign: "left",
-                    fontWeight: "500",
-                  }}
-                >
-                  <strong>Student's Name:</strong> {student.name}
-                  <br />
-                  <strong>Mother's Name:</strong> {student.motherName || "N/A"}
-                  <br />
-                  <strong>Father's Name:</strong> {student.fatherName || "N/A"}
-                  <br />
-                  <strong>Address:</strong> {student.address || "N/A"}
-                </td>
-
-               
-<td
+         <table
   style={{
-    width: "20%",
-    verticalAlign: "top",
-    textAlign: "center",
+    width: "100%",
+    borderCollapse: "separate",   // border-collapse hata diya
+    borderSpacing: 0,
+    fontSize: "12pt",
+    lineHeight: "1.6",
+    padding: "4px",
+    border: "none",               // table border off
   }}
 >
-  <div
-    style={{
-      width: "90px",
-      height: "80px",
-      border: "1px solid #000",
-      margin: "0 auto",
-    }}
-  >
-    <img
-      src={student.photo || "https://via.placeholder.com/100"}
-      alt="Student"
-      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-    />
-  </div>
-</td>
+  <tbody>
+    <tr>
+      {/* LEFT DETAILS */}
+      <td
+        style={{
+          width: "40%",
+          verticalAlign: "top",
+          paddingRight: "10px",
+          textAlign: "left",
+          fontWeight: "500",
+          border: "none",          // cell border off
+        }}
+      >
+        <div style={{ marginBottom: "4px" }}>
+          <strong>Student's Name:</strong> {student.name}
+        </div>
+        <div style={{ marginBottom: "4px" }}>
+          <strong>Mother's Name:</strong> {student.motherName || "N/A"}
+        </div>
+        <div style={{ marginBottom: "4px" }}>
+          <strong>Father's Name:</strong> {student.fatherName || "N/A"}
+        </div>
+        <div>
+          <strong>Address:</strong> {student.address || "N/A"}
+        </div>
+      </td>
 
+      <td
+        style={{
+          width: "20%",
+          verticalAlign: "top",
+          textAlign: "center",
+          border: "none",
+        }}
+      >
+        <div
+          style={{
+            width: "90px",
+            height: "80px",
+            border: "1px solid #000",   // sirf photo ka frame rahe
+            margin: "0 auto",
+          }}
+        >
+          <img
+            src={student.photo || "https://via.placeholder.com/100"}
+            alt="Student"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </div>
+      </td>
 
-                {/* RIGHT DETAILS */}
-                <td
-                  style={{
-                    width: "40%",
-                    verticalAlign: "top",
-                    paddingLeft: "10px",
-                    textAlign: "left",
-                    fontWeight: "500",
-                  }}
-                >
-                  <strong>Roll No:</strong> {student.rollNo || "N/A"}
-                  <br />
-                  <strong>Attendance:</strong> {attendanceDisplay}
-                  {positionLabel && (
-                    <>
-                      <br />
-                      <strong>Position:</strong> {positionLabel}
-                    </>
-                  )}
-                </td>
-              </tr>
-            </tbody>
+      {/* RIGHT DETAILS */}
+      <td
+        style={{
+          width: "40%",
+          verticalAlign: "top",
+          paddingLeft: "10px",
+          textAlign: "left",
+          fontWeight: "500",
+          border: "none",
+        }}
+      >
+        <div style={{ marginBottom: "4px" }}>
+          <strong>Roll No:</strong> {student.rollNo || "N/A"}
+        </div>
+        <div style={{ marginBottom: positionLabel ? "4px" : 0 }}>
+          <strong>Attendance:</strong> {attendanceDisplay}
+        </div>
+        {positionLabel && (
+          <div>
+            <strong>Position:</strong> {positionLabel}
+          </div>
+        )}
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-          </table>
         </div>
 
         {/* Marks Table */}
@@ -751,12 +844,14 @@ th, td {
               display: "block",
               fontWeight: "bold",
               textDecoration: "underline",
+              
+              
             }}
           >
             Academic Performance : Scholastic Area (9 Point Scale)
           </h4>
 
-          <div className="table-container" style={{ marginTop: "10px" }}>
+          <div className="table-container" style={{ marginTop: "10px" ,}}>
             <table className="marks-table">
               <thead>
                 {isPrimary ? (
@@ -891,40 +986,57 @@ th, td {
                 ))}
 
                 {/* Total Row – sirf main subjects ka */}
-                <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
-                  <td>TOTAL (Avg)</td>
-                  {isPrimary ? (
-                    <td colSpan="6" style={{ textAlign: "center" }}>
-                      {avgF.toFixed(1)}
-                    </td>
-                  ) : isHalfYearly ? (
-                    <>
-                      <td colSpan="3"></td>
-                      <td>{avgT1.toFixed(1)}</td>
-                      <td>—</td>
-                      <td>—</td>
-                    </>
-                  ) : (
-                    <>
-                      {/* First Term block */}
-                      <td colSpan="3"></td>
-                      <td>{avgT1.toFixed(1)}</td>
-                      <td>—</td>
+                <tr style={{ fontWeight: "bold", background: "#f0f0f0", }}>
+  <td>TOTAL</td>
 
-                      {/* Second Term block */}
-                      <td colSpan="3"></td>
-                      <td>{avgT2.toFixed(1)}</td>
-                      <td>—</td>
+  {isPrimary ? (
+    <>
+      {/* SUBJECT | PA1 | PA2 | SA1 | TOTAL | GP | GRADE */}
+      <td>{totalPa1.toFixed(1)}</td>
+      <td>{totalPa2.toFixed(1)}</td>
+      <td>{totalSa1.toFixed(1)}</td>
+      <td>{totalFinal.toFixed(1)}</td>
+      <td></td>
+      <td></td>
+    </>
+  ) : isHalfYearly ? (
+    <>
+      {/* SUBJECT | PA1 | PA2 | SA1 | TOTAL | GP | GRADE */}
+      <td>{totalPa1.toFixed(1)}</td>
+      <td>{totalPa2.toFixed(1)}</td>
+      <td>{totalSa1.toFixed(1)}</td>
+      <td>{totalTerm1.toFixed(1)}</td>
+      <td></td>
+      <td></td>
+    </>
+  ) : (
+    <>
+      {/* FINAL (DONO TERM) – Header ke columns ka order follow kiya hai */}
 
-                      {/* Final block: First term, second term, final */}
-                      <td>{avgT1.toFixed(1)}</td>
-                      <td>{avgT2.toFixed(1)}</td>
-                      <td>{avgF.toFixed(1)}</td>
-                      <td>—</td>
-                      <td>—</td>
-                    </>
-                  )}
-                </tr>
+      {/* First Term */}
+      <td>{totalPa1.toFixed(1)}</td>
+      <td>{totalPa2.toFixed(1)}</td>
+      <td>{totalSa1.toFixed(1)}</td>
+      <td>{totalTerm1.toFixed(1)}</td>
+      <td></td>
+
+      {/* Second Term */}
+      <td>{totalPa3.toFixed(1)}</td>
+      <td>{totalPa4.toFixed(1)}</td>
+      <td>{totalSa2.toFixed(1)}</td>
+      <td>{totalTerm2.toFixed(1)}</td>
+      <td></td>
+
+      {/* Final Block */}
+      <td>{totalTerm1.toFixed(1)}</td>
+      <td>{totalTerm2.toFixed(1)}</td>
+      <td>{totalFinal.toFixed(1)}</td>
+      <td></td>
+      <td></td>
+    </>
+  )}
+</tr>
+
 
                 {/* Drawing rows – totals ke baad, bina grade/GP ke */}
                 {drawingRows.map((row) => (
@@ -996,9 +1108,27 @@ th, td {
             flexWrap: "wrap",
           }}
         >
-          <div style={{ flex: "1 1 30%", minWidth: "180px" }}>
-            <table className="marks-table" style={{ width: "100%", fontSize: "9pt" }}>
+
+          <div
+            style={{
+              flex: "1 1 30%",
+              minWidth: "180px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            <table
+  className="marks-table grade-scale-table"
+  style={{ width: "100%", fontSize: "8pt" }}  // chaho to 9pt bhi rehne do
+>
+
               <thead>
+                <tr>
+                  <th colSpan="3" style={{ textAlign: "center" }}>
+                    SCHOLASTIC AREAS( 9 Point Scale)
+                  </th>
+                </tr>
                 <tr>
                   <th>MARKS RANGE</th>
                   <th>GRADE</th>
@@ -1053,6 +1183,18 @@ th, td {
                 </tr>
               </tbody>
             </table>
+
+            {/* 👇 yaha signature niche add kiya */}
+            <div
+              style={{
+                marginTop: "10px",
+                textAlign: "center",
+                fontSize: "10pt",
+                fontWeight: 500,
+              }}
+            >
+              Class Teacher Sig. __________________
+            </div>
           </div>
 
           <div
@@ -1065,18 +1207,25 @@ th, td {
             }}
           >
             <div>
-              Students are assessed according to the following :-<br />
-              Promotion is based on the day-to-day work of the student
+              <div style={{ fontSize: "11pt", fontWeight: 500, lineHeight: 1.5, wordSpacing: "3px", }}>
+                <span style={{ fontWeight: 700 ,fontSize: "14pt"}}>
+                  Students are assessed according to the following :-
+                </span>
+                <br />
+                Promotion is based on the day-to-day work of the student
+                <br />
+                Throughout the year and also on the performance in the half
+                <br />
+                Yearly/Summative examination.
+                <br />
+              </div>
+
+
+              First Term: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PA I (10%) + PA II (10%) + SA I (80%) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
               <br />
-              Throughout the year and also on the performance in the half
+              Second Term: &nbsp;&nbsp; PA III (10%) + PA IV (10%) +SA II (80%) = 100%
               <br />
-              Yearly/Summative examination.
-              <br />
-              First Term: PAⅠ(10%) + PAⅡ(10%) + SAⅠ(80%) = 100%
-              <br />
-              Second Term: PAⅢ(10%) + PAⅣ(10%) + SAⅡ(80%) = 100%
-              <br />
-              Final Result: (First Term + Second Term) ÷ 2 = 100%
+              Final Result: &nbsp;&nbsp;&nbsp;50% of 1st Term + 50% of 2nd Term &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
 
             </div>
 
@@ -1089,6 +1238,8 @@ th, td {
                 width: "100%",
               }}
             >
+
+
               <div
                 style={{
                   fontSize: "10pt",
@@ -1097,40 +1248,37 @@ th, td {
                   marginTop: "10px",
                 }}
               >
-                <div>Class Teacher Sig._________</div>
-                <div>Principal Sig.__________</div>
+                <div>Principal Sig. __________</div>
               </div>
+
               <div
-                style={{
-                  border: "1px solid black",
-                  padding: "3px",
-                  width: "140px",
-                  fontSize: "10pt",
-                }}
-              >
-                <div
-                  style={{
-                    borderBottom: "1px solid black",
-                    padding: "4px 0",
-                  }}
-                >
-                  <strong>
-                    Final Avg
-                    <br />
-                    Marks
-                  </strong>
-                  <div style={{ textAlign: "right" }}>{avgF.toFixed(1)}</div>
-                </div>
-                <div
-                  style={{
-                    borderBottom: "1px solid black",
-                    padding: "4px 0",
-                  }}
-                >
-                  <strong>Percentage</strong>
-                  <div style={{ textAlign: "right" }}>{percentage}%</div>
-                </div>
-              </div>
+  style={{
+    border: "1px solid black",
+    padding: "3px",
+    width: "140px",
+    fontSize: "10pt",
+  }}
+>
+  <div
+    style={{
+      borderBottom: "1px solid black",
+      padding: "4px 0",
+    }}
+  >
+    <strong>Final Marks</strong>
+    <div style={{ textAlign: "right" }}>{finalMarks.toFixed(1)}</div>
+  </div>
+  <div
+    style={{
+      borderBottom: "1px solid black",
+      padding: "4px 0",
+    }}
+  >
+    <strong>Percentage</strong>
+    <div style={{ textAlign: "right" }}>{percentage}%</div>
+  </div>
+</div>
+
             </div>
           </div>
         </div>
@@ -1148,7 +1296,7 @@ th, td {
         }
             .marks-table th:first-child,
   .marks-table td:first-child {
-    width: 125px;      /* Thoda wide karna ho to 160 ya 180 bhi rakh sakte ho */
+    width: 70px;      /* Thoda wide karna ho to 160 ya 180 bhi rakh sakte ho */
     font-weight: bold;
   }
         h2 {
@@ -1202,15 +1350,18 @@ th, td {
   word-wrap: break-word;
 }
 .vertical-header {
-  writing-mode: vertical-lr;
-  text-orientation: mixed;
+  display: inline-block;
+  transform: rotate(-90deg);      /* right side (clockwise) rotate */
+  transform-origin: center center;
   white-space: nowrap;
   padding: 4px 1px;
-  min-width: 20px;         /* 30 se 20 kiya */
+  min-width: 20px;
   text-align: center;
   font-weight: bold;
-  font-size: 0.6rem;       /* aur thoda chhota */
+  font-size: 0.6rem;
 }
+
+
 
         .action-buttons {
           margin-top: 12px;
@@ -1236,10 +1387,40 @@ th, td {
           border-radius: 6px;
           background: #fff;
         }
+                  .vr-top-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin: 0.5rem 0 1rem;
+          flex-wrap: wrap;
+        }
+
+        .vr-back-btn {
+          padding: 6px 14px;
+          border-radius: 20px;
+          border: 1px solid #d1d5db;
+          background: #2563eb;
+          cursor: pointer;
+          font-size: 0.9rem;
+          color: white;
+        }
+
+        .vr-top-bar h2 {
+          margin: 0;
+          flex: 1;
+          text-align: center;
+        }
+
         
       `}</style>
 
+          <div className="vr-top-bar">
+      <button className="vr-back-btn" onClick={handleBackClick}>
+        ← Back
+      </button>
       <h2>Student Marks Record</h2>
+    </div>
+
 
       <div
         style={{

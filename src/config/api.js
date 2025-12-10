@@ -40,6 +40,7 @@ export const endpoints = {
   byClass: api('/api/students/by-class'),
   myStudents: api('/api/students/my-students'),
   create: api('/api/students'),
+  promote: (id) => api(`/api/students/${id}/promote`),
 },
   attendance: {
     get: (date, className) =>
@@ -50,6 +51,9 @@ export const endpoints = {
      studentMonthly: (studentId, year, month) =>
     api(`/api/attendance/student-monthly?studentId=${encodeURIComponent(studentId)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`),
      studentTotal: (studentId) => api(`/api/attendance/student-total/${studentId}`),
+
+     schoolSummary: (date) =>
+    api(`/api/attendance/school-summary?date=${encodeURIComponent(date)}`),
   },
   marks: {
     list: api('/api/marks'),
