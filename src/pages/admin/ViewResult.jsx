@@ -1,5 +1,4 @@
 
-
 // src/pages/teacher/ViewResult.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import html2pdf from "html2pdf.js";
@@ -21,6 +20,9 @@ const ViewResult = ({ onBack }) => {
   const [searchRoll, setSearchRoll] = useState("");
   const [searchMobile, setSearchMobile] = useState("");
   const [session, setSession] = useState("");
+
+  // helper: detect drawing subject
+const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
 
     const handleBackClick = () => {
     if (typeof onBack === "function") {
@@ -352,58 +354,56 @@ th, td {
   // ---------- AVERAGE CALC + POSITION (TOP 3) – HOOKS SE PEHLE NAHI, BUT USEMEMO PEHLE  ----------
 
   const computeAverageForRecord = (r, examType) => {
-    const subjectsArray = classSubjectMap[r.class] || [];
-    if (!subjectsArray.length) return 0;
+  const subjectsArray = classSubjectMap[r.class] || [];
+  if (!subjectsArray.length) return 0;
 
-    const isPrimary = isPrimaryClass(r.class);
-    const examData = r.exams || {};
+  const isPrimary = isPrimaryClass(r.class);
+  const examData = r.exams || {};
 
-    let sumT1 = 0,
-      sumT2 = 0,
-      sumF = 0,
-      n = 0;
+  let sumT1 = 0,
+    sumT2 = 0,
+    sumF = 0,
+    n = 0;
 
-    subjectsArray.forEach((sub) => {
-      const lowerSub = String(sub || "").toLowerCase();
-      const isDrawing = lowerSub === "drawing";
+  subjectsArray.forEach((sub) => {
+    const lowerSub = String(sub || "").toLowerCase();
+    if (isDrawing(sub)) {
+      // skip drawing entirely for numeric averages
+      return;
+    }
 
-      const pa1 = examData.pa1?.[sub] || 0;
-      const pa2 = examData.pa2?.[sub] || 0;
-      const sa1 = examData.halfYear?.[sub] || 0;
-      const pa3 = examData.pa3?.[sub] || 0;
-      const pa4 = examData.pa4?.[sub] || 0;
-      const sa2 = examData.final?.[sub] || 0;
+    // parse numeric values safely (fallback to 0)
+    const pa1 = Number(examData.pa1?.[sub] || 0);
+    const pa2 = Number(examData.pa2?.[sub] || 0);
+    const sa1 = Number(examData.halfYear?.[sub] || 0);
+    const pa3 = Number(examData.pa3?.[sub] || 0);
+    const pa4 = Number(examData.pa4?.[sub] || 0);
+    const sa2 = Number(examData.final?.[sub] || 0);
 
-      if (isPrimary) {
-        const total = pa1 + pa2 + sa1;
-        if (!isDrawing) {
-          sumF += total;
-          n++;
-        }
-      } else if (examType === "halfYearly") {
-        const term1 = pa1 / 2 + pa2 / 2 + sa1;
-        if (!isDrawing) {
-          sumT1 += term1;
-          sumF += term1;
-          n++;
-        }
-      } else {
-        const term1 = pa1 / 2 + pa2 / 2 + sa1;
-        const term2 = pa3 / 2 + pa4 / 2 + sa2;
-        const finalTotal = (term1 + term2) / 2;
-        if (!isDrawing) {
-          sumT1 += term1;
-          sumT2 += term2;
-          sumF += finalTotal;
-          n++;
-        }
-      }
-    });
+    if (isPrimary) {
+      const total = pa1 + pa2 + sa1;
+      sumF += total;
+      n++;
+    } else if (examType === "halfYearly") {
+      const term1 = pa1 / 2 + pa2 / 2 + sa1;
+      sumT1 += term1;
+      sumF += term1;
+      n++;
+    } else {
+      const term1 = pa1 / 2 + pa2 / 2 + sa1;
+      const term2 = pa3 / 2 + pa4 / 2 + sa2;
+      const finalTotal = (term1 + term2) / 2;
+      sumT1 += term1;
+      sumT2 += term2;
+      sumF += finalTotal;
+      n++;
+    }
+  });
 
-    if (!n) return 0;
-    const avgF = sumF / n;
-    return avgF;
-  };
+  if (!n) return 0;
+  const avgF = sumF / n;
+  return avgF;
+};
 
   const positionMap = useMemo(() => {
     const map = {};
@@ -454,73 +454,114 @@ th, td {
     const isPrimary = isPrimaryClass(r.class);
     const isHalfYearly = examType === "halfYearly";
 
+
     const subjectRows = subjectsArray.map((sub) => {
-      const pa1 = examData.pa1?.[sub] || 0;
-      const pa2 = examData.pa2?.[sub] || 0;
-      const sa1 = examData.halfYear?.[sub] || 0;
+  const pa1Raw = examData.pa1?.[sub];
+  const pa2Raw = examData.pa2?.[sub];
+  const sa1Raw = examData.halfYear?.[sub];
+  const pa3Raw = examData.pa3?.[sub];
+  const pa4Raw = examData.pa4?.[sub];
+  const sa2Raw = examData.final?.[sub];
 
-      const pa3 = examData.pa3?.[sub] || 0;
-      const pa4 = examData.pa4?.[sub] || 0;
-      const sa2 = examData.final?.[sub] || 0;
+  const drawing = isDrawing(sub);
 
-      const isDrawing = sub.toLowerCase() === "drawing";
+  // For drawing keep raw grade string (if any)
+  if (drawing) {
+    // Prefer any grade present in any of the exam slots (pa1/pa2/sa1/pa3/pa4/sa2)
+    const grade = pa1Raw || pa2Raw || sa1Raw || pa3Raw || pa4Raw || sa2Raw || "";
 
-      if (isPrimary) {
-        const total = pa1 + pa2 + sa1;
-        const { grade, point } = getGradePointAndGrade(total);
-        return { sub, pa1, pa2, sa1, total, grade, point, isDrawing };
-      }
+    return {
+      sub,
+      // keep fields so rendering code can still access them (but they are strings / blank)
+      pa1: grade,
+      pa2: "",
+      sa1: "",
+      pa3: "",
+      pa4: "",
+      sa2: "",
+      term1: null,
+      term2: null,
+      finalTotal: null,
+      grade,
+      point: "",
+      isDrawing: true,
+    };
+  }
 
-      if (isHalfYearly) {
-        const term1 = pa1 / 2 + pa2 / 2 + sa1;
-        const { grade, point } = getGradePointAndGrade(term1);
-        return {
-          sub,
-          pa1: pa1 / 2,
-          pa2: pa2 / 2,
-          sa1,
-          term1,
-          term1Grade: grade,
-          term1Point: point,
-          finalTotal: term1,
-          grade,
-          point,
-          isDrawing,
-        };
-      }
+  // Numeric subject: coerce to numbers (safe fallback to 0)
+  const pa1 = Number(pa1Raw || 0);
+  const pa2 = Number(pa2Raw || 0);
+  const sa1 = Number(sa1Raw || 0);
+  const pa3 = Number(pa3Raw || 0);
+  const pa4 = Number(pa4Raw || 0);
+  const sa2 = Number(sa2Raw || 0);
 
-      const term1 = pa1 / 2 + pa2 / 2 + sa1;
-      const term2 = pa3 / 2 + pa4 / 2 + sa2;
-      const finalTotal = (term1 + term2) / 2;
+  if (isPrimary) {
+    const total = pa1 + pa2 + sa1;
+    const { grade, point } = getGradePointAndGrade(total);
+    return { sub, pa1, pa2, sa1, total, grade, point, isDrawing: false };
+  }
 
-      const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
-      const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
-      const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
+  if (isHalfYearly) {
+    const term1 = pa1 / 2 + pa2 / 2 + sa1;
+    const { grade, point } = getGradePointAndGrade(term1);
+    return {
+      sub,
+      pa1: pa1 / 2,
+      pa2: pa2 / 2,
+      sa1,
+      term1,
+      term1Grade: grade,
+      term1Point: point,
+      finalTotal: term1,
+      grade,
+      point,
+      isDrawing: false,
+    };
+  }
 
-      return {
-        sub,
-        pa1: pa1 / 2,
-        pa2: pa2 / 2,
-        sa1,
-        pa3: pa3 / 2,
-        pa4: pa4 / 2,
-        sa2,
-        term1,
-        term2,
-        finalTotal,
-        term1Grade: g1,
-        term1Point: p1,
-        term2Grade: g2,
-        term2Point: p2,
-        finalGrade: gf,
-        finalPoint: pf,
-        isDrawing,
-      };
-    });
+  // Final (annual)
+  const term1 = pa1 / 2 + pa2 / 2 + sa1;
+  const term2 = pa3 / 2 + pa4 / 2 + sa2;
+  const finalTotal = (term1 + term2) / 2;
 
-    // Drawing alag array me
+  const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
+  const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
+  const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
+
+  return {
+    sub,
+    pa1: term1 ? (pa1 / 2) : 0, // already used display as halves in table
+    pa2: term1 ? (pa2 / 2) : 0,
+    sa1,
+    pa3: pa3 / 2,
+    pa4: pa4 / 2,
+    sa2,
+    term1,
+    term2,
+    finalTotal,
+    term1Grade: g1,
+    term1Point: p1,
+    term2Grade: g2,
+    term2Point: p2,
+    finalGrade: gf,
+    finalPoint: pf,
+    isDrawing: false,
+  };
+});
+
+
+    
     const mainRows = subjectRows.filter((r) => !r.isDrawing);
-    const drawingRows = subjectRows.filter((r) => r.isDrawing);
+const drawingRows = subjectRows.filter((r) => r.isDrawing);
+
+// safe formatter: only call toFixed on numbers
+const formatCell = (v, decimals = 1) => {
+  if (v === null || v === undefined || v === "") return "";
+  return typeof v === "number" ? v.toFixed(decimals) : String(v);
+};
+
+
 
     // Totals sirf main subjects se
        // Totals sirf main subjects se
@@ -786,12 +827,13 @@ th, td {
             height: "80px",
             border: "1px solid #000",   // sirf photo ka frame rahe
             margin: "0 auto",
+            borderRadius:"10px"
           }}
         >
           <img
             src={student.photo || "https://via.placeholder.com/100"}
             alt="Student"
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            style={{ width: "100%", height: "100%", objectFit: "cover" ,borderRadius:"10px"}}
           />
         </div>
       </td>
@@ -929,169 +971,155 @@ th, td {
 
 
               <tbody>
-                {/* Main subjects (Drawing ke bina) */}
-                {mainRows.map((row) => (
-                  <tr key={row.sub}>
-                    <td>{row.sub.toUpperCase()}</td>
+  {/* Main subjects (Drawing ke bina) */}
+  {mainRows.map((row) => (
+    <tr key={row.sub}>
+      <td>{row.sub.toUpperCase()}</td>
 
-                    {isPrimary ? (
-                      <>
-                        <td>{row.pa1}</td>
-                        <td>{row.pa2}</td>
-                        <td>{row.sa1}</td>
-                        <td>
-                          {typeof row.total === "number"
-                            ? row.total.toFixed(1)
-                            : row.total}
-                        </td>
-                        {/* Drawing ke liye grade/point blank */}
-                        <td>{row.isDrawing ? "" : row.point}</td>
-                        <td>{row.isDrawing ? "" : row.grade}</td>
-                      </>
-                    ) : isHalfYearly ? (
-                      <>
-                        <td>{row.pa1.toFixed(1)}</td>
-                        <td>{row.pa2.toFixed(1)}</td>
-                        <td>{row.sa1.toFixed(1)}</td>
-                        <td>{row.term1.toFixed(1)}</td>
-                        {/* Drawing ke liye grade/point blank */}
-                        <td>{row.isDrawing ? "" : row.term1Point}</td>
-                        <td>{row.isDrawing ? "" : row.term1Grade}</td>
-                      </>
-                    ) : (
-                      <>
-                        {/* First Term */}
-                        <td>{row.pa1.toFixed(1)}</td>
-                        <td>{row.pa2.toFixed(1)}</td>
-                        <td>{row.sa1.toFixed(1)}</td>
-                        <td>{row.term1.toFixed(1)}</td>
-                        <td>{row.isDrawing ? "" : row.term1Grade}</td>
+      {isPrimary ? (
+        <>
+          <td>{formatCell(row.pa1)}</td>
+          <td>{formatCell(row.pa2)}</td>
+          <td>{formatCell(row.sa1)}</td>
+          <td>{typeof row.total === "number" ? row.total.toFixed(1) : row.total || ""}</td>
+          <td>{row.isDrawing ? "" : row.point || ""}</td>
+          <td>{row.isDrawing ? "" : row.grade || ""}</td>
+        </>
+      ) : isHalfYearly ? (
+        <>
+          <td>{formatCell(row.pa1)}</td>
+          <td>{formatCell(row.pa2)}</td>
+          <td>{formatCell(row.sa1)}</td>
+          <td>{formatCell(row.term1)}</td>
+          <td>{row.isDrawing ? "" : row.term1Point || ""}</td>
+          <td>{row.isDrawing ? "" : row.term1Grade || ""}</td>
+        </>
+      ) : (
+        <>
+          {/* First Term */}
+          <td>{formatCell(row.pa1)}</td>
+          <td>{formatCell(row.pa2)}</td>
+          <td>{formatCell(row.sa1)}</td>
+          <td>{formatCell(row.term1)}</td>
+          <td>{row.isDrawing ? "" : row.term1Grade || ""}</td>
 
-                        {/* Second Term */}
-                        <td>{row.pa3.toFixed(1)}</td>
-                        <td>{row.pa4.toFixed(1)}</td>
-                        <td>{row.sa2.toFixed(1)}</td>
-                        <td>{row.term2.toFixed(1)}</td>
-                        <td>{row.isDrawing ? "" : row.term2Grade}</td>
+          {/* Second Term */}
+          <td>{formatCell(row.pa3)}</td>
+          <td>{formatCell(row.pa4)}</td>
+          <td>{formatCell(row.sa2)}</td>
+          <td>{formatCell(row.term2)}</td>
+          <td>{row.isDrawing ? "" : row.term2Grade || ""}</td>
 
-                        {/* Final Block */}
-                        <td>{row.term1.toFixed(1)}</td>
-                        <td>{row.term2.toFixed(1)}</td>
-                        <td>{row.finalTotal.toFixed(1)}</td>
-                        <td>{row.isDrawing ? "" : row.finalPoint}</td>
-                        <td>{row.isDrawing ? "" : row.finalGrade}</td>
-                      </>
-                    )}
-                  </tr>
-                ))}
+          {/* Final Block */}
+          <td>{formatCell(row.term1)}</td>
+          <td>{formatCell(row.term2)}</td>
+          <td>{formatCell(row.finalTotal)}</td>
+          <td>{row.isDrawing ? "" : row.finalPoint || ""}</td>
+          <td>{row.isDrawing ? "" : row.finalGrade || ""}</td>
+        </>
+      )}
+    </tr>
+  ))}
 
-                {/* Total Row – sirf main subjects ka */}
-                <tr style={{ fontWeight: "bold", background: "#f0f0f0", }}>
-  <td>TOTAL</td>
+  {/* Total Row – sirf main subjects ka */}
+  <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
+    <td>TOTAL</td>
 
-  {isPrimary ? (
-    <>
-      {/* SUBJECT | PA1 | PA2 | SA1 | TOTAL | GP | GRADE */}
-      <td>{totalPa1.toFixed(1)}</td>
-      <td>{totalPa2.toFixed(1)}</td>
-      <td>{totalSa1.toFixed(1)}</td>
-      <td>{totalFinal.toFixed(1)}</td>
-      <td></td>
-      <td></td>
-    </>
-  ) : isHalfYearly ? (
-    <>
-      {/* SUBJECT | PA1 | PA2 | SA1 | TOTAL | GP | GRADE */}
-      <td>{totalPa1.toFixed(1)}</td>
-      <td>{totalPa2.toFixed(1)}</td>
-      <td>{totalSa1.toFixed(1)}</td>
-      <td>{totalTerm1.toFixed(1)}</td>
-      <td></td>
-      <td></td>
-    </>
-  ) : (
-    <>
-      {/* FINAL (DONO TERM) – Header ke columns ka order follow kiya hai */}
+    {isPrimary ? (
+      <>
+        <td>{formatCell(totalPa1)}</td>
+        <td>{formatCell(totalPa2)}</td>
+        <td>{formatCell(totalSa1)}</td>
+        <td>{formatCell(totalFinal)}</td>
+        <td></td>
+        <td></td>
+      </>
+    ) : isHalfYearly ? (
+      <>
+        <td>{formatCell(totalPa1)}</td>
+        <td>{formatCell(totalPa2)}</td>
+        <td>{formatCell(totalSa1)}</td>
+        <td>{formatCell(totalTerm1)}</td>
+        <td></td>
+        <td></td>
+      </>
+    ) : (
+      <>
+        {/* First Term */}
+        <td>{formatCell(totalPa1)}</td>
+        <td>{formatCell(totalPa2)}</td>
+        <td>{formatCell(totalSa1)}</td>
+        <td>{formatCell(totalTerm1)}</td>
+        <td></td>
 
-      {/* First Term */}
-      <td>{totalPa1.toFixed(1)}</td>
-      <td>{totalPa2.toFixed(1)}</td>
-      <td>{totalSa1.toFixed(1)}</td>
-      <td>{totalTerm1.toFixed(1)}</td>
-      <td></td>
+        {/* Second Term */}
+        <td>{formatCell(totalPa3)}</td>
+        <td>{formatCell(totalPa4)}</td>
+        <td>{formatCell(totalSa2)}</td>
+        <td>{formatCell(totalTerm2)}</td>
+        <td></td>
 
-      {/* Second Term */}
-      <td>{totalPa3.toFixed(1)}</td>
-      <td>{totalPa4.toFixed(1)}</td>
-      <td>{totalSa2.toFixed(1)}</td>
-      <td>{totalTerm2.toFixed(1)}</td>
-      <td></td>
+        {/* Final Block */}
+        <td>{formatCell(totalTerm1)}</td>
+        <td>{formatCell(totalTerm2)}</td>
+        <td>{formatCell(totalFinal)}</td>
+        <td></td>
+        <td></td>
+      </>
+    )}
+  </tr>
 
-      {/* Final Block */}
-      <td>{totalTerm1.toFixed(1)}</td>
-      <td>{totalTerm2.toFixed(1)}</td>
-      <td>{totalFinal.toFixed(1)}</td>
-      <td></td>
-      <td></td>
-    </>
-  )}
-</tr>
+  {/* Drawing rows – totals ke baad, bina grade/GP ke */}
+  {drawingRows.map((row) => (
+    <tr key={row.sub + "-drawing"}>
+      <td>{row.sub.toUpperCase()}</td>
 
+      {isPrimary ? (
+        <>
+          <td>{formatCell(row.pa1)}</td>
+          <td>{formatCell(row.pa2)}</td>
+          <td>{formatCell(row.sa1)}</td>
+          <td>{formatCell(row.total)}</td>
+          <td></td>
+          <td></td>
+        </>
+      ) : isHalfYearly ? (
+        <>
+          <td>{formatCell(row.pa1)}</td>
+          <td>{formatCell(row.pa2)}</td>
+          <td>{formatCell(row.sa1)}</td>
+          <td>{formatCell(row.term1)}</td>
+          <td></td>
+          <td></td>
+        </>
+      ) : (
+        <>
+          {/* First Term */}
+          <td>{formatCell(row.pa1)}</td>
+          <td>{formatCell(row.pa2)}</td>
+          <td>{formatCell(row.sa1)}</td>
+          <td>{formatCell(row.term1)}</td>
+          <td></td>
 
-                {/* Drawing rows – totals ke baad, bina grade/GP ke */}
-                {drawingRows.map((row) => (
-                  <tr key={row.sub + "-drawing"}>
-                    <td>{row.sub.toUpperCase()}</td>
+          {/* Second Term */}
+          <td>{formatCell(row.pa3)}</td>
+          <td>{formatCell(row.pa4)}</td>
+          <td>{formatCell(row.sa2)}</td>
+          <td>{formatCell(row.term2)}</td>
+          <td></td>
 
-                    {isPrimary ? (
-                      <>
-                        <td>{row.pa1}</td>
-                        <td>{row.pa2}</td>
-                        <td>{row.sa1}</td>
-                        <td>
-                          {typeof row.total === "number"
-                            ? row.total.toFixed(1)
-                            : row.total}
-                        </td>
-                        <td></td>
-                        <td></td>
-                      </>
-                    ) : isHalfYearly ? (
-                      <>
-                        <td>{row.pa1.toFixed(1)}</td>
-                        <td>{row.pa2.toFixed(1)}</td>
-                        <td>{row.sa1.toFixed(1)}</td>
-                        <td>{row.term1.toFixed(1)}</td>
-                        <td></td>
-                        <td></td>
-                      </>
-                    ) : (
-                      <>
-                        {/* First Term */}
-                        <td>{row.pa1.toFixed(1)}</td>
-                        <td>{row.pa2.toFixed(1)}</td>
-                        <td>{row.sa1.toFixed(1)}</td>
-                        <td>{row.term1.toFixed(1)}</td>
-                        <td></td>
+          {/* Final block */}
+          <td>{formatCell(row.term1)}</td>
+          <td>{formatCell(row.term2)}</td>
+          <td>{formatCell(row.finalTotal)}</td>
+          <td></td>
+          <td></td>
+        </>
+      )}
+    </tr>
+  ))}
+</tbody>
 
-                        {/* Second Term */}
-                        <td>{row.pa3.toFixed(1)}</td>
-                        <td>{row.pa4.toFixed(1)}</td>
-                        <td>{row.sa2.toFixed(1)}</td>
-                        <td>{row.term2.toFixed(1)}</td>
-                        <td></td>
-
-                        {/* Final block */}
-                        <td>{row.term1.toFixed(1)}</td>
-                        <td>{row.term2.toFixed(1)}</td>
-                        <td>{row.finalTotal.toFixed(1)}</td>
-                        <td></td>
-                        <td></td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
 
             </table>
           </div>

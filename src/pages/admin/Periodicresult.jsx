@@ -6,7 +6,6 @@ import Logo from "../../assets/logo.png";
 import { endpoints } from "../../config/api";
 
 const ViewPAResults = ({ onBack }) => {
-
   const [results, setResults] = useState([]);
   const [classSubjectMap, setClassSubjectMap] = useState({});
   const [assignedClasses, setAssignedClasses] = useState([]);
@@ -18,12 +17,19 @@ const ViewPAResults = ({ onBack }) => {
   const [searchName, setSearchName] = useState("");
   const [selectedPA, setSelectedPA] = useState("pa1");
 
-   const handleBackClick = () => {
+  const handleBackClick = () => {
     if (typeof onBack === "function") onBack();
     else window.history.back();
   };
 
+  // helper: detect drawing subject
+  const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
 
+  // safe formatter for display
+  const formatCell = (v, decimals = 2) => {
+    if (v === null || v === undefined || v === "") return "";
+    return typeof v === "number" ? v.toFixed(decimals) : String(v);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -31,15 +37,18 @@ const ViewPAResults = ({ onBack }) => {
 
     fetch(endpoints.auth.me, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.json())
-      .then((data) => setAssignedClasses(data.assignedClasses || []));
+      .then((data) => setAssignedClasses(data.assignedClasses || []))
+      .catch(() => {});
 
     fetch(endpoints.marks.list, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.json())
-      .then((data) => setResults(data));
+      .then((data) => setResults(Array.isArray(data) ? data : []))
+      .catch(() => setResults([]));
 
     fetch(endpoints.classSubjects.getAll, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.json())
-      .then((mapping) => setClassSubjectMap(mapping))
+      .then((mapping) => setClassSubjectMap(mapping || {}))
+      .catch(() => setClassSubjectMap({}))
       .finally(() => setLoading(false));
   }, []);
 
@@ -54,9 +63,9 @@ const ViewPAResults = ({ onBack }) => {
   const getExamStorageKey = (examKey) => {
     switch (examKey) {
       case "sa1":
-        return "halfYear"; // DB me ye naam hai
+        return "halfYear"; // DB name
       case "sa2":
-        return "final"; // DB me ye naam hai
+        return "final"; // DB name
       default:
         return examKey; // pa1, pa2, pa3, pa4
     }
@@ -74,7 +83,7 @@ const ViewPAResults = ({ onBack }) => {
     if (!element) return;
 
     const win = window.open("", "_blank");
-    const logoUrl = Logo; // bundler se resolve hoga
+    const logoUrl = Logo;
 
     const html = `
       <html>
@@ -82,118 +91,25 @@ const ViewPAResults = ({ onBack }) => {
           <title>${examKey.toUpperCase()} - Class ${className}</title>
           <style>
             * { box-sizing: border-box; }
-            body {
-              font-family: "Times New Roman", serif;
-              margin: 0;
-              padding: 0;
-            }
-
-            .school-header {
-              border: 1px solid #000;
-              margin: 8px;
-              padding: 4px 12px 8px;
-              background: #fff;
-            }
-
-            .header-top-line {
-              display: flex;
-              justify-content: space-between;
-              font-size: 12px;
-              margin-bottom: 4px;
-            }
-
-            /* HEADER MAIN: LOGO LEFT, TEXT CENTER */
-            .header-main {
-              display: grid;
-              grid-template-columns: 100px auto 100px;
-              align-items: center;
-            }
-
-            .school-logo {
-              width: 80px;
-              height: 70px;
-              object-fit: contain;
-              justify-self: start;
-            }
-
-            .school-text {
-              text-align: center;
-              justify-self: center;
-            }
-
-            .school-name {
-              font-size: 22px;
-              font-weight: bold;
-              letter-spacing: 1px;
-            }
-
-            .school-sub,
-            .school-address,
-            .school-phone {
-              font-size: 20px;
-            }
-
-            .print-content {
-              padding: 0 12px 16px;
-              margin-top: 130px;
-            }
-
-            .report-title {
-              text-align: center;
-              font-size: 16px;
-              font-weight: bold;
-              margin: 4px 0 8px;
-              text-transform: uppercase;
-            }
-
-            .class-title {
-              text-align: center;
-              margin-bottom: 10px;
-              font-size: 14px;
-            }
-
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              font-size: 12px;
-              page-break-inside: auto;
-            }
-
-            th, td {
-              border: 1px solid #000;
-              padding: 4px;
-              text-align: center;
-            }
-
-            th { font-weight: bold; }
-
-            /* IMPORTANT: table header har page par repeat */
-            thead {
-              display: table-header-group;
-            }
-            tfoot {
-              display: table-footer-group;
-            }
-
+            body { font-family: "Times New Roman", serif; margin: 0; padding: 0; }
+            .school-header { border: 1px solid #000; margin: 8px; padding: 4px 12px 8px; background: #fff; }
+            .header-top-line { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+            .header-main { display: grid; grid-template-columns: 100px auto 100px; align-items: center; }
+            .school-logo { width: 80px; height: 70px; object-fit: contain; justify-self: start; }
+            .school-text { text-align: center; justify-self: center; }
+            .school-name { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+            .print-content { padding: 0 12px 16px; margin-top: 130px; }
+            .report-title { text-align: center; font-size: 16px; font-weight: bold; margin: 4px 0 8px; text-transform: uppercase; }
+            .class-title { text-align: center; margin-bottom: 10px; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; page-break-inside: auto; }
+            th, td { border: 1px solid #000; padding: 4px; text-align: center; }
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
             @media print {
               body { margin: 0; }
-
-              .school-header {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 999;
-                border-bottom: 1px solid #000;
-              }
-
-              .print-content {
-                margin-top: 140px;
-              }
-
-              @page {
-                margin: 10mm;
-              }
+              .school-header { position: fixed; top: 0; left: 0; right: 0; z-index: 999; border-bottom: 1px solid #000; }
+              .print-content { margin-top: 140px; }
+              @page { margin: 10mm; }
             }
           </style>
         </head>
@@ -211,7 +127,7 @@ const ViewPAResults = ({ onBack }) => {
                 <div class="school-address">Saidpur, Dighwara (Saran), 841207</div>
                 <div class="school-phone">Mob. 8797118188</div>
               </div>
-              <div></div> <!-- right side empty column for perfect centering -->
+              <div></div>
             </div>
           </div>
 
@@ -246,21 +162,20 @@ const ViewPAResults = ({ onBack }) => {
     return (
       (searchClass === "" ||
         r.class.toLowerCase().includes(searchClass.toLowerCase())) &&
-      (searchRoll === "" || student.rollNo?.toString().includes(searchRoll)) &&
+      (searchRoll === "" || String(student.rollNo || "").includes(searchRoll)) &&
       (searchName === "" ||
         student.name.toLowerCase().includes(searchName.toLowerCase()))
     );
   });
 
- return (
-  <div style={{ padding: "20px" }}>
-    <div style={styles.topBar}>
-      <button style={styles.backBtn} onClick={handleBackClick}>
-        ← Back
-      </button>
-      <h2 style={styles.heading}>📘 Periodic Assessment Results</h2>
-    </div>
-
+  return (
+    <div style={{ padding: "20px" }}>
+      <div style={styles.topBar}>
+        <button style={styles.backBtn} onClick={handleBackClick}>
+          ← Back
+        </button>
+        <h2 style={styles.heading}>📘 Periodic Assessment Results</h2>
+      </div>
 
       {/* FILTER BAR */}
       <div
@@ -337,7 +252,10 @@ const ViewPAResults = ({ onBack }) => {
 
               const subjects = classSubjectMap[cls] || [];
               const perSubMax = getPerSubjectMax(selectedPA);
-              const maxMarks = subjects.length * perSubMax;
+
+              // Consider only numeric subjects when computing class max
+              const numericSubjects = subjects.filter((s) => !isDrawing(s));
+              const maxMarks = numericSubjects.length * perSubMax;
 
               return (
                 <div key={`${selectedPA}-${cls}`} style={{ marginBottom: "30px" }}>
@@ -364,22 +282,34 @@ const ViewPAResults = ({ onBack }) => {
 
                           const storageKey = getExamStorageKey(selectedPA);
                           const exam = r.exams?.[storageKey] || {};
-                          const marks = subjects.map((sub) => exam[sub] || 0);
 
-                          const total = marks.reduce((a, b) => a + b, 0);
-                          const percent = maxMarks
-                            ? ((total / maxMarks) * 100).toFixed(2)
-                            : "0.00";
+                          // Build marks info per subject: if drawing -> keep string, else numeric
+                          const marksInfo = subjects.map((sub) => {
+                            const raw = exam[sub];
+                            if (isDrawing(sub)) {
+                              // show letter grade as-is (or blank)
+                              return { sub, display: raw || "", numeric: 0, isDrawing: true };
+                            }
+                            // numeric subjects: try parse float, fallback 0
+                            const num = parseFloat(raw);
+                            const numeric = Number.isFinite(num) ? num : 0;
+                            return { sub, display: numeric, numeric, isDrawing: false };
+                          });
+
+                          const total = marksInfo.reduce((acc, mi) => acc + (mi.isDrawing ? 0 : mi.numeric), 0);
+                          const percent = maxMarks ? ((total / maxMarks) * 100).toFixed(2) : "0.00";
 
                           return (
                             <tr key={r._id}>
                               <td>{student.rollNo}</td>
-                              <td>{student.name}</td>
-                              {marks.map((m, idx) => (
-                                <td key={idx}>{m}</td>
+                              <td style={{ textAlign: "left", paddingLeft: 8 }}>{student.name}</td>
+                              {marksInfo.map((m) => (
+                                <td key={m.sub}>
+                                  {m.isDrawing ? String(m.display || "") : formatCell(m.display, 0)}
+                                </td>
                               ))}
                               <td>
-                                <b>{total}</b>
+                                <b>{formatCell(total, 0)}</b>
                               </td>
                               <td>
                                 <b>{percent}%</b>
@@ -442,7 +372,7 @@ const styles = {
     borderRadius: "5px",
     cursor: "pointer",
   },
-    topBar: {
+  topBar: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
@@ -464,7 +394,6 @@ const styles = {
     textAlign: "center",
     flex: 1,
   },
-
 };
 
 export default ViewPAResults;

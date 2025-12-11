@@ -1,5 +1,5 @@
 
-
+// src/components/marks/AddMarks.jsx
 import React, { useState, useEffect } from "react";
 import { endpoints } from "../../config/api";
 
@@ -18,18 +18,20 @@ const AddMarks = ({ onBack }) => {
   const [classes, setClasses] = useState([]);
 
   const [rowStatus, setRowStatus] = useState({});
-  const [userRole, setUserRole] = useState(null);         // "admin" / "teacher"
+  const [userRole, setUserRole] = useState(null); // "admin" / "teacher"
   const [classSubjectsMap, setClassSubjectsMap] = useState({}); // { "1": ["Math","Eng"], ... }
 
+  // helper: drawing detection
+  const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
 
-
-   const handleBackClick = () => {
+  const handleBackClick = () => {
     if (typeof onBack === "function") {
       onBack();
     } else {
       window.history.back();
     }
   };
+
   useEffect(() => {
     const loadVisibleExams = async () => {
       try {
@@ -49,7 +51,7 @@ const AddMarks = ({ onBack }) => {
     loadVisibleExams();
   }, []);
 
-  // 🔹 Fetch current user (role + teacher assignments)
+  // fetch current user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -66,7 +68,7 @@ const AddMarks = ({ onBack }) => {
           const assignments = user.teachingAssignments || [];
           setTeacherAssignments(assignments);
 
-          // teacher ke liye classes -> assignments se
+          // teacher classes
           const classList = [...new Set(assignments.map((a) => a.class))];
           setClasses(classList);
         }
@@ -78,7 +80,7 @@ const AddMarks = ({ onBack }) => {
     fetchUser();
   }, []);
 
-  // 🔹 Fetch class-subjects mapping (admin + teacher dono use kar sakte hain)
+  // fetch class-subject mapping
   useEffect(() => {
     const fetchClassSubjects = async () => {
       try {
@@ -88,8 +90,6 @@ const AddMarks = ({ onBack }) => {
         if (!res.ok) return;
         const data = await res.json();
 
-        // AssignTeacher se dekh ke: mapping ek OBJECT hai
-        // Example: { "1": ["Math","English"], "2": ["Math","Science"] }
         setClassSubjectsMap(data || {});
       } catch (err) {
         console.error("Failed to load class-subjects", err);
@@ -99,7 +99,7 @@ const AddMarks = ({ onBack }) => {
     fetchClassSubjects();
   }, []);
 
-  // 🔹 Fetch students (admin: sab students, teacher: sirf apne students – backend already handle)
+  // fetch students list (backend filters for teacher)
   useEffect(() => {
     const fetchStudents = async () => {
       try {
@@ -118,7 +118,7 @@ const AddMarks = ({ onBack }) => {
     fetchStudents();
   }, []);
 
-  // 🔹 Admin ke liye: students se classes nikaalo
+  // admin: compute classes from students
   useEffect(() => {
     if (userRole !== "admin") return;
     if (!students.length) return;
@@ -133,7 +133,7 @@ const AddMarks = ({ onBack }) => {
     ? students.filter((s) => s.class === selectedClass)
     : [];
 
-  // 🔹 Class change hone par (ADMIN) subjects set karo
+  // when class changes (admin) set subjects
   useEffect(() => {
     if (!selectedClass) {
       setSubjects([]);
@@ -144,10 +144,10 @@ const AddMarks = ({ onBack }) => {
       const subs = classSubjectsMap[selectedClass] || [];
       setSubjects(subs);
     }
-    // teacher ke liye subjects yaha nahi set kar rahe, wo student se aayenge
+    // teacher subjects will be loaded when student selected
   }, [selectedClass, userRole, classSubjectsMap]);
 
-  // 🔹 Load marks + subjects when student change
+  // load marks + subjects when student changes
   useEffect(() => {
     if (!selectedStudent) return;
 
@@ -163,19 +163,20 @@ const AddMarks = ({ onBack }) => {
       let allowedSubjects = [];
 
       if (userRole === "teacher") {
-        // teacher ke liye subjects => teachingAssignments
+        // subjects from teacher assignments
         const assignment = teacherAssignments.find(
           (a) => a.class === student.class
         );
         allowedSubjects = assignment ? assignment.subjects || [] : [];
         setSubjects(allowedSubjects);
       } else if (userRole === "admin") {
-        // admin ke liye subjects already selectedClass effect me set ho chuke hain
+        // admin: subjects already obtained by selectedClass effect
         allowedSubjects = subjects;
       }
 
       const finalSubjects = allowedSubjects || [];
 
+      // initial marks structure (strings) — drawing will keep strings
       const initialMarks = {};
       visibleExams.forEach((ex) => {
         initialMarks[ex] = {};
@@ -193,7 +194,12 @@ const AddMarks = ({ onBack }) => {
           visibleExams.forEach((exam) => {
             if (data.exams?.[exam]) {
               finalSubjects.forEach((sub) => {
-                initialMarks[exam][sub] = data.exams[exam][sub] ?? "";
+                // if coming from backend, it might be number or grade letter
+                const val = data.exams[exam][sub];
+                // For drawing keep whatever (string), for numeric convert to string for input
+                if (val !== undefined && val !== null) {
+                  initialMarks[exam][sub] = isDrawing(sub) ? String(val) : String(val);
+                }
               });
             }
           });
@@ -213,12 +219,31 @@ const AddMarks = ({ onBack }) => {
     students,
     teacherAssignments,
     userRole,
-    subjects, // admin case me needed
+    subjects, // admin case
   ]);
 
+  // handle change: drawing => letter only; others => numeric validation
   const handleChange = (exam, subject, value) => {
+    if (isDrawing(subject)) {
+      const v = value ? String(value).toUpperCase() : "";
+      if (v && !["A", "B", "C", "D"].includes(v)) return;
+      setMarks((prev) => ({
+        ...prev,
+        [exam]: { ...prev[exam], [subject]: v },
+      }));
+      setRowStatus((prev) => ({
+        ...prev,
+        [exam]: {
+          ...(prev[exam] || {}),
+          [subject]: undefined,
+        },
+      }));
+      return;
+    }
+
+    // numeric subjects: allow empty or 0-100 (frontend check)
     const num = Number(value);
-    if (value !== "" && (num < 0 || num > 100)) return;
+    if (value !== "" && (isNaN(num) || num < 0 || num > 100)) return;
 
     setMarks((prev) => ({
       ...prev,
@@ -250,13 +275,16 @@ const AddMarks = ({ onBack }) => {
     }));
 
     try {
+      // For drawing, send the letter; for numeric, send number string (backend sanitizes)
+      const body = { exams: { [exam]: { [subject]: value } } };
+
       const res = await fetch(endpoints.marks.save(selectedStudent), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ exams: { [exam]: { [subject]: value } } }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -294,147 +322,160 @@ const AddMarks = ({ onBack }) => {
 
   return (
     <div style={styles.wrapper}>
-    <div style={styles.container}>
-      <div style={styles.topBar}>
-        <button
-          type="button"
-          style={styles.backBtn}
-          onClick={handleBackClick}
-        >
-          ← Back
-        </button>
-        <h2 style={styles.title}>Add / Update Student Marks</h2>
+      <div style={styles.container}>
+        <div style={styles.topBar}>
+          <button
+            type="button"
+            style={styles.backBtn}
+            onClick={handleBackClick}
+          >
+            ← Back
+          </button>
+          <h2 style={styles.title}>Add / Update Student Marks</h2>
 
-        {/* Class Dropdown */}
-        
-        <select
-          style={styles.dropdown}
-          value={selectedClass}
-          onChange={(e) => {
-            setSelectedClass(e.target.value);
-            setSelectedStudent("");
-            setMarks({});
-            setRowStatus({});
-            if (userRole === "teacher") setSubjects([]);
-          }}
-        >
-          <option value="">-- Select Class --</option>
-          {classes.map((cls) => (
-            <option key={cls} value={cls}>
-              Class {cls}
-            </option>
-          ))}
-        </select>
-
-        {/* Student Dropdown */}
-        <label style={styles.label}>Select Student</label>
-        <select
-          style={styles.dropdown}
-          value={selectedStudent}
-          disabled={!selectedClass}
-          onChange={(e) => {
-            setSelectedStudent(e.target.value);
-            setMessage("");
-          }}
-        >
-          <option value="">-- Select Student --</option>
-
-          {filteredStudents.map((s) => {
-            const roll =
-              s.rollNo || s.roll || s.roll_number || s.rno || "No Roll";
-
-            return (
-              <option key={s._id} value={s._id}>
-                {roll} - {s.name}
-              </option>
-            );
-          })}
-        </select>
-
-        {/* No exams enabled */}
-        {visibleExams.length === 0 && (
-          <p style={styles.warning}>⚠ No exam enabled by admin.</p>
-        )}
-
-        {/* Ask to select student */}
-        {visibleExams.length > 0 && !selectedStudent && (
-          <p style={styles.info}>Please select a student to continue.</p>
-        )}
-
-        {/* Exams + subjects */}
-        {selectedStudent &&
-          subjects.length > 0 &&
-          visibleExams.map((exam) => (
-            <div key={exam} style={styles.examCard}>
-              <h3 style={styles.examTitle}>{exam.toUpperCase()}</h3>
-
-              {subjects.map((sub) => (
-                <div style={styles.subjectRow} key={sub}>
-                  <span style={styles.subjectLabel}>{sub}</span>
-
-                  <input
-                    style={styles.input}
-                    type="text"
-                    value={marks[exam]?.[sub] ?? ""}
-                    onChange={(e) => handleChange(exam, sub, e.target.value)}
-                  />
-
-                  <button
-                    style={{
-                      ...styles.saveBtn,
-                      background:
-                        rowStatus[exam]?.[sub] === "saved"
-                          ? "#16a34a"
-                          : rowStatus[exam]?.[sub] === "saving"
-                          ? "#6b7280"
-                          : styles.saveBtn.background,
-                      cursor:
-                        rowStatus[exam]?.[sub] === "saving"
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                    disabled={rowStatus[exam]?.[sub] === "saving"}
-                    onClick={() => saveSingle(exam, sub)}
-                  >
-                    {rowStatus[exam]?.[sub] === "saving"
-                      ? "Saving..."
-                      : rowStatus[exam]?.[sub] === "saved"
-                      ? "Saved ✓"
-                      : "Save"}
-                  </button>
-
-                  {rowStatus[exam]?.[sub] === "error" && (
-                    <span style={{ color: "red", fontSize: "12px" }}>
-                      Error saving
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
-
-        {/* Jab class ke liye subjects hi nahi mile */}
-        {selectedClass && selectedStudent && subjects.length === 0 && (
-          <p style={styles.warning}>
-            {userRole === "teacher"
-              ? "⚠ No subjects assigned for this class in your assignment."
-              : "⚠ No subjects configured for this class. Please set class subjects from admin panel."}
-          </p>
-        )}
-
-        {message && (
-          <p
-            style={{
-              color: message.includes("✅") ? "green" : "red",
-              marginTop: "15px",
-              fontWeight: "bold",
+          {/* Class Dropdown */}
+          <select
+            style={styles.dropdown}
+            value={selectedClass}
+            onChange={(e) => {
+              setSelectedClass(e.target.value);
+              setSelectedStudent("");
+              setMarks({});
+              setRowStatus({});
+              if (userRole === "teacher") setSubjects([]);
             }}
           >
-            {message}
-          </p>
-        )}
+            <option value="">-- Select Class --</option>
+            {classes.map((cls) => (
+              <option key={cls} value={cls}>
+                Class {cls}
+              </option>
+            ))}
+          </select>
+
+          {/* Student Dropdown */}
+          <label style={styles.label}>Select Student</label>
+          <select
+            style={styles.dropdown}
+            value={selectedStudent}
+            disabled={!selectedClass}
+            onChange={(e) => {
+              setSelectedStudent(e.target.value);
+              setMessage("");
+            }}
+          >
+            <option value="">-- Select Student --</option>
+
+            {filteredStudents.map((s) => {
+              const roll =
+                s.rollNo || s.roll || s.roll_number || s.rno || "No Roll";
+
+              return (
+                <option key={s._id} value={s._id}>
+                  {roll} - {s.name}
+                </option>
+              );
+            })}
+          </select>
+
+          {/* No exams enabled */}
+          {visibleExams.length === 0 && (
+            <p style={styles.warning}>⚠ No exam enabled by admin.</p>
+          )}
+
+          {/* Ask to select student */}
+          {visibleExams.length > 0 && !selectedStudent && (
+            <p style={styles.info}>Please select a student to continue.</p>
+          )}
+
+          {/* Exams + subjects */}
+          {selectedStudent &&
+            subjects.length > 0 &&
+            visibleExams.map((exam) => (
+              <div key={exam} style={styles.examCard}>
+                <h3 style={styles.examTitle}>{exam.toUpperCase()}</h3>
+
+                {subjects.map((sub) => (
+                  <div style={styles.subjectRow} key={sub}>
+                    <span style={styles.subjectLabel}>{sub}</span>
+
+                    {isDrawing(sub) ? (
+                      <select
+                        style={{ ...styles.input, width: "120px" }}
+                        value={marks[exam]?.[sub] ?? ""}
+                        onChange={(e) => handleChange(exam, sub, e.target.value)}
+                      >
+                        <option value="">--Grade--</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                      </select>
+                    ) : (
+                      <input
+                        style={styles.input}
+                        type="text"
+                        value={marks[exam]?.[sub] ?? ""}
+                        onChange={(e) => handleChange(exam, sub, e.target.value)}
+                      />
+                    )}
+
+                    <button
+                      style={{
+                        ...styles.saveBtn,
+                        background:
+                          rowStatus[exam]?.[sub] === "saved"
+                            ? "#16a34a"
+                            : rowStatus[exam]?.[sub] === "saving"
+                            ? "#6b7280"
+                            : styles.saveBtn.background,
+                        cursor:
+                          rowStatus[exam]?.[sub] === "saving"
+                            ? "not-allowed"
+                            : "pointer",
+                      }}
+                      disabled={rowStatus[exam]?.[sub] === "saving"}
+                      onClick={() => saveSingle(exam, sub)}
+                    >
+                      {rowStatus[exam]?.[sub] === "saving"
+                        ? "Saving..."
+                        : rowStatus[exam]?.[sub] === "saved"
+                        ? "Saved ✓"
+                        : "Save"}
+                    </button>
+
+                    {rowStatus[exam]?.[sub] === "error" && (
+                      <span style={{ color: "red", fontSize: "12px" }}>
+                        Error saving
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+
+          {/* No subjects assigned */}
+          {selectedClass && selectedStudent && subjects.length === 0 && (
+            <p style={styles.warning}>
+              {userRole === "teacher"
+                ? "⚠ No subjects assigned for this class in your assignment."
+                : "⚠ No subjects configured for this class. Please set class subjects from admin panel."}
+            </p>
+          )}
+
+          {message && (
+            <p
+              style={{
+                color: message.includes("✅") ? "green" : "red",
+                marginTop: "15px",
+                fontWeight: "bold",
+              }}
+            >
+              {message}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 };
@@ -453,7 +494,7 @@ const styles = {
     borderRadius: "14px",
     boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
   },
-    topBar: {
+  topBar: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
