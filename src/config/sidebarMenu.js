@@ -7,6 +7,7 @@ export const adminMenu = [
   { label: 'Manage Teachers', path: '/teachers', icon: '👨‍🏫' },
   { label: 'Assign Teachers', path: '/assign-teacher', icon: '📌' },
   { label: 'View All Students', path: '/students', icon: '🧑‍🎓' },
+  { label: 'School Attendance Summary', path: '/admin/school-attendance-summary', icon: '🏫' },
 
   { label: 'Admit Cards', path: '/admit-cards', icon: '🎫' },
   { label: 'ID Cards', path: '/id-cards', icon: '🪪' },
@@ -18,7 +19,6 @@ export const adminMenu = [
   { label: 'Exam Controls', path: '/exam-controls', icon: '🛠️' },
 
   { label: 'Attendance Overview', path: '/admin/attendance-overview', icon: '🗓️' },
-  { label: 'School Attendance Summary', path: '/admin/school-attendance-summary', icon: '🏫' },
   
 
   { label: 'Add Marks', path: '/add-marks', icon: '✍️' },

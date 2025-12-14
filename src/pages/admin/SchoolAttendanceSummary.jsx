@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { endpoints } from "../../config/api";
 
 const SchoolAttendanceSummary = ({ onBack }) => {
@@ -40,6 +40,13 @@ const SchoolAttendanceSummary = ({ onBack }) => {
       setLoading(false);
     }
   };
+
+    // 🔹 AUTO LOAD TODAY'S SUMMARY ON PAGE LOAD
+  useEffect(() => {
+    handleFetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const handleCardClick = (mode) => {
     setView(mode);
