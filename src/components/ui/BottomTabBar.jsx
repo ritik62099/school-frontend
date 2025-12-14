@@ -1,3 +1,5 @@
+
+
 // src/components/ui/BottomTabBar.jsx
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -6,35 +8,27 @@ const BottomTabBar = ({ userRole }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Determine label and path for the second tab
-  let secondTabLabel, secondTabPath;
-  if (userRole === 'teacher') {
-    secondTabLabel = 'Students';
-    secondTabPath = '/my-students';
-  } else {
-    // For admin or student role — show 'Teachers'
-    secondTabLabel = 'Teachers';
-    secondTabPath = '/teachers';
-  }
-
   const tabs = [
     { label: 'Home', path: '/dashboard', icon: '🏠' },
-    { label: secondTabLabel, path: secondTabPath, icon: userRole === 'teacher' ? '🧑‍🎓' : '👨‍🏫' },
-    // { label: 'Profile', path: '/profile', icon: '👤' }
+    {
+      label: userRole === 'admin' ? 'Teachers' : 'Students',
+      path: userRole === 'admin' ? '/teachers' : '/my-students',
+      icon: userRole === 'admin' ? '👨‍🏫' : '🧑‍🎓'
+    }
   ];
 
   return (
-    <div style={styles.tabBar}>
+    <div style={styles.bar}>
       {tabs.map(tab => (
         <button
           key={tab.path}
           onClick={() => navigate(tab.path)}
           style={{
             ...styles.tab,
-            ...(location.pathname === tab.path ? styles.activeTab : {})
+            ...(location.pathname === tab.path ? styles.active : {})
           }}
         >
-          <span style={styles.icon}>{tab.icon}</span>
+          <span style={{ fontSize: 20 }}>{tab.icon}</span>
           <span>{tab.label}</span>
         </button>
       ))}
@@ -43,37 +37,35 @@ const BottomTabBar = ({ userRole }) => {
 };
 
 const styles = {
-  tabBar: {
+  bar: {
     position: 'fixed',
     bottom: 0,
     left: 0,
     right: 0,
+    background: '#fff',
     display: 'flex',
     justifyContent: 'space-around',
-    backgroundColor: '#fff',
-    borderTop: '1px solid #e2e8f0',
-    padding: '0.75rem 0',
-    boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
-    zIndex: 1000,
+    padding: '0.7rem',
+    borderTop: '1px solid #e5e7eb',
+    boxShadow: '0 -5px 15px rgba(0,0,0,.1)',
   },
   tab: {
+    border: 'none',
+    background: 'none',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    fontSize: '0.75rem',
     color: '#94a3b8',
-    background: 'none',
-    border: 'none',
+    fontSize: '0.75rem',
     cursor: 'pointer',
+    padding: '0.4rem 0.8rem',
+    borderRadius: 12,
   },
-  activeTab: {
+  active: {
+    background: '#eff6ff',
     color: '#2563eb',
-    fontWeight: '600',
+    fontWeight: 600,
   },
-  icon: {
-    fontSize: '1.25rem',
-    marginBottom: '0.25rem',
-  }
 };
 
 export default BottomTabBar;

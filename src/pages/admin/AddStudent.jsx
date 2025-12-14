@@ -1,10 +1,11 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { endpoints } from '../../config/api';
 
 const AddStudent = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: '',
     fatherName: '',
@@ -18,21 +19,18 @@ const AddStudent = () => {
     photo: '',
     transport: false,
     transportFee: '',
-    dob: "",
+    dob: '',
   });
 
   const [photoPreview, setPhotoPreview] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [allowedClasses, setAllowedClasses] = useState([]);
-  const navigate = useNavigate();
 
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const isAdmin = currentUser?.role === 'admin';
-  const handleBackClick = () => {
-    navigate(-1); // ek step piche
-  };
 
+  /* ---------------- FETCH CLASSES ---------------- */
   useEffect(() => {
     const fetchClasses = async () => {
       const token = localStorage.getItem('token');
@@ -40,394 +38,183 @@ const AddStudent = () => {
 
       try {
         const res = await fetch(endpoints.classes.list, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          const classes = await res.json();
-          const currentUser = JSON.parse(localStorage.getItem('user'));
 
-          if (currentUser?.role === 'teacher' && Array.isArray(currentUser.teachingAssignments)) {
-            const classSet = new Set();
-            currentUser.teachingAssignments.forEach(a => {
-              if (a.canMarkAttendance && a.class) classSet.add(a.class);
-            });
-            const allowed = Array.from(classSet);
-            setAllowedClasses(allowed);
-            if (allowed.length > 0) setFormData(prev => ({ ...prev, class: allowed[0] }));
-          } else if (currentUser?.role === 'admin') {
-            setAllowedClasses(classes);
-            if (classes.length > 0) setFormData(prev => ({ ...prev, class: classes[0] }));
-          }
+        if (!res.ok) return;
+        const classes = await res.json();
+
+        if (currentUser?.role === 'teacher') {
+          const set = new Set();
+          currentUser.teachingAssignments?.forEach(a => {
+            if (a.canMarkAttendance && a.class) set.add(a.class);
+          });
+          const arr = [...set];
+          setAllowedClasses(arr);
+          if (arr[0]) setFormData(p => ({ ...p, class: arr[0] }));
+        } else {
+          setAllowedClasses(classes);
+          if (classes[0]) setFormData(p => ({ ...p, class: classes[0] }));
         }
-      } catch (err) {
-        console.error('Failed to load classes', err);
+      } catch (e) {
+        console.error(e);
       }
     };
+
     fetchClasses();
   }, []);
 
-  const handleChange = (e) => {
+  /* ---------------- HANDLERS ---------------- */
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
-    if (message) {
-      setMessage('');
-      setMessageType('');
-    }
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+    setMessage('');
   };
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoChange = e => {
     const file = e.target.files[0];
-    if (file) {
-      setPhotoPreview(URL.createObjectURL(file));
-      setFormData(prev => ({ ...prev, photo: file }));
-    } else {
-      setPhotoPreview(null);
-      setFormData(prev => ({ ...prev, photo: '' }));
-    }
+    if (!file) return;
+    setPhotoPreview(URL.createObjectURL(file));
+    setFormData(p => ({ ...p, photo: file }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
-    const currentUser = JSON.parse(localStorage.getItem('user'));
-    if (currentUser?.role === 'teacher' && !allowedClasses.includes(formData.class)) {
-      setMessage(allowedClasses.length === 0
-        ? 'You are not permitted to add students. Contact admin for attendance access.'
-        : `You can only add students to classes: ${allowedClasses.join(', ')}`
-      );
-      setMessageType('error');
-      return;
-    }
-
     if (!/^[6-9]\d{9}$/.test(formData.mobile)) {
-      setMessage('Please enter a valid 10-digit Indian mobile number (starting with 6-9).');
       setMessageType('error');
+      setMessage('Invalid mobile number');
       return;
     }
-
-    // if (!/^\d{12}$/.test(formData.aadhar)) {
-    //   setMessage('Aadhaar number must be exactly 12 digits.');
-    //   setMessageType('error');
-    //   return;
-    // }
 
     if (!/^\d+$/.test(formData.rollNo)) {
-      setMessage('Roll number must be numeric.');
       setMessageType('error');
+      setMessage('Roll number must be numeric');
       return;
     }
 
-    if (formData.transport) {
-      const fee = Number(formData.transportFee);
-      if (!fee || fee <= 0) {
-        setMessage('Please enter a valid transport fee amount.');
-        setMessageType('error');
-        return;
-      }
+    if (formData.transport && (!formData.transportFee || formData.transportFee <= 0)) {
+      setMessageType('error');
+      setMessage('Enter valid transport fee');
+      return;
     }
 
-    const uploadData = new FormData();
-    uploadData.append('name', formData.name);
-    uploadData.append('fatherName', formData.fatherName || '');
-    uploadData.append('motherName', formData.motherName || '');
-    uploadData.append('class', formData.class);
-    uploadData.append('section', formData.section);
-    uploadData.append('rollNo', formData.rollNo);
-    uploadData.append('mobile', formData.mobile);
-    uploadData.append('address', formData.address);
-    uploadData.append('aadhar', formData.aadhar);
-    uploadData.append("dob", formData.dob);
-    uploadData.append('transport', formData.transport);
-    if (formData.transport && formData.transportFee) {
-      uploadData.append('transportFee', formData.transportFee);
-    }
-    if (formData.photo) {
-      uploadData.append('photo', formData.photo);
-    }
+    const fd = new FormData();
+    Object.entries(formData).forEach(([k, v]) => {
+      if (v !== '' && v !== null) fd.append(k, v);
+    });
 
     try {
       const res = await fetch(endpoints.students.create, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: uploadData
+        body: fd,
       });
 
       const result = await res.json();
       if (res.ok) {
-        setMessage('✅ Student added successfully!');
         setMessageType('success');
-        setFormData({
-          name: '',
-          fatherName: '',
-          motherName: '',
-          class: allowedClasses.length > 0 ? allowedClasses[0] : '',
-          section: 'A',
-          rollNo: '',
-          mobile: '',
-          address: '',
-          aadhar: '',
-          photo: '',
-          transport: false,
-          transportFee: '',
-          dob: "", 
-        });
-        setPhotoPreview(null);
-        setTimeout(() => navigate('/dashboard'), 1800);
+        setMessage('✅ Student added successfully');
+        setTimeout(() => navigate('/dashboard'), 1500);
       } else {
-        setMessage(result.message || '❌ Failed to add student.');
         setMessageType('error');
+        setMessage(result.message || 'Failed to add student');
       }
-    } catch (err) {
-      console.error('Submission error:', err);
-      setMessage('❌ Network or server error.');
+    } catch {
       setMessageType('error');
+      setMessage('Server error');
     }
   };
 
-    return (
-    <div style={styles.pageContainer}>
+  /* ---------------- UI ---------------- */
+  return (
+    <div style={styles.page}>
       <div style={styles.card}>
-        <div style={styles.headerRow}>
-          <button
-            type="button"
-            onClick={handleBackClick}
-            style={styles.backButton}
-          >
-            ← Back
-          </button>
-          <h2 style={styles.title}>Add New Student</h2>
+        {/* Header */}
+        <div style={styles.header}>
+          <div>
+            <h2 style={styles.title}>Add New Student</h2>
+            <p style={styles.subtitle}>Personal & academic information</p>
+          </div>
+          <button onClick={() => navigate(-1)} style={styles.backBtn}>← Back</button>
         </div>
 
-
+        {/* Message */}
         {message && (
           <div style={{
             ...styles.message,
-            backgroundColor: messageType === 'success' ? '#d1fae5' : '#fee2e2',
-            color: messageType === 'success' ? '#065f46' : '#b91c1c',
-            border: messageType === 'success' ? '1px solid #a7f3d0' : '1px solid #fecaca'
+            background: messageType === 'success' ? '#dcfce7' : '#fee2e2',
+            color: messageType === 'success' ? '#166534' : '#991b1b',
           }}>
             {message}
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} style={styles.form}>
-          {/* Full Name */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Full Name</label>
-            <input
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              style={styles.input}
-              placeholder="Enter student's full name"
-            />
-          </div>
+          <Field label="Full Name">
+            <input name="name" value={formData.name} onChange={handleChange} required style={styles.input} />
+          </Field>
 
-          {/* Class */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              {allowedClasses.length > 0
-                ? (JSON.parse(localStorage.getItem('user'))?.role === 'teacher'
-                  ? 'Classes (Attendance Access Only)'
-                  : 'Select Class')
-                : 'No classes available'}
-            </label>
-            <select
-              name="class"
-              value={formData.class}
-              onChange={handleChange}
-              required
-              style={styles.input}
-              disabled={allowedClasses.length === 0}
-            >
-              <option value="">-- Select Class --</option>
-              {allowedClasses.map(cls => (
-                <option key={cls} value={cls}>{cls}</option>
-              ))}
+          <Field label="Class">
+            <select name="class" value={formData.class} onChange={handleChange} style={styles.input}>
+              {allowedClasses.map(c => <option key={c}>{c}</option>)}
             </select>
-          </div>
+          </Field>
 
-          {/* Section */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Section</label>
-            <select
-              name="section"
-              value={formData.section}
-              onChange={handleChange}
-              required
-              style={styles.input}
-            >
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
+          <Field label="Section">
+            <select name="section" value={formData.section} onChange={handleChange} style={styles.input}>
+              <option>A</option><option>B</option><option>C</option>
             </select>
-          </div>
+          </Field>
 
-          {/* Roll Number */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Roll Number</label>
-            <input
-              name="rollNo"
-              type="text"
-              value={formData.rollNo}
-              onChange={handleChange}
-              required
-              style={styles.input}
-              placeholder="1, 2, 3..."
-              inputMode="numeric"
-            />
-          </div>
+          <Field label="Roll Number">
+            <input name="rollNo" value={formData.rollNo} onChange={handleChange} style={styles.input} />
+          </Field>
 
-          {/* Parents */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Father's Name</label>
-            <input
-              name="fatherName"
-              type="text"
-              value={formData.fatherName}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="Enter father's name"
-            />
-          </div>
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Mother's Name</label>
-            <input
-              name="motherName"
-              type="text"
-              value={formData.motherName}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="Enter mother's name"
-            />
-          </div>
+          <Field label="Father's Name">
+            <input name="fatherName" value={formData.fatherName} onChange={handleChange} style={styles.input} />
+          </Field>
 
-          {/* Mobile */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Mobile Number</label>
-            <input
-              name="mobile"
-              type="tel"
-              value={formData.mobile}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="10-digit mobile number"
-              maxLength="10"
-            />
-          </div>
+          <Field label="Mother's Name">
+            <input name="motherName" value={formData.motherName} onChange={handleChange} style={styles.input} />
+          </Field>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Date of Birth</label>
-            <input
-              type="date"
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              
-              style={styles.input}
-            />
-          </div>
+          <Field label="Mobile">
+            <input name="mobile" value={formData.mobile} onChange={handleChange} style={styles.input} />
+          </Field>
 
+          <Field label="Date of Birth">
+            <input type="date" name="dob" value={formData.dob} onChange={handleChange} style={styles.input} />
+          </Field>
 
-          {/* Address */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Address</label>
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              style={{ ...styles.input, minHeight: '60px' }}
-              placeholder="Enter address"
-            />
-          </div>
+          <Field label="Address">
+            <textarea name="address" value={formData.address} onChange={handleChange} style={styles.textarea} />
+          </Field>
 
-          {/* Aadhaar */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Aadhaar Number</label>
-            <input
-              name="aadhar"
-              type="text"
-              value={formData.aadhar}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="12-digit Aadhaar number"
-              maxLength="12"
-            />
-          </div>
-
-          {/* Transport section — Admin only */}
           {isAdmin && (
             <>
-              <div style={styles.inputGroup}>
-                <label style={{ ...styles.label, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input
-                    type="checkbox"
-                    name="transport"
-                    checked={formData.transport}
-                    onChange={handleChange}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  Uses School Transport
-                </label>
-              </div>
+              <label style={styles.checkbox}>
+                <input type="checkbox" name="transport" checked={formData.transport} onChange={handleChange} />
+                Uses School Transport
+              </label>
 
               {formData.transport && (
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>Transport Fee (₹)</label>
-                  <input
-                    name="transportFee"
-                    type="number"
-                    value={formData.transportFee}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    style={styles.input}
-                    placeholder="e.g., 500"
-                  />
-                </div>
+                <Field label="Transport Fee">
+                  <input name="transportFee" value={formData.transportFee} onChange={handleChange} style={styles.input} />
+                </Field>
               )}
             </>
           )}
 
-          {/* Photo */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Student Photo (Optional)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              style={{ ...styles.input, padding: '0.5rem' }}
-            />
-            {photoPreview && (
-              <img
-                src={photoPreview}
-                alt="Student preview"
-                style={styles.photoPreview}
-              />
-            )}
-          </div>
+          <Field label="Photo">
+            <input type="file" accept="image/*" onChange={handlePhotoChange} />
+            {photoPreview && <img src={photoPreview} alt="" style={styles.photo} />}
+          </Field>
 
-          {/* Buttons */}
-          <div style={styles.buttonGroup}>
-            <button
-              type="submit"
-              style={styles.submitButton}
-              disabled={allowedClasses.length === 0}
-            >
-              Add Student
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              style={styles.cancelButton}
-            >
-              Cancel
-            </button>
+          <div style={styles.actions}>
+            <button type="submit" style={styles.submit}>Add Student</button>
+            <button type="button" onClick={() => navigate('/dashboard')} style={styles.cancel}>Cancel</button>
           </div>
         </form>
       </div>
@@ -435,114 +222,100 @@ const AddStudent = () => {
   );
 };
 
-const styles = {
-    headerRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    marginBottom: '1.25rem',
-    flexWrap: 'wrap',
-  },
-  backButton: {
-    padding: '0.4rem 0.9rem',
-    borderRadius: '999px',
-    border: '1px solid #d1d5db',
-    backgroundColor: '#2563eb',
-    cursor: 'pointer',
-    fontSize: '0.9rem',
-    color: 'white',
-  },
+/* ---------------- SMALL COMPONENT ---------------- */
+const Field = ({ label, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
+    <label style={{ fontWeight: 600 }}>{label}</label>
+    {children}
+  </div>
+);
 
-  pageContainer: {
+/* ---------------- STYLES ---------------- */
+const styles = {
+  page: {
     display: 'flex',
     justifyContent: 'center',
-    padding: '2rem 1rem',
-    backgroundColor: '#f8fafc',
-    minHeight: '100vh',
-    fontFamily: 'Arial, sans-serif'
+    padding: '2rem',
+    background: 'linear-gradient(180deg,#f8fafc,#eef2ff)',
   },
   card: {
     width: '100%',
-    maxWidth: '600px',
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+    maxWidth: 700,
+    background: '#fff',
+    borderRadius: 20,
     padding: '2rem',
-    border: '1px solid #e2e8f0'
+    boxShadow: '0 20px 40px rgba(0,0,0,.1)',
   },
-  title: {
-    fontSize: '1.75rem',
-    fontWeight: '700',
-    color: '#0f172a',
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
     marginBottom: '1.5rem',
-    textAlign: 'center'
   },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem'
+  title: { margin: 0, fontSize: '1.8rem' },
+  subtitle: { margin: 0, color: '#64748b' },
+  backBtn: {
+    background: '#2563eb',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 999,
+    padding: '.4rem 1rem',
+    cursor: 'pointer',
   },
-  inputGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem'
+  message: {
+    padding: '.75rem',
+    borderRadius: 10,
+    marginBottom: '1rem',
+    fontWeight: 600,
+    textAlign: 'center',
   },
-  label: {
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    color: '#334155'
-  },
+  form: { display: 'grid', gap: '1rem' },
   input: {
-    padding: '0.875rem',
-    fontSize: '1rem',
+    padding: '.75rem',
+    borderRadius: 10,
     border: '1px solid #cbd5e1',
-    borderRadius: '10px',
-    backgroundColor: '#f8fafc',
-    outline: 'none'
   },
-  photoPreview: {
-    width: '100px',
-    height: '100px',
+  textarea: {
+    padding: '.75rem',
+    borderRadius: 10,
+    border: '1px solid #cbd5e1',
+    minHeight: 70,
+  },
+  checkbox: {
+    display: 'flex',
+    gap: '.5rem',
+    fontWeight: 600,
+  },
+  photo: {
+    width: 110,
+    height: 110,
+    borderRadius: 12,
+    marginTop: '.5rem',
     objectFit: 'cover',
-    borderRadius: '8px',
-    marginTop: '0.5rem',
-    border: '1px solid #e2e8f0'
   },
-  buttonGroup: {
+  actions: {
     display: 'flex',
     gap: '1rem',
     justifyContent: 'center',
-    flexWrap: 'wrap'
+    marginTop: '1.5rem',
   },
-  submitButton: {
-    padding: '0.875rem 2rem',
-    backgroundColor: '#3b82f6',
-    color: 'white',
+  submit: {
+    background: 'linear-gradient(135deg,#2563eb,#1e40af)',
+    color: '#fff',
     border: 'none',
-    borderRadius: '10px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer'
+    padding: '.8rem 2rem',
+    borderRadius: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
   },
-  cancelButton: {
-    padding: '0.875rem 2rem',
-    backgroundColor: '#94a3b8',
-    color: 'white',
+  cancel: {
+    background: '#94a3b8',
+    color: '#fff',
     border: 'none',
-    borderRadius: '10px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer'
+    padding: '.8rem 2rem',
+    borderRadius: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
   },
-  message: {
-    padding: '0.875rem',
-    borderRadius: '10px',
-    fontWeight: '500',
-    marginBottom: '1rem',
-    textAlign: 'center'
-  }
 };
 
 export default AddStudent;
-
-
