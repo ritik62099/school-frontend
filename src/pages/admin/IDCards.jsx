@@ -437,7 +437,7 @@ const IDCardsStudent = ({ onBack }) => {
                       </div>
 
                       <div class="detail-item">
-                        <b>ADD</b> : ${student.address?.substring(0, 15) || "N/A"}
+                        <b>ADD</b> : ${student.address?.substring(0, 20) || "N/A"}
                       </div>
                     </div>
 
@@ -771,7 +771,7 @@ const IDCardsStudent = ({ onBack }) => {
                   </div>
 
                   <div className="detail-item">
-                    <b>ADD</b> : {student.address?.substring(0, 15) || 'N/A'}
+                    <b>ADD</b> : {student.address?.substring(0, 20) || 'N/A'}
                   </div>
                 </div>
 
