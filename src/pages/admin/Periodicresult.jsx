@@ -4,6 +4,9 @@
 import React, { useEffect, useState } from "react";
 import Logo from "../../assets/logo.png";
 import { endpoints } from "../../config/api";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const ViewPAResults = ({ onBack }) => {
   const [results, setResults] = useState([]);
@@ -16,6 +19,8 @@ const ViewPAResults = ({ onBack }) => {
   const [searchRoll, setSearchRoll] = useState("");
   const [searchName, setSearchName] = useState("");
   const [selectedPA, setSelectedPA] = useState("pa1");
+ 
+
 
   const handleBackClick = () => {
     if (typeof onBack === "function") onBack();
@@ -77,82 +82,144 @@ const ViewPAResults = ({ onBack }) => {
     return 20;
   };
 
-  // PRINT
-  const printClassPA = (examKey, className) => {
-    const element = document.getElementById(`pa-${examKey}-${className}`);
-    if (!element) return;
 
-    const win = window.open("", "_blank");
-    const logoUrl = Logo;
+const loadImageAsBase64 = (src) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = src;
 
-    const html = `
-      <html>
-        <head>
-          <title>${examKey.toUpperCase()} - Class ${className}</title>
-          <style>
-            * { box-sizing: border-box; }
-            body { font-family: "Times New Roman", serif; margin: 0; padding: 0; }
-            .school-header { border: 1px solid #000; margin: 8px; padding: 4px 12px 8px; background: #fff; }
-            .header-top-line { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-            .header-main { display: grid; grid-template-columns: 100px auto 100px; align-items: center; }
-            .school-logo { width: 80px; height: 70px; object-fit: contain; justify-self: start; }
-            .school-text { text-align: center; justify-self: center; }
-            .school-name { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
-            .print-content { padding: 0 12px 16px; margin-top: 130px; }
-            .report-title { text-align: center; font-size: 16px; font-weight: bold; margin: 4px 0 8px; text-transform: uppercase; }
-            .class-title { text-align: center; margin-bottom: 10px; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; font-size: 12px; page-break-inside: auto; }
-            th, td { border: 1px solid #000; padding: 4px; text-align: center; }
-            thead { display: table-header-group; }
-            tfoot { display: table-footer-group; }
-            @media print {
-              body { margin: 0; }
-              .school-header { position: fixed; top: 0; left: 0; right: 0; z-index: 999; border-bottom: 1px solid #000; }
-              .print-content { margin-top: 140px; }
-              @page { margin: 10mm; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="school-header">
-            <div class="header-top-line">
-              <div>Reg. No :- 21912662021926123218</div>
-              <div>UDISE No :- 10170504508</div>
-            </div>
-            <div class="header-main">
-              <img src="${logoUrl}" class="school-logo" />
-              <div class="school-text">
-                <div class="school-name">AMBIKA INTERNATIONAL SCHOOL</div>
-                <div class="school-sub">Based on CBSE curriculum (Play to Xth)</div>
-                <div class="school-address">Saidpur, Dighwara (Saran), 841207</div>
-                <div class="school-phone">Mob. 8797118188</div>
-              </div>
-              <div></div>
-            </div>
-          </div>
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL("image/png"));
+    };
+  });
+};
 
-          <div class="print-content">
-            <div class="report-title">
-              ${examKey.toUpperCase()} EXAMINATION RESULT
-            </div>
-            <div class="class-title">Class: ${className}</div>
-            ${element.innerHTML}
-          </div>
 
-          <script>
-            window.onload = function () {
-              window.focus();
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `;
+const printClassPA_PDF = async (examKey, className, students, subjects) => {
+  const doc = new jsPDF("p", "mm", "a4");
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
+  // ✅ Load logo
+  const logoBase64 = await loadImageAsBase64(Logo);
+
+  // ===== HEADER =====
+  const drawHeader = () => {
+    doc.setFontSize(9);
+doc.setFont("helvetica", "normal");
+
+doc.text("Reg. No: 21912662021926123218", 14, 8);
+doc.text("UDISE No: 10170504508", pageWidth - 14, 8, { align: "right" });
+
+    doc.addImage(logoBase64, "PNG", 14, 10, 20, 20);
+
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("AMBIKA INTERNATIONAL SCHOOL", pageWidth / 2, 15, { align: "center" });
+
+  
+   
+    doc.setFontSize(10);
+    doc.text("Based on CBSE curriculum (Play to Xth)", pageWidth / 2, 21, { align: "center" });
+    doc.text("Saidpur, Dighwara (Saran), 841207", pageWidth / 2, 26, { align: "center" });
+    doc.text("Mob. 8797118188", pageWidth / 2, 31, { align: "center" });
+
+    doc.setFontSize(9);
+
+    doc.line(14, 39, pageWidth - 14, 39);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(
+      `${examKey.toUpperCase()} EXAMINATION RESULT  |  Class: ${className}`,
+      pageWidth / 2,
+      45,
+      { align: "center" }
+    );
   };
+
+  // ===== TABLE HEAD =====
+  const head = [[
+    "Roll",
+    "Name",
+    ...subjects,
+    "Total",
+    "%"
+  ]];
+
+  // ===== TABLE BODY =====
+  const body = students.map((r) => {
+    const student = typeof r.studentId === "object" ? r.studentId : {};
+    const examKeyDB =
+      examKey === "sa1" ? "halfYear" :
+      examKey === "sa2" ? "final" :
+      examKey;
+
+    const exam = r.exams?.[examKeyDB] || {};
+
+    let total = 0;
+
+    const marks = subjects.map((sub) => {
+      const val = exam[sub];
+      if (String(sub).toLowerCase() === "drawing") return val || "";
+      const num = parseFloat(val);
+      if (!isNaN(num)) total += num;
+      return isNaN(num) ? 0 : num;
+    });
+
+    const maxMarks =
+      subjects.filter((s) => String(s).toLowerCase() !== "drawing").length *
+      (examKey === "sa1" || examKey === "sa2" ? 80 : 20);
+
+    const percent = maxMarks ? ((total / maxMarks) * 100).toFixed(2) : "0.00";
+
+    return [
+      student.rollNo || "",
+      student.name || "",
+      ...marks,
+      total,
+      `${percent}%`
+    ];
+  });
+
+  // ===== AUTOTABLE =====
+  autoTable(doc, {
+    startY: 50,
+    head,
+    body,
+    theme: "grid",
+    styles: {
+      fontSize: 9,
+      halign: "center",
+      valign: "middle",
+    },
+    headStyles: {
+      fillColor: [230, 230, 230],
+      fontStyle: "bold",
+    },
+    didDrawPage: () => {
+      drawHeader();
+      doc.setFontSize(9);
+      doc.text(
+        `Page ${doc.internal.getNumberOfPages()}`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: "center" }
+      );
+    },
+    margin: { top: 50 },
+  });
+
+  doc.save(`${examKey.toUpperCase()}_Class_${className}.pdf`);
+};
+
 
   // FILTER LOGIC
   const filteredResults = results.filter((r) => {
@@ -261,7 +328,8 @@ const ViewPAResults = ({ onBack }) => {
                 <div key={`${selectedPA}-${cls}`} style={{ marginBottom: "30px" }}>
                   <h4 style={styles.classTitle}>Class: {cls}</h4>
 
-                  <div id={`pa-${selectedPA}-${cls}`} style={{ overflowX: "auto" }}>
+                  <div id={`pa-${selectedPA}-${cls}`} className="print-table-wrap">
+
                     <table style={styles.table}>
                       <thead>
                         <tr>
@@ -322,12 +390,16 @@ const ViewPAResults = ({ onBack }) => {
                   </div>
 
                   <div style={{ textAlign: "center", marginTop: "10px" }}>
-                    <button
-                      onClick={() => printClassPA(selectedPA, cls)}
-                      style={styles.printBtn}
-                    >
-                      🖨 Print Class {cls}
-                    </button>
+<button
+  onClick={() =>
+    printClassPA_PDF(selectedPA, cls, students, subjects)
+  }
+  style={styles.printBtn}
+>
+  📄 Download PDF – Class {cls}
+</button>
+
+
                   </div>
                 </div>
               );
