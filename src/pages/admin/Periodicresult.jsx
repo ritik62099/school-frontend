@@ -199,9 +199,11 @@ doc.text("UDISE No: 10170504508", pageWidth - 14, 8, { align: "right" });
       fontSize: 9,
       halign: "center",
       valign: "middle",
+      textColor: [0, 0, 0], 
     },
     headStyles: {
-      fillColor: [230, 230, 230],
+      fillColor: [255, 255, 255], // ✅ HEADER BACKGROUND WHITE
+    textColor: [0, 0, 0],    
       fontStyle: "bold",
     },
     didDrawPage: () => {
