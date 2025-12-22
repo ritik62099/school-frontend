@@ -286,6 +286,8 @@ table td:first-child {
 .grade-scale-table td {
   padding: 1px 2px;   /* pehle 3px 2px tha, ab height kam ho jayegi */
   line-height: 1.1;   /* text tight ho jayega */
+  text-align: center !important;
+  vertical-align: middle !important;
 }
 
 
@@ -467,26 +469,23 @@ th, td {
 
   // For drawing keep raw grade string (if any)
   if (drawing) {
-    // Prefer any grade present in any of the exam slots (pa1/pa2/sa1/pa3/pa4/sa2)
-    const grade = pa1Raw || pa2Raw || sa1Raw || pa3Raw || pa4Raw || sa2Raw || "";
+  return {
+    sub,
+    pa1: pa1Raw ?? "",
+    pa2: pa2Raw ?? "",
+    sa1: sa1Raw ?? "",
+    pa3: pa3Raw ?? "",
+    pa4: pa4Raw ?? "",
+    sa2: sa2Raw ?? "",
+    term1: "",
+    term2: "",
+    finalTotal: "",
+    grade: pa1Raw || pa2Raw || sa1Raw || pa3Raw || pa4Raw || sa2Raw || "",
+    point: "",
+    isDrawing: true,
+  };
+}
 
-    return {
-      sub,
-      // keep fields so rendering code can still access them (but they are strings / blank)
-      pa1: grade,
-      pa2: "",
-      sa1: "",
-      pa3: "",
-      pa4: "",
-      sa2: "",
-      term1: null,
-      term2: null,
-      finalTotal: null,
-      grade,
-      point: "",
-      isDrawing: true,
-    };
-  }
 
   // Numeric subject: coerce to numbers (safe fallback to 0)
   const pa1 = Number(pa1Raw || 0);
@@ -695,17 +694,18 @@ const formatCell = (v, decimals = 1) => {
             {/* CENTER: Full-width text (ab logo se independent center hoga) */}
             <div style={{ textAlign: "center", width: "100%", marginLeft: "40px" }}>
               <h1
-                style={{
-                  fontFamily: 'Algerian, "Times New Roman", serif',
-                  fontWeight: "normal",
-                  fontSize: "34px",
-                  letterSpacing: "4px",
-                  textTransform: "uppercase",
-                  margin: 0,
-                }}
-              >
-                AMBIKA INTERNATIONAL SCHOOL
-              </h1>
+  style={{
+    fontFamily: 'Algerian, "Times New Roman", serif',
+    fontWeight: 500,
+    fontSize: "46px",
+    letterSpacing: "5px",
+    textTransform: "uppercase",
+    margin: 0,
+  }}
+>
+  AMBIKA INTERNATIONAL SCHOOL
+</h1>
+
               <p style={{ margin: 0, fontSize: "15pt", fontWeight: 600 }}>
                 Based on CBSE curriculum (Play to Xth)
               </p>
@@ -920,8 +920,8 @@ const formatCell = (v, decimals = 1) => {
                   <>
                     <tr>
                       <th rowSpan={2}>SUBJECT</th>
-                      <th colSpan={5}>First Term (SA I)</th>
-                      <th colSpan={5}>Second Term (SA II)</th>
+                      <th colSpan={5}>First Term</th>
+                      <th colSpan={5}>Second Term</th>
                       <th colSpan={5}>Final Result</th>
                     </tr>
                     <tr>
@@ -1273,7 +1273,7 @@ const formatCell = (v, decimals = 1) => {
                   fontSize: "10pt",
                   display: "flex",
                   gap: "20px",
-                  marginTop: "10px",
+                  marginTop: "105px",
                 }}
               >
                 <div>Principal Sig. __________</div>
@@ -1326,6 +1326,7 @@ const formatCell = (v, decimals = 1) => {
   .marks-table td:first-child {
     width: 70px;      /* Thoda wide karna ho to 160 ya 180 bhi rakh sakte ho */
     font-weight: bold;
+    
   }
         h2 {
           text-align: center;

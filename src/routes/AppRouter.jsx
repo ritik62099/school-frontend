@@ -35,6 +35,7 @@ import Periodic from '../pages/admin/Periodicresult';
 import ExamControls from '../pages/admin/ExamVisibility';
 import AttendanceOverview from '../pages/admin/AttendanceOverview';
 import SchoolAttendanceSummary from '../pages/admin/SchoolAttendanceSummary';
+import StudentPayment from '../pages/admin/StudentPayments';
 
 const AppRouter = () => {
   return (

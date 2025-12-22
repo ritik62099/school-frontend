@@ -6,7 +6,7 @@ import { endpoints } from '../../config/api';
 import Logo from "../../assets/logo.png";
 import BackgroundImage from "../../assets/back.png";
 import { useStudents } from '../../hooks/useStudents';
-
+import Sign from "../../assets/sign.png";
 const SCHOOL_LOGO_URL = Logo;
 
 // Helper → Split students into groups of 9 (for each A4 page)
@@ -35,6 +35,7 @@ const IDCardsStudent = ({ onBack }) => {
   const [selectedClass, setSelectedClass] = useState('');
   const [logoBase64, setLogoBase64] = useState('');
   const [bgBase64, setBgBase64] = useState('');
+  const [signBase64, setSignBase64] = useState('');
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [backendClasses, setBackendClasses] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -126,6 +127,23 @@ const IDCardsStudent = ({ onBack }) => {
     convertLogoToBase64();
   }, []);
 
+  useEffect(() => {
+  const convertSignToBase64 = async () => {
+    try {
+      const response = await fetch(Sign);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      reader.onloadend = () => setSignBase64(reader.result);
+      reader.readAsDataURL(blob);
+    } catch (err) {
+      console.error("Error loading signature:", err);
+    }
+  };
+
+  convertSignToBase64();
+}, []);
+
+
   // ✅ Convert background to base64
   useEffect(() => {
     const convertBackgroundToBase64 = async () => {
@@ -176,7 +194,8 @@ const IDCardsStudent = ({ onBack }) => {
   };
 
   const generatePrint = (studentsList, sessionForPrint) => {
-    if (!logoLoaded || !logoBase64 || !bgBase64) {
+    if (!logoLoaded || !logoBase64 || !bgBase64 || !signBase64) {
+
       alert("Images are still loading. Please wait...");
       return;
     }
@@ -337,7 +356,8 @@ const IDCardsStudent = ({ onBack }) => {
 
 .transport-badge {
   font-weight: bold;
-  font-size: 10px;
+  font-size: 14px;
+  color: #0447ffff;
 }
 
           .flex-between {
@@ -443,10 +463,13 @@ const IDCardsStudent = ({ onBack }) => {
 
                     <div class="footer">
                       <div class="footer-left">
-                        Mob: 6203080946
+                        Mob: 8797118188
                       </div>
                      <div class="footer-sign">
-  <div style=" margin-bottom:1px; font-size: 9px; color:red">SONAL KR</div>
+<img src="${signBase64}" alt="Sonal Signature"
+     style="height:22px; object-fit:contain;" />
+
+
   <div class="footer-sign-line"></div>
   <div>SECRETARY</div>
 </div>
@@ -462,10 +485,14 @@ const IDCardsStudent = ({ onBack }) => {
     </html>
   `);
 
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+   printWindow.document.close();
+
+printWindow.onload = () => {
+  printWindow.focus();
+  printWindow.print();
+};
+
+    // printWindow.close();
   };
 
   // ✅ Select checkbox toggle
@@ -755,7 +782,7 @@ const IDCardsStudent = ({ onBack }) => {
                     </span>
 
                     {student.transport && (
-                      <span style={{ fontWeight: 'bold', fontSize: '11px' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '11px',color: '#0044ffff' }}>
                         BUS
                       </span>
                     )}
@@ -789,7 +816,7 @@ const IDCardsStudent = ({ onBack }) => {
                   }}
                 >
                   <div style={{ fontWeight: "bold" }}>
-                    Mob: 6203080946
+                    Mob: 8797118188
                   </div>
 
                   <div

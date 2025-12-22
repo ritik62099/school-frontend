@@ -23,57 +23,116 @@ const Attendance = () => {
     return today.toISOString().split('T')[0];
   }
 
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     const currentUser = JSON.parse(localStorage.getItem('user'));
+  //     if (!currentUser) {
+  //       setError('User not found. Please log in again.');
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     if (currentUser.role === 'teacher') {
+  //       // ✅ Filter only classes where canMarkAttendance is true
+  //       const attendanceClasses = (currentUser.teachingAssignments || [])
+  //         .filter(assignment => assignment.canMarkAttendance)
+  //         .map(assignment => assignment.class);
+
+  //       if (attendanceClasses.length === 0) {
+  //         setError('You are not authorized to mark attendance for any class.');
+  //         setLoading(false);
+  //         return;
+  //       }
+
+  //       setAssignedClasses(attendanceClasses);
+  //       setSelectedClass(attendanceClasses[0]);
+  //     } else if (currentUser.role === 'admin') {
+  //       // Admin can mark attendance for any class → fetch all classes
+  //       try {
+  //         const token = localStorage.getItem('token');
+  //         const classesRes = await fetch(endpoints.classes.list, {
+  //           headers: { Authorization: `Bearer ${token}` }
+  //         });
+  //         if (!classesRes.ok) throw new Error('Failed to load classes');
+  //         const allClasses = await classesRes.json();
+  //         if (allClasses.length === 0) {
+  //           setError('No classes found.');
+  //           setLoading(false);
+  //           return;
+  //         }
+  //         setAssignedClasses(allClasses);
+  //         setSelectedClass(allClasses[0]);
+  //       } catch (err) {
+  //         setError('Failed to load class list: ' + (err.message || 'Unknown error'));
+  //         setLoading(false);
+  //         return;
+  //       }
+  //     }
+
+  //     setLoading(false);
+  //   };
+
+  //   fetchUserData();
+  // }, []);
+
+
   useEffect(() => {
-    const fetchUserData = async () => {
-      const currentUser = JSON.parse(localStorage.getItem('user'));
-      if (!currentUser) {
-        setError('User not found. Please log in again.');
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Session expired. Please login again.");
         setLoading(false);
         return;
       }
 
-      if (currentUser.role === 'teacher') {
-        // ✅ Filter only classes where canMarkAttendance is true
+      // 🔥 STEP 1: Fetch fresh logged-in user
+      const userRes = await fetch(endpoints.auth.me, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!userRes.ok) throw new Error("Failed to load user");
+
+      const currentUser = await userRes.json();
+
+      // 🔥 STEP 2: Role-based logic
+      if (currentUser.role === "teacher") {
         const attendanceClasses = (currentUser.teachingAssignments || [])
-          .filter(assignment => assignment.canMarkAttendance)
-          .map(assignment => assignment.class);
+          .filter(a => a.canMarkAttendance === true)
+          .map(a => a.class);
 
         if (attendanceClasses.length === 0) {
-          setError('You are not authorized to mark attendance for any class.');
+          setError("You are not authorized to mark attendance for any class.");
           setLoading(false);
           return;
         }
 
         setAssignedClasses(attendanceClasses);
         setSelectedClass(attendanceClasses[0]);
-      } else if (currentUser.role === 'admin') {
-        // Admin can mark attendance for any class → fetch all classes
-        try {
-          const token = localStorage.getItem('token');
-          const classesRes = await fetch(endpoints.classes.list, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (!classesRes.ok) throw new Error('Failed to load classes');
-          const allClasses = await classesRes.json();
-          if (allClasses.length === 0) {
-            setError('No classes found.');
-            setLoading(false);
-            return;
-          }
-          setAssignedClasses(allClasses);
-          setSelectedClass(allClasses[0]);
-        } catch (err) {
-          setError('Failed to load class list: ' + (err.message || 'Unknown error'));
-          setLoading(false);
-          return;
-        }
       }
 
-      setLoading(false);
-    };
+      if (currentUser.role === "admin") {
+        const classesRes = await fetch(endpoints.classes.list, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-    fetchUserData();
-  }, []);
+        if (!classesRes.ok) throw new Error("Failed to load classes");
+
+        const allClasses = await classesRes.json();
+        setAssignedClasses(allClasses);
+        setSelectedClass(allClasses[0]);
+      }
+
+      setError("");
+    } catch (err) {
+      setError(err.message || "Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUserData();
+}, []);
 
   useEffect(() => {
     if (!selectedClass) return;
