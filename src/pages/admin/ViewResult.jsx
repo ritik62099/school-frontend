@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import html2pdf from "html2pdf.js";
 import Logo from "../../assets/logo.png";
 import { endpoints } from "../../config/api";
+import PrincipalSign from "../../assets/sign.png";
 
 const ViewResult = ({ onBack }) => {
 
@@ -22,9 +23,9 @@ const ViewResult = ({ onBack }) => {
   const [session, setSession] = useState("");
 
   // helper: detect drawing subject
-const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
+  const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
 
-    const handleBackClick = () => {
+  const handleBackClick = () => {
     if (typeof onBack === "function") {
       onBack();
     } else {
@@ -253,9 +254,24 @@ const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
 }
 
 /* headings bigger */
-h1,h3,h4 {
-  font-size: 22px !important;
+h3,h4 {
+  font-size: 26px !important;
 }
+
+.school-name {
+  font-family: Algerian, "Times New Roman", serif !important;
+  font-size: 30px !important;
+  letter-spacing: 2.5px !important;
+  font-weight: 550 !important;
+  text-transform: uppercase;
+  text-align: center;
+
+  margin: 0 !important;          /* 🔥 GAP REMOVE */
+  padding: 0 !important;         /* 🔥 GAP REMOVE */
+  line-height: 1.1 !important;   /* 🔥 TIGHT LOOK */
+}
+
+
 
 /* Final marks & name section visibly larger */
 strong {
@@ -277,7 +293,7 @@ table td:first-child {
         .print-page {
   height: 297mm;
   width: 210mm;
-  padding: 6mm 10mm 5mm 10mm;  /* ⬅ Top padding kam kar diya */
+  padding: 3mm 3mm 5mm 5mm; /* ⬅ Top padding kam kar diya */
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -305,23 +321,43 @@ table td:first-child {
 }
 th, td {
   border: 1px solid #000000ff;
-  padding: 0px 0px;         /* ← Height kam hogi */
-  line-height: 1.1;         /* ← Text compact hogga */
-  font-size: 13px;          /* Jyada chota chahiye to 12 bhi kar sakte ho */
- 
+  padding: 0px 0px;
+  line-height: 1.1;
+  font-size: 13px;
 }
+
+/* 🔥 ADD THIS BELOW */
+.marks-table th,
+.marks-table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.marks-table th:first-child,
+.marks-table td:first-child {
+  text-align: left !important;
+  padding-left: 6px;
+}
+
 
 
 .vertical-header {
   display: inline-block;
-  transform: rotate(-90deg);        /* print me bhi right rotate */
+  transform: rotate(-90deg);
   transform-origin: center center;
   white-space: nowrap;
-  padding: 3px 1px;
-  min-width: 18px;
+
+  padding: 6px 3px;        /* 🔥 zyada space */
+  min-width: 26px;         /* 🔥 column wide */
   text-align: center;
+
   font-weight: bold;
-  font-size: 8px;
+  font-size: 11px;         /* 🔥 SIZE INCREASE (print) */
+}
+
+.marks-table thead tr:nth-child(2) th {
+  height: 30px;        /* 🔥 rotated text ke liye jagah */
+  vertical-align: middle;
 }
 
 
@@ -356,56 +392,56 @@ th, td {
   // ---------- AVERAGE CALC + POSITION (TOP 3) – HOOKS SE PEHLE NAHI, BUT USEMEMO PEHLE  ----------
 
   const computeAverageForRecord = (r, examType) => {
-  const subjectsArray = classSubjectMap[r.class] || [];
-  if (!subjectsArray.length) return 0;
+    const subjectsArray = classSubjectMap[r.class] || [];
+    if (!subjectsArray.length) return 0;
 
-  const isPrimary = isPrimaryClass(r.class);
-  const examData = r.exams || {};
+    const isPrimary = isPrimaryClass(r.class);
+    const examData = r.exams || {};
 
-  let sumT1 = 0,
-    sumT2 = 0,
-    sumF = 0,
-    n = 0;
+    let sumT1 = 0,
+      sumT2 = 0,
+      sumF = 0,
+      n = 0;
 
-  subjectsArray.forEach((sub) => {
-    const lowerSub = String(sub || "").toLowerCase();
-    if (isDrawing(sub)) {
-      // skip drawing entirely for numeric averages
-      return;
-    }
+    subjectsArray.forEach((sub) => {
+      const lowerSub = String(sub || "").toLowerCase();
+      if (isDrawing(sub)) {
+        // skip drawing entirely for numeric averages
+        return;
+      }
 
-    // parse numeric values safely (fallback to 0)
-    const pa1 = Number(examData.pa1?.[sub] || 0);
-    const pa2 = Number(examData.pa2?.[sub] || 0);
-    const sa1 = Number(examData.halfYear?.[sub] || 0);
-    const pa3 = Number(examData.pa3?.[sub] || 0);
-    const pa4 = Number(examData.pa4?.[sub] || 0);
-    const sa2 = Number(examData.final?.[sub] || 0);
+      // parse numeric values safely (fallback to 0)
+      const pa1 = Number(examData.pa1?.[sub] || 0);
+      const pa2 = Number(examData.pa2?.[sub] || 0);
+      const sa1 = Number(examData.halfYear?.[sub] || 0);
+      const pa3 = Number(examData.pa3?.[sub] || 0);
+      const pa4 = Number(examData.pa4?.[sub] || 0);
+      const sa2 = Number(examData.final?.[sub] || 0);
 
-    if (isPrimary) {
-      const total = pa1 + pa2 + sa1;
-      sumF += total;
-      n++;
-    } else if (examType === "halfYearly") {
-      const term1 = pa1 / 2 + pa2 / 2 + sa1;
-      sumT1 += term1;
-      sumF += term1;
-      n++;
-    } else {
-      const term1 = pa1 / 2 + pa2 / 2 + sa1;
-      const term2 = pa3 / 2 + pa4 / 2 + sa2;
-      const finalTotal = (term1 + term2) / 2;
-      sumT1 += term1;
-      sumT2 += term2;
-      sumF += finalTotal;
-      n++;
-    }
-  });
+      if (isPrimary) {
+        const total = pa1 + pa2 + sa1;
+        sumF += total;
+        n++;
+      } else if (examType === "halfYearly") {
+        const term1 = pa1 / 2 + pa2 / 2 + sa1;
+        sumT1 += term1;
+        sumF += term1;
+        n++;
+      } else {
+        const term1 = pa1 / 2 + pa2 / 2 + sa1;
+        const term2 = pa3 / 2 + pa4 / 2 + sa2;
+        const finalTotal = (term1 + term2) / 2;
+        sumT1 += term1;
+        sumT2 += term2;
+        sumF += finalTotal;
+        n++;
+      }
+    });
 
-  if (!n) return 0;
-  const avgF = sumF / n;
-  return avgF;
-};
+    if (!n) return 0;
+    const avgF = sumF / n;
+    return avgF;
+  };
 
   const positionMap = useMemo(() => {
     const map = {};
@@ -458,112 +494,112 @@ th, td {
 
 
     const subjectRows = subjectsArray.map((sub) => {
-  const pa1Raw = examData.pa1?.[sub];
-  const pa2Raw = examData.pa2?.[sub];
-  const sa1Raw = examData.halfYear?.[sub];
-  const pa3Raw = examData.pa3?.[sub];
-  const pa4Raw = examData.pa4?.[sub];
-  const sa2Raw = examData.final?.[sub];
+      const pa1Raw = examData.pa1?.[sub];
+      const pa2Raw = examData.pa2?.[sub];
+      const sa1Raw = examData.halfYear?.[sub];
+      const pa3Raw = examData.pa3?.[sub];
+      const pa4Raw = examData.pa4?.[sub];
+      const sa2Raw = examData.final?.[sub];
 
-  const drawing = isDrawing(sub);
+      const drawing = isDrawing(sub);
 
-  // For drawing keep raw grade string (if any)
-  if (drawing) {
-  return {
-    sub,
-    pa1: pa1Raw ?? "",
-    pa2: pa2Raw ?? "",
-    sa1: sa1Raw ?? "",
-    pa3: pa3Raw ?? "",
-    pa4: pa4Raw ?? "",
-    sa2: sa2Raw ?? "",
-    term1: "",
-    term2: "",
-    finalTotal: "",
-    grade: pa1Raw || pa2Raw || sa1Raw || pa3Raw || pa4Raw || sa2Raw || "",
-    point: "",
-    isDrawing: true,
-  };
-}
-
-
-  // Numeric subject: coerce to numbers (safe fallback to 0)
-  const pa1 = Number(pa1Raw || 0);
-  const pa2 = Number(pa2Raw || 0);
-  const sa1 = Number(sa1Raw || 0);
-  const pa3 = Number(pa3Raw || 0);
-  const pa4 = Number(pa4Raw || 0);
-  const sa2 = Number(sa2Raw || 0);
-
-  if (isPrimary) {
-    const total = pa1 + pa2 + sa1;
-    const { grade, point } = getGradePointAndGrade(total);
-    return { sub, pa1, pa2, sa1, total, grade, point, isDrawing: false };
-  }
-
-  if (isHalfYearly) {
-    const term1 = pa1 / 2 + pa2 / 2 + sa1;
-    const { grade, point } = getGradePointAndGrade(term1);
-    return {
-      sub,
-      pa1: pa1 / 2,
-      pa2: pa2 / 2,
-      sa1,
-      term1,
-      term1Grade: grade,
-      term1Point: point,
-      finalTotal: term1,
-      grade,
-      point,
-      isDrawing: false,
-    };
-  }
-
-  // Final (annual)
-  const term1 = pa1 / 2 + pa2 / 2 + sa1;
-  const term2 = pa3 / 2 + pa4 / 2 + sa2;
-  const finalTotal = (term1 + term2) / 2;
-
-  const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
-  const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
-  const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
-
-  return {
-    sub,
-    pa1: term1 ? (pa1 / 2) : 0, // already used display as halves in table
-    pa2: term1 ? (pa2 / 2) : 0,
-    sa1,
-    pa3: pa3 / 2,
-    pa4: pa4 / 2,
-    sa2,
-    term1,
-    term2,
-    finalTotal,
-    term1Grade: g1,
-    term1Point: p1,
-    term2Grade: g2,
-    term2Point: p2,
-    finalGrade: gf,
-    finalPoint: pf,
-    isDrawing: false,
-  };
-});
+      // For drawing keep raw grade string (if any)
+      if (drawing) {
+        return {
+          sub,
+          pa1: pa1Raw ?? "",
+          pa2: pa2Raw ?? "",
+          sa1: sa1Raw ?? "",
+          pa3: pa3Raw ?? "",
+          pa4: pa4Raw ?? "",
+          sa2: sa2Raw ?? "",
+          term1: "",
+          term2: "",
+          finalTotal: "",
+          grade: pa1Raw || pa2Raw || sa1Raw || pa3Raw || pa4Raw || sa2Raw || "",
+          point: "",
+          isDrawing: true,
+        };
+      }
 
 
-    
+      // Numeric subject: coerce to numbers (safe fallback to 0)
+      const pa1 = Number(pa1Raw || 0);
+      const pa2 = Number(pa2Raw || 0);
+      const sa1 = Number(sa1Raw || 0);
+      const pa3 = Number(pa3Raw || 0);
+      const pa4 = Number(pa4Raw || 0);
+      const sa2 = Number(sa2Raw || 0);
+
+      if (isPrimary) {
+        const total = pa1 + pa2 + sa1;
+        const { grade, point } = getGradePointAndGrade(total);
+        return { sub, pa1, pa2, sa1, total, grade, point, isDrawing: false };
+      }
+
+      if (isHalfYearly) {
+        const term1 = pa1 / 2 + pa2 / 2 + sa1;
+        const { grade, point } = getGradePointAndGrade(term1);
+        return {
+          sub,
+          pa1: pa1 / 2,
+          pa2: pa2 / 2,
+          sa1,
+          term1,
+          term1Grade: grade,
+          term1Point: point,
+          finalTotal: term1,
+          grade,
+          point,
+          isDrawing: false,
+        };
+      }
+
+      // Final (annual)
+      const term1 = pa1 / 2 + pa2 / 2 + sa1;
+      const term2 = pa3 / 2 + pa4 / 2 + sa2;
+      const finalTotal = (term1 + term2) / 2;
+
+      const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
+      const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
+      const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
+
+      return {
+        sub,
+        pa1: term1 ? (pa1 / 2) : 0, // already used display as halves in table
+        pa2: term1 ? (pa2 / 2) : 0,
+        sa1,
+        pa3: pa3 / 2,
+        pa4: pa4 / 2,
+        sa2,
+        term1,
+        term2,
+        finalTotal,
+        term1Grade: g1,
+        term1Point: p1,
+        term2Grade: g2,
+        term2Point: p2,
+        finalGrade: gf,
+        finalPoint: pf,
+        isDrawing: false,
+      };
+    });
+
+
+
     const mainRows = subjectRows.filter((r) => !r.isDrawing);
-const drawingRows = subjectRows.filter((r) => r.isDrawing);
+    const drawingRows = subjectRows.filter((r) => r.isDrawing);
 
-// safe formatter: only call toFixed on numbers
-const formatCell = (v, decimals = 1) => {
-  if (v === null || v === undefined || v === "") return "";
-  return typeof v === "number" ? v.toFixed(decimals) : String(v);
-};
+    // safe formatter: only call toFixed on numbers
+    const formatCell = (v, decimals = 1) => {
+      if (v === null || v === undefined || v === "") return "";
+      return typeof v === "number" ? v.toFixed(decimals) : String(v);
+    };
 
 
 
     // Totals sirf main subjects se
-       // Totals sirf main subjects se
+    // Totals sirf main subjects se
     let sumT1 = 0,
       sumT2 = 0,
       sumF = 0,
@@ -622,7 +658,7 @@ const formatCell = (v, decimals = 1) => {
       }
     });
 
-        // (agar kahin use karna ho to rakh sakte ho)
+    // (agar kahin use karna ho to rakh sakte ho)
     const avgT1 = n ? sumT1 / n : 0;
     const avgT2 = n ? sumT2 / n : 0;
     const avgF = n ? sumF / n : 0;
@@ -693,26 +729,18 @@ const formatCell = (v, decimals = 1) => {
 
             {/* CENTER: Full-width text (ab logo se independent center hoga) */}
             <div style={{ textAlign: "center", width: "100%", marginLeft: "40px" }}>
-              <h1
-  style={{
-    fontFamily: 'Algerian, "Times New Roman", serif',
-    fontWeight: 500,
-    fontSize: "46px",
-    letterSpacing: "5px",
-    textTransform: "uppercase",
-    margin: 0,
-  }}
->
-  AMBIKA INTERNATIONAL SCHOOL
-</h1>
+              <h1 className="school-name">
+                AMBIKA INTERNATIONAL SCHOOL
+              </h1>
 
-              <p style={{ margin: 0, fontSize: "15pt", fontWeight: 600 }}>
+              <p style={{ margin: "2px 0 0 0", fontSize: "15pt", fontWeight: 600 }}>
+
                 Based on CBSE curriculum (Play to Xth)
               </p>
-              <p style={{ margin: 0, fontSize: "14pt" }}>
+              <p style={{ margin: "1px 0", fontSize: "14pt" }}>
                 Saidpur, Dighwara (Saran), 841207
               </p>
-              <p style={{ margin: 0, fontSize: "14pt" }}>Mob. 8797118188</p>
+              <p style={{ margin: "1px 0", fontSize: "14pt" }}>Mob. 8797118188</p>
             </div>
 
             <div />
@@ -775,95 +803,96 @@ const formatCell = (v, decimals = 1) => {
           >
             STUDENT'S DETAIL
           </div>
-         <table
-  style={{
-    width: "100%",
-    borderCollapse: "separate",   // border-collapse hata diya
-    borderSpacing: 0,
-    fontSize: "12pt",
-    lineHeight: "1.6",
-    padding: "4px",
-    border: "none",               // table border off
-  }}
->
-  <tbody>
-    <tr>
-      {/* LEFT DETAILS */}
-      <td
-        style={{
-          width: "40%",
-          verticalAlign: "top",
-          paddingRight: "10px",
-          textAlign: "left",
-          fontWeight: "500",
-          border: "none",          // cell border off
-        }}
-      >
-        <div style={{ marginBottom: "4px" }}>
-          <strong>Student's Name:</strong> {student.name}
-        </div>
-        <div style={{ marginBottom: "4px" }}>
-          <strong>Mother's Name:</strong> {student.motherName || "N/A"}
-        </div>
-        <div style={{ marginBottom: "4px" }}>
-          <strong>Father's Name:</strong> {student.fatherName || "N/A"}
-        </div>
-        <div>
-          <strong>Address:</strong> {student.address || "N/A"}
-        </div>
-      </td>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "separate",   // border-collapse hata diya
+              borderSpacing: 0,
+              fontSize: "12pt",
+              lineHeight: "1.6",
+              padding: "4px",
+              border: "none",               // table border off
+            }}
+          >
+            <tbody>
+              <tr>
+                {/* LEFT DETAILS */}
+                <td
+                  style={{
+                    width: "40%",
+                    verticalAlign: "top",
+                    paddingRight: "10px",
+                    textAlign: "left",
+                    fontWeight: "500",
+                    border: "none",          // cell border off
+                  }}
+                >
+                  <div style={{ marginBottom: "4px" }}>
+                    <strong>Student's Name:</strong> {student.name}
+                  </div>
+                  <div style={{ marginBottom: "4px" }}>
+                    <strong>Mother's Name:</strong> {student.motherName || "N/A"}
+                  </div>
+                  <div style={{ marginBottom: "4px" }}>
+                    <strong>Father's Name:</strong> {student.fatherName || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Address:</strong> {student.address || "N/A"}
+                  </div>
+                </td>
 
-      <td
-        style={{
-          width: "20%",
-          verticalAlign: "top",
-          textAlign: "center",
-          border: "none",
-        }}
-      >
-        <div
-          style={{
-            width: "90px",
-            height: "80px",
-            border: "1px solid #000",   // sirf photo ka frame rahe
-            margin: "0 auto",
-            borderRadius:"10px"
-          }}
-        >
-          <img
-            src={student.photo || "https://via.placeholder.com/100"}
-            alt="Student"
-            style={{ width: "100%", height: "100%", objectFit: "cover" ,borderRadius:"10px"}}
-          />
-        </div>
-      </td>
+                <td
+                  style={{
+                    width: "20%",
+                    verticalAlign: "top",
+                    textAlign: "center",
+                    border: "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "90px",
+                      height: "80px",
+                      border: "1px solid #000",   // sirf photo ka frame rahe
+                      margin: "0 auto",
+                      borderRadius: "10px"
+                    }}
+                  >
+                    <img
+                      src={student.photo || "https://via.placeholder.com/100"}
+                      alt="Student"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}
+                    />
+                  </div>
+                </td>
 
-      {/* RIGHT DETAILS */}
-      <td
-        style={{
-          width: "40%",
-          verticalAlign: "top",
-          paddingLeft: "10px",
-          textAlign: "left",
-          fontWeight: "500",
-          border: "none",
-        }}
-      >
-        <div style={{ marginBottom: "4px" }}>
-          <strong>Roll No:</strong> {student.rollNo || "N/A"}
-        </div>
-        <div style={{ marginBottom: positionLabel ? "4px" : 0 }}>
-          <strong>Attendance:</strong> {attendanceDisplay}
-        </div>
-        {positionLabel && (
-          <div>
-            <strong>Position:</strong> {positionLabel}
-          </div>
-        )}
-      </td>
-    </tr>
-  </tbody>
-</table>
+                {/* RIGHT DETAILS */}
+                <td
+                  style={{
+                    width: "40%",
+                    verticalAlign: "top",
+                    paddingLeft: "10px",
+                    textAlign: "left",
+                    fontWeight: "500",
+                    border: "none",
+                  }}
+                >
+                  <div style={{ marginBottom: "4px" }}>
+                    <strong>Roll No:</strong> {student.rollNo || "N/A"}
+                  </div>
+                  <div style={{ marginBottom: positionLabel ? "4px" : 0 }}>
+                    <strong>Attendance:</strong> {attendanceDisplay}
+                  </div>
+                  
+                  {positionLabel && (
+                    <div>
+                      <strong>Position:</strong> {positionLabel}
+                    </div>
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
         </div>
 
@@ -886,14 +915,14 @@ const formatCell = (v, decimals = 1) => {
               display: "block",
               fontWeight: "bold",
               textDecoration: "underline",
-              
-              
+
+
             }}
           >
             Academic Performance : Scholastic Area (9 Point Scale)
           </h4>
 
-          <div className="table-container" style={{ marginTop: "10px" ,}}>
+          <div className="table-container" style={{ marginTop: "10px", }}>
             <table className="marks-table">
               <thead>
                 {isPrimary ? (
@@ -949,16 +978,18 @@ const formatCell = (v, decimals = 1) => {
 
                       {/* Final Block */}
                       <th>
-                        <div className="vertical-header">First Term</div>
+                        <div className="vertical-header">
+  First<br />Term
+</div>
                       </th>
                       <th>
-                        <div className="vertical-header">Second Term</div>
+                        <div className="vertical-header">Second <br /> Term</div>
                       </th>
                       <th>
-                        <div className="vertical-header">Final (100)</div>
+                        <div className="vertical-header">Final <br />(100)</div>
                       </th>
                       <th>
-                        <div className="vertical-header">Grade Point</div>
+                        <div className="vertical-header">Grade <br /> Point</div>
                       </th>
                       <th>
                         <div className="vertical-header">Grade</div>
@@ -971,154 +1002,154 @@ const formatCell = (v, decimals = 1) => {
 
 
               <tbody>
-  {/* Main subjects (Drawing ke bina) */}
-  {mainRows.map((row) => (
-    <tr key={row.sub}>
-      <td>{row.sub.toUpperCase()}</td>
+                {/* Main subjects (Drawing ke bina) */}
+                {mainRows.map((row) => (
+                  <tr key={row.sub}>
+                    <td>{row.sub.toUpperCase()}</td>
 
-      {isPrimary ? (
-        <>
-          <td>{formatCell(row.pa1)}</td>
-          <td>{formatCell(row.pa2)}</td>
-          <td>{formatCell(row.sa1)}</td>
-          <td>{typeof row.total === "number" ? row.total.toFixed(1) : row.total || ""}</td>
-          <td>{row.isDrawing ? "" : row.point || ""}</td>
-          <td>{row.isDrawing ? "" : row.grade || ""}</td>
-        </>
-      ) : isHalfYearly ? (
-        <>
-          <td>{formatCell(row.pa1)}</td>
-          <td>{formatCell(row.pa2)}</td>
-          <td>{formatCell(row.sa1)}</td>
-          <td>{formatCell(row.term1)}</td>
-          <td>{row.isDrawing ? "" : row.term1Point || ""}</td>
-          <td>{row.isDrawing ? "" : row.term1Grade || ""}</td>
-        </>
-      ) : (
-        <>
-          {/* First Term */}
-          <td>{formatCell(row.pa1)}</td>
-          <td>{formatCell(row.pa2)}</td>
-          <td>{formatCell(row.sa1)}</td>
-          <td>{formatCell(row.term1)}</td>
-          <td>{row.isDrawing ? "" : row.term1Grade || ""}</td>
+                    {isPrimary ? (
+                      <>
+                        <td>{formatCell(row.pa1)}</td>
+                        <td>{formatCell(row.pa2)}</td>
+                        <td>{formatCell(row.sa1)}</td>
+                        <td>{typeof row.total === "number" ? row.total.toFixed(1) : row.total || ""}</td>
+                        <td>{row.isDrawing ? "" : row.point || ""}</td>
+                        <td>{row.isDrawing ? "" : row.grade || ""}</td>
+                      </>
+                    ) : isHalfYearly ? (
+                      <>
+                        <td>{formatCell(row.pa1)}</td>
+                        <td>{formatCell(row.pa2)}</td>
+                        <td>{formatCell(row.sa1)}</td>
+                        <td>{formatCell(row.term1)}</td>
+                        <td>{row.isDrawing ? "" : row.term1Point || ""}</td>
+                        <td>{row.isDrawing ? "" : row.term1Grade || ""}</td>
+                      </>
+                    ) : (
+                      <>
+                        {/* First Term */}
+                        <td>{formatCell(row.pa1)}</td>
+                        <td>{formatCell(row.pa2)}</td>
+                        <td>{formatCell(row.sa1)}</td>
+                        <td>{formatCell(row.term1)}</td>
+                        <td>{row.isDrawing ? "" : row.term1Grade || ""}</td>
 
-          {/* Second Term */}
-          <td>{formatCell(row.pa3)}</td>
-          <td>{formatCell(row.pa4)}</td>
-          <td>{formatCell(row.sa2)}</td>
-          <td>{formatCell(row.term2)}</td>
-          <td>{row.isDrawing ? "" : row.term2Grade || ""}</td>
+                        {/* Second Term */}
+                        <td>{formatCell(row.pa3)}</td>
+                        <td>{formatCell(row.pa4)}</td>
+                        <td>{formatCell(row.sa2)}</td>
+                        <td>{formatCell(row.term2)}</td>
+                        <td>{row.isDrawing ? "" : row.term2Grade || ""}</td>
 
-          {/* Final Block */}
-          <td>{formatCell(row.term1)}</td>
-          <td>{formatCell(row.term2)}</td>
-          <td>{formatCell(row.finalTotal)}</td>
-          <td>{row.isDrawing ? "" : row.finalPoint || ""}</td>
-          <td>{row.isDrawing ? "" : row.finalGrade || ""}</td>
-        </>
-      )}
-    </tr>
-  ))}
+                        {/* Final Block */}
+                        <td>{formatCell(row.term1)}</td>
+                        <td>{formatCell(row.term2)}</td>
+                        <td>{formatCell(row.finalTotal)}</td>
+                        <td>{row.isDrawing ? "" : row.finalPoint || ""}</td>
+                        <td>{row.isDrawing ? "" : row.finalGrade || ""}</td>
+                      </>
+                    )}
+                  </tr>
+                ))}
 
-  {/* Total Row – sirf main subjects ka */}
-  <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
-    <td>TOTAL</td>
+                {/* Total Row – sirf main subjects ka */}
+                <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
+                  <td>TOTAL</td>
 
-    {isPrimary ? (
-      <>
-        <td>{formatCell(totalPa1)}</td>
-        <td>{formatCell(totalPa2)}</td>
-        <td>{formatCell(totalSa1)}</td>
-        <td>{formatCell(totalFinal)}</td>
-        <td></td>
-        <td></td>
-      </>
-    ) : isHalfYearly ? (
-      <>
-        <td>{formatCell(totalPa1)}</td>
-        <td>{formatCell(totalPa2)}</td>
-        <td>{formatCell(totalSa1)}</td>
-        <td>{formatCell(totalTerm1)}</td>
-        <td></td>
-        <td></td>
-      </>
-    ) : (
-      <>
-        {/* First Term */}
-        <td>{formatCell(totalPa1)}</td>
-        <td>{formatCell(totalPa2)}</td>
-        <td>{formatCell(totalSa1)}</td>
-        <td>{formatCell(totalTerm1)}</td>
-        <td></td>
+                  {isPrimary ? (
+                    <>
+                      <td>{formatCell(totalPa1)}</td>
+                      <td>{formatCell(totalPa2)}</td>
+                      <td>{formatCell(totalSa1)}</td>
+                      <td>{formatCell(totalFinal)}</td>
+                      <td></td>
+                      <td></td>
+                    </>
+                  ) : isHalfYearly ? (
+                    <>
+                      <td>{formatCell(totalPa1)}</td>
+                      <td>{formatCell(totalPa2)}</td>
+                      <td>{formatCell(totalSa1)}</td>
+                      <td>{formatCell(totalTerm1)}</td>
+                      <td></td>
+                      <td></td>
+                    </>
+                  ) : (
+                    <>
+                      {/* First Term */}
+                      <td>{formatCell(totalPa1)}</td>
+                      <td>{formatCell(totalPa2)}</td>
+                      <td>{formatCell(totalSa1)}</td>
+                      <td>{formatCell(totalTerm1)}</td>
+                      <td></td>
 
-        {/* Second Term */}
-        <td>{formatCell(totalPa3)}</td>
-        <td>{formatCell(totalPa4)}</td>
-        <td>{formatCell(totalSa2)}</td>
-        <td>{formatCell(totalTerm2)}</td>
-        <td></td>
+                      {/* Second Term */}
+                      <td>{formatCell(totalPa3)}</td>
+                      <td>{formatCell(totalPa4)}</td>
+                      <td>{formatCell(totalSa2)}</td>
+                      <td>{formatCell(totalTerm2)}</td>
+                      <td></td>
 
-        {/* Final Block */}
-        <td>{formatCell(totalTerm1)}</td>
-        <td>{formatCell(totalTerm2)}</td>
-        <td>{formatCell(totalFinal)}</td>
-        <td></td>
-        <td></td>
-      </>
-    )}
-  </tr>
+                      {/* Final Block */}
+                      <td>{formatCell(totalTerm1)}</td>
+                      <td>{formatCell(totalTerm2)}</td>
+                      <td>{formatCell(totalFinal)}</td>
+                      <td></td>
+                      <td></td>
+                    </>
+                  )}
+                </tr>
 
-  {/* Drawing rows – totals ke baad, bina grade/GP ke */}
-  {drawingRows.map((row) => (
-    <tr key={row.sub + "-drawing"}>
-      <td>{row.sub.toUpperCase()}</td>
+                {/* Drawing rows – totals ke baad, bina grade/GP ke */}
+                {drawingRows.map((row) => (
+                  <tr key={row.sub + "-drawing"}>
+                    <td>{row.sub.toUpperCase()}</td>
 
-      {isPrimary ? (
-        <>
-          <td>{formatCell(row.pa1)}</td>
-          <td>{formatCell(row.pa2)}</td>
-          <td>{formatCell(row.sa1)}</td>
-          <td>{formatCell(row.total)}</td>
-          <td></td>
-          <td></td>
-        </>
-      ) : isHalfYearly ? (
-        <>
-          <td>{formatCell(row.pa1)}</td>
-          <td>{formatCell(row.pa2)}</td>
-          <td>{formatCell(row.sa1)}</td>
-          <td>{formatCell(row.term1)}</td>
-          <td></td>
-          <td></td>
-        </>
-      ) : (
-        <>
-          {/* First Term */}
-          <td>{formatCell(row.pa1)}</td>
-          <td>{formatCell(row.pa2)}</td>
-          <td>{formatCell(row.sa1)}</td>
-          <td>{formatCell(row.term1)}</td>
-          <td></td>
+                    {isPrimary ? (
+                      <>
+                        <td>{formatCell(row.pa1)}</td>
+                        <td>{formatCell(row.pa2)}</td>
+                        <td>{formatCell(row.sa1)}</td>
+                        <td>{formatCell(row.total)}</td>
+                        <td></td>
+                        <td></td>
+                      </>
+                    ) : isHalfYearly ? (
+                      <>
+                        <td>{formatCell(row.pa1)}</td>
+                        <td>{formatCell(row.pa2)}</td>
+                        <td>{formatCell(row.sa1)}</td>
+                        <td>{formatCell(row.term1)}</td>
+                        <td></td>
+                        <td></td>
+                      </>
+                    ) : (
+                      <>
+                        {/* First Term */}
+                        <td>{formatCell(row.pa1)}</td>
+                        <td>{formatCell(row.pa2)}</td>
+                        <td>{formatCell(row.sa1)}</td>
+                        <td>{formatCell(row.term1)}</td>
+                        <td></td>
 
-          {/* Second Term */}
-          <td>{formatCell(row.pa3)}</td>
-          <td>{formatCell(row.pa4)}</td>
-          <td>{formatCell(row.sa2)}</td>
-          <td>{formatCell(row.term2)}</td>
-          <td></td>
+                        {/* Second Term */}
+                        <td>{formatCell(row.pa3)}</td>
+                        <td>{formatCell(row.pa4)}</td>
+                        <td>{formatCell(row.sa2)}</td>
+                        <td>{formatCell(row.term2)}</td>
+                        <td></td>
 
-          {/* Final block */}
-          <td>{formatCell(row.term1)}</td>
-          <td>{formatCell(row.term2)}</td>
-          <td>{formatCell(row.finalTotal)}</td>
-          <td></td>
-          <td></td>
-        </>
-      )}
-    </tr>
-  ))}
-</tbody>
+                        {/* Final block */}
+                        <td>{formatCell(row.term1)}</td>
+                        <td>{formatCell(row.term2)}</td>
+                        <td>{formatCell(row.finalTotal)}</td>
+                        <td></td>
+                        <td></td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
 
 
             </table>
@@ -1147,9 +1178,9 @@ const formatCell = (v, decimals = 1) => {
             }}
           >
             <table
-  className="marks-table grade-scale-table"
-  style={{ width: "100%", fontSize: "8pt" }}  // chaho to 9pt bhi rehne do
->
+              className="marks-table grade-scale-table"
+              style={{ width: "100%", fontSize: "8pt" }}  // chaho to 9pt bhi rehne do
+            >
 
               <thead>
                 <tr>
@@ -1232,11 +1263,12 @@ const formatCell = (v, decimals = 1) => {
               display: "flex",
               flexDirection: "column",
               lineHeight: 1.4,
+              marginLeft: "30px",
             }}
           >
             <div>
               <div style={{ fontSize: "11pt", fontWeight: 500, lineHeight: 1.5, wordSpacing: "3px", }}>
-                <span style={{ fontWeight: 700 ,fontSize: "14pt"}}>
+                <span style={{ fontWeight: 700, fontSize: "14pt" }}>
                   Students are assessed according to the following :-
                 </span>
                 <br />
@@ -1249,11 +1281,11 @@ const formatCell = (v, decimals = 1) => {
               </div>
 
 
-              First Term: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PA I (10%) + PA II (10%) + SA I (80%) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
+              First Term &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :-PA I (10%) + PA II (10%) + SA I (80%) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
               <br />
-              Second Term: &nbsp;&nbsp; PA III (10%) + PA IV (10%) +SA II (80%) = 100%
+              Second Term &nbsp;&nbsp; :-PA III (10%) + PA IV (10%) +SA II (80%) = 100%
               <br />
-              Final Result: &nbsp;&nbsp;&nbsp;50% of 1st Term + 50% of 2nd Term &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
+              Final Result &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:-50% of 1st Term + 50% of 2nd Term &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
 
             </div>
 
@@ -1267,45 +1299,115 @@ const formatCell = (v, decimals = 1) => {
               }}
             >
 
-
-              <div
-                style={{
-                  fontSize: "10pt",
-                  display: "flex",
-                  gap: "20px",
-                  marginTop: "105px",
-                }}
-              >
-                <div>Principal Sig. __________</div>
-              </div>
-
-              <div
+<div
   style={{
-    border: "1px solid black",
-    padding: "3px",
-    width: "140px",
+    display: "flex",
+    alignItems: "flex-end",
+    gap: "12px",
+    marginTop: "50px",
     fontSize: "10pt",
   }}
 >
-  <div
-    style={{
-      borderBottom: "1px solid black",
-      padding: "4px 0",
-    }}
-  >
-    <strong>Final Marks</strong>
-    <div style={{ textAlign: "right" }}>{finalMarks.toFixed(1)}</div>
+
+  {/* Label */}
+  <div style={{ whiteSpace: "nowrap" }}>
+    Principal Sig.
   </div>
-  <div
-    style={{
-      borderBottom: "1px solid black",
-      padding: "4px 0",
-    }}
-  >
-    <strong>Percentage</strong>
-    <div style={{ textAlign: "right" }}>{percentage}%</div>
+  {/* Signature + underline */}
+  <div style={{ textAlign: "center" }}>
+    <img
+      src={PrincipalSign}
+      alt="Principal Signature"
+      style={{
+        width: "120px",
+        height: "auto",
+        display: "block",
+        marginBottom: "2px",
+      }}
+    />
+
+    {/* underline */}
+    <div
+      style={{
+        borderBottom: "1px solid black",
+        width: "120px",
+        margin: "0 auto",
+      }}
+    ></div>
   </div>
 </div>
+
+
+              <div
+                style={{
+
+                  padding: "3px",
+                  width: "140px",
+                  fontSize: "10pt",
+                  marginRight: "15px",
+                  marginTop: "30px",
+                }}
+              >
+                <table
+                  style={{
+                    border: "1px solid black",
+                    borderCollapse: "collapse",
+                    width: "160px",
+                    fontSize: "10pt",
+                  }}
+                >
+                  <tbody>
+                    <tr>
+                      <td
+                        style={{
+                          border: "1px solid black",
+                          padding: "3px",
+                          fontWeight: "bold",
+                          textAlign: "left",
+                        }}
+                      >
+                        Total obtain marks
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid black",
+                          padding: "3px",
+                          fontWeight: "bold",
+                          textAlign: "center",
+                          fontSize: "14pt",
+                        }}
+                      >
+                        {finalMarks.toFixed(0)}
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td
+                        style={{
+                          border: "1px solid black",
+                          padding: "6px",
+                          fontWeight: "bold",
+                          textAlign: "left",
+                        }}
+                      >
+                        Percentage
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid black",
+                          padding: "6px",
+                          fontWeight: "bold",
+                          textAlign: "right",
+                          fontSize: "14pt",
+                        }}
+                      >
+                        {percentage}%
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+              </div>
 
             </div>
           </div>
@@ -1328,6 +1430,19 @@ const formatCell = (v, decimals = 1) => {
     font-weight: bold;
     
   }
+    /* SUBJECT column left */
+.marks-table th:first-child,
+.marks-table td:first-child {
+  text-align: left !important;
+  padding-left: 6px;
+}
+
+/* Baaki sab columns center */
+.marks-table th:not(:first-child),
+.marks-table td:not(:first-child) {
+  text-align: center !important;
+}
+
         h2 {
           text-align: center;
           color: #2c3e50;
@@ -1375,20 +1490,32 @@ const formatCell = (v, decimals = 1) => {
 .marks-table td {
   padding: 3px 2px;        /* kam padding */
   border: 1px solid #000;
-  text-align: center;
+  text-align: center !important;
   word-wrap: break-word;
 }
+
+
 .vertical-header {
-  display: inline-block;
-  transform: rotate(-90deg);      /* right side (clockwise) rotate */
+  display: flex;                    /* 🔥 IMPORTANT */
+  align-items: center;
+  justify-content: center;
+
+  transform: rotate(-90deg);
   transform-origin: center center;
   white-space: nowrap;
-  padding: 4px 1px;
-  min-width: 20px;
-  text-align: center;
+
+  line-height: 0.9;        /* 🔥 multi-line ke liye */
+  white-space: normal; 
+
+  height: 95px;                     /* 🔥 PRINT me space */
+  width: 22px;
+
   font-weight: bold;
-  font-size: 0.6rem;
+  font-size: 11px;                  /* print readable */
+  line-height: 1;
 }
+
+
 
 
 
@@ -1443,12 +1570,12 @@ const formatCell = (v, decimals = 1) => {
         
       `}</style>
 
-          <div className="vr-top-bar">
-      <button className="vr-back-btn" onClick={handleBackClick}>
-        ← Back
-      </button>
-      <h2>Student Marks Record</h2>
-    </div>
+      <div className="vr-top-bar">
+        <button className="vr-back-btn" onClick={handleBackClick}>
+          ← Back
+        </button>
+        <h2>Student Marks Record</h2>
+      </div>
 
 
       <div
