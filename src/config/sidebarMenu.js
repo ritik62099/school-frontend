@@ -20,7 +20,7 @@ export const adminMenu = [
 
   { label: 'Attendance Overview', path: '/admin/attendance-overview', icon: '🗓️' },
   
-   { label: 'Student Payments', path: '/student-payments', color: '#7e22ce' },
+  //  { label: 'Student Payments', path: '/student-payments', color: '#7e22ce' },
   
 
   { label: 'Add Marks', path: '/add-marks', icon: '✍️' },

@@ -169,8 +169,8 @@ const StudentsList = () => {
                 <th>Class</th>
                 <th>Section</th>
                 <th>Roll No</th>
+                <th>Mobile</th>
                 <th>DOB</th>
-                <th>Admission</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -193,14 +193,10 @@ const StudentsList = () => {
                   <td>{student.class || "—"}</td>
                   <td>{student.section || "—"}</td>
                   <td>{student.rollNo || "—"}</td>
+                  <td>{student.mobile || "—"}</td>
                   <td>
                     {student.dob
                       ? new Date(student.dob).toLocaleDateString()
-                      : "—"}
-                  </td>
-                  <td>
-                    {student.admissionDate
-                      ? new Date(student.admissionDate).toLocaleDateString()
                       : "—"}
                   </td>
                   <td>
@@ -291,11 +287,9 @@ const StudentsList = () => {
                   <strong>Roll No:</strong> {student.rollNo || "—"}
                 </p>
                 <p>
-                  <strong>Admission:</strong>{" "}
-                  {student.admissionDate
-                    ? new Date(student.admissionDate).toLocaleDateString()
-                    : "—"}
-                </p>
+    <strong>Mobile:</strong> {student.mobile || "—"}
+  </p>
+                
                 <p>
                   <strong>DOB:</strong>{" "}
                   {student.dob

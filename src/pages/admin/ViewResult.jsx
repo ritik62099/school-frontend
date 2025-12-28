@@ -883,6 +883,10 @@ th, td {
                   <div style={{ marginBottom: positionLabel ? "4px" : 0 }}>
                     <strong>Attendance:</strong> {attendanceDisplay}
                   </div>
+
+                  <div style={{ marginBottom: positionLabel ? "4px" : 0 }}>
+  <strong>Mobile:</strong> {student.mobile || "N/A"}
+</div>
                   
                   {positionLabel && (
                     <div>
