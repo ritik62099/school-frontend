@@ -120,34 +120,24 @@ const ViewResult = ({ onBack }) => {
 
   }, []);
 
-  useEffect(() => {
-    if (filteredResults.length === 0) return;
-    const token = localStorage.getItem("token");
-    const fetchAttendance = async () => {
-      const attMap = {};
-      for (const r of filteredResults) {
-        const studentId = r.studentId?._id || r.studentId;
-        if (!studentId) continue;
-        try {
-          const res = await fetch(endpoints.attendance.studentTotal(studentId), {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            attMap[studentId] = {
-              present: data.totalPresentDays,
-              total: data.totalSchoolDays,
-              percentage: data.percentage,
-            };
-          }
-        } catch (err) {
-          console.error("Failed to load attendance for", studentId);
-        }
-      }
-      setAttendanceData(attMap);
-    };
-    fetchAttendance();
-  }, [filteredResults]);
+ useEffect(() => {
+  if (!filteredResults.length) return;
+
+  const token = localStorage.getItem("token");
+
+  const ids = filteredResults
+    .map(r => r.studentId?._id || r.studentId)
+    .filter(Boolean);
+
+  fetch(endpoints.attendance.studentBulk(ids.join(",")), {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+    .then(res => res.json())
+    .then(data => setAttendanceData(data))
+    .catch(err => console.error("Attendance bulk error", err));
+
+}, [filteredResults]);
+
 
   useEffect(() => {
     let filtered = results;
@@ -885,9 +875,9 @@ th, td {
                   </div>
 
                   <div style={{ marginBottom: positionLabel ? "4px" : 0 }}>
-  <strong>Mobile:</strong> {student.mobile || "N/A"}
-</div>
-                  
+                    <strong>Mobile:</strong> {student.mobile || "N/A"}
+                  </div>
+
                   {positionLabel && (
                     <div>
                       <strong>Position:</strong> {positionLabel}
@@ -983,8 +973,8 @@ th, td {
                       {/* Final Block */}
                       <th>
                         <div className="vertical-header">
-  First<br />Term
-</div>
+                          First<br />Term
+                        </div>
                       </th>
                       <th>
                         <div className="vertical-header">Second <br /> Term</div>
@@ -1303,43 +1293,43 @@ th, td {
               }}
             >
 
-<div
-  style={{
-    display: "flex",
-    alignItems: "flex-end",
-    gap: "12px",
-    marginTop: "50px",
-    fontSize: "10pt",
-  }}
->
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  gap: "12px",
+                  marginTop: "50px",
+                  fontSize: "10pt",
+                }}
+              >
 
-  {/* Label */}
-  <div style={{ whiteSpace: "nowrap" }}>
-    Principal Sig.
-  </div>
-  {/* Signature + underline */}
-  <div style={{ textAlign: "center" }}>
-    <img
-      src={PrincipalSign}
-      alt="Principal Signature"
-      style={{
-        width: "120px",
-        height: "auto",
-        display: "block",
-        marginBottom: "2px",
-      }}
-    />
+                {/* Label */}
+                <div style={{ whiteSpace: "nowrap" }}>
+                  Principal Sig.
+                </div>
+                {/* Signature + underline */}
+                <div style={{ textAlign: "center" }}>
+                  <img
+                    src={PrincipalSign}
+                    alt="Principal Signature"
+                    style={{
+                      width: "120px",
+                      height: "auto",
+                      display: "block",
+                      marginBottom: "2px",
+                    }}
+                  />
 
-    {/* underline */}
-    <div
-      style={{
-        borderBottom: "1px solid black",
-        width: "120px",
-        margin: "0 auto",
-      }}
-    ></div>
-  </div>
-</div>
+                  {/* underline */}
+                  <div
+                    style={{
+                      borderBottom: "1px solid black",
+                      width: "120px",
+                      margin: "0 auto",
+                    }}
+                  ></div>
+                </div>
+              </div>
 
 
               <div
