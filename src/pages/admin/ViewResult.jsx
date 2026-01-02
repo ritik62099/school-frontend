@@ -468,7 +468,8 @@ th, td {
       <h3 style={{ textAlign: "center", color: "red", padding: "2rem" }}>{error}</h3>
     );
 
-  const classOptions = [...new Set(filteredResults.map((r) => r.class))];
+const classOptions = [...new Set(results.map(r => r.class))].sort();
+
 
   const renderReportCard = (
     r,
@@ -581,10 +582,13 @@ th, td {
     const drawingRows = subjectRows.filter((r) => r.isDrawing);
 
     // safe formatter: only call toFixed on numbers
-    const formatCell = (v, decimals = 1) => {
-      if (v === null || v === undefined || v === "") return "";
-      return typeof v === "number" ? v.toFixed(decimals) : String(v);
-    };
+   const formatCell = (v, decimals = 1) => {
+  // 👇 0 ka matlab Absent
+  if (v === 0) return "AB";
+
+  if (v === null || v === undefined || v === "") return "";
+  return typeof v === "number" ? v.toFixed(decimals) : String(v);
+};
 
 
 
