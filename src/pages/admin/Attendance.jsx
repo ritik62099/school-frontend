@@ -77,62 +77,62 @@ const Attendance = () => {
 
 
   useEffect(() => {
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Session expired. Please login again.");
-        setLoading(false);
-        return;
-      }
-
-      // 🔥 STEP 1: Fetch fresh logged-in user
-      const userRes = await fetch(endpoints.auth.me, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!userRes.ok) throw new Error("Failed to load user");
-
-      const currentUser = await userRes.json();
-
-      // 🔥 STEP 2: Role-based logic
-      if (currentUser.role === "teacher") {
-        const attendanceClasses = (currentUser.teachingAssignments || [])
-          .filter(a => a.canMarkAttendance === true)
-          .map(a => a.class);
-
-        if (attendanceClasses.length === 0) {
-          setError("You are not authorized to mark attendance for any class.");
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("Session expired. Please login again.");
           setLoading(false);
           return;
         }
 
-        setAssignedClasses(attendanceClasses);
-        setSelectedClass(attendanceClasses[0]);
-      }
-
-      if (currentUser.role === "admin") {
-        const classesRes = await fetch(endpoints.classes.list, {
+        // 🔥 STEP 1: Fetch fresh logged-in user
+        const userRes = await fetch(endpoints.auth.me, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!classesRes.ok) throw new Error("Failed to load classes");
+        if (!userRes.ok) throw new Error("Failed to load user");
 
-        const allClasses = await classesRes.json();
-        setAssignedClasses(allClasses);
-        setSelectedClass(allClasses[0]);
+        const currentUser = await userRes.json();
+
+        // 🔥 STEP 2: Role-based logic
+        if (currentUser.role === "teacher") {
+          const attendanceClasses = (currentUser.teachingAssignments || [])
+            .filter(a => a.canMarkAttendance === true)
+            .map(a => a.class);
+
+          if (attendanceClasses.length === 0) {
+            setError("You are not authorized to mark attendance for any class.");
+            setLoading(false);
+            return;
+          }
+
+          setAssignedClasses(attendanceClasses);
+          setSelectedClass(attendanceClasses[0]);
+        }
+
+        if (currentUser.role === "admin") {
+          const classesRes = await fetch(endpoints.classes.list, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!classesRes.ok) throw new Error("Failed to load classes");
+
+          const allClasses = await classesRes.json();
+          setAssignedClasses(allClasses);
+          setSelectedClass(allClasses[0]);
+        }
+
+        setError("");
+      } catch (err) {
+        setError(err.message || "Failed to load data");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setError("");
-    } catch (err) {
-      setError(err.message || "Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchUserData();
-}, []);
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     if (!selectedClass) return;
@@ -207,9 +207,9 @@ const Attendance = () => {
       records: isSchoolClosed
         ? []                       // school closed -> koi records nahi
         : students.map(s => ({
-            studentId: s._id,
-            present: s.present
-          })),
+          studentId: s._id,
+          present: s.present
+        })),
     };
 
     try {
@@ -223,8 +223,8 @@ const Attendance = () => {
       });
       if (res.ok) {
         alert('Attendance updated successfully!');
-        navigate('/dashboard');
-      } else {
+      }
+      else {
         const err = await res.json();
         alert('Failed: ' + (err.message || 'Unknown error'));
       }
@@ -256,7 +256,7 @@ const Attendance = () => {
       <div style={styles.card} className="card">
         <h1 style={styles.title} className="title">Mark Attendance</h1>
         {error && <div style={styles.alertError} className="alertError">{error}</div>}
-        
+
         <div style={styles.controls} className="controls">
           <div style={styles.controlItem} className="control-item">
             <label style={styles.label}>Date</label>
@@ -366,14 +366,14 @@ const Attendance = () => {
               ...styles.buttonPrimary,
               opacity:
                 loading ||
-                !selectedClass ||
-                (!isSchoolClosed && students.length === 0)
+                  !selectedClass ||
+                  (!isSchoolClosed && students.length === 0)
                   ? 0.6
                   : 1,
               cursor:
                 loading ||
-                !selectedClass ||
-                (!isSchoolClosed && students.length === 0)
+                  !selectedClass ||
+                  (!isSchoolClosed && students.length === 0)
                   ? 'not-allowed'
                   : 'pointer',
             }}
