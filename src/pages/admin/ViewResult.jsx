@@ -15,7 +15,8 @@ const ViewResult = ({ onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [assignedClasses, setAssignedClasses] = useState([]);
-  const [selectedExamType, setSelectedExamType] = useState("halfYearly");
+  const [selectedExamType, setSelectedExamType] = useState("halfYear");
+
   const [attendanceData, setAttendanceData] = useState({});
   const [classSubjectMap, setClassSubjectMap] = useState({});
   const [searchRoll, setSearchRoll] = useState("");
@@ -24,6 +25,20 @@ const ViewResult = ({ onBack }) => {
 
   // helper: detect drawing subject
   const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
+
+  const toSafeNumber = (v) => {
+  if (v === undefined || v === null) return 0;
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && /^\d+(\.\d+)?$/.test(v)) {
+    return Number(v);
+  }
+  return 0; // AB, A, B, C, D
+};
+
+const isAbsent = (v) =>
+  typeof v === "string" && v.toUpperCase() === "AB";
+
+
 
   const handleBackClick = () => {
     if (typeof onBack === "function") {
@@ -120,23 +135,23 @@ const ViewResult = ({ onBack }) => {
 
   }, []);
 
- useEffect(() => {
-  if (!filteredResults.length) return;
+  useEffect(() => {
+    if (!filteredResults.length) return;
 
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  const ids = filteredResults
-    .map(r => r.studentId?._id || r.studentId)
-    .filter(Boolean);
+    const ids = filteredResults
+      .map(r => r.studentId?._id || r.studentId)
+      .filter(Boolean);
 
-  fetch(endpoints.attendance.studentBulk(ids.join(",")), {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-    .then(res => res.json())
-    .then(data => setAttendanceData(data))
-    .catch(err => console.error("Attendance bulk error", err));
+    fetch(endpoints.attendance.studentBulk(ids.join(",")), {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setAttendanceData(data))
+      .catch(err => console.error("Attendance bulk error", err));
 
-}, [filteredResults]);
+  }, [filteredResults]);
 
 
   useEffect(() => {
@@ -394,12 +409,18 @@ th, td {
       n = 0;
 
     subjectsArray.forEach((sub) => {
-      const lowerSub = String(sub || "").toLowerCase();
-      if (isDrawing(sub)) {
-        // skip drawing entirely for numeric averages
-        return;
-      }
+  if (isDrawing(sub)) return;
 
+  // 🔥 AB subject ko average / rank se hata do
+  const hasAB =
+    isAbsent(examData.pa1?.[sub]) ||
+    isAbsent(examData.pa2?.[sub]) ||
+    isAbsent(examData.halfYear?.[sub]) ||
+    isAbsent(examData.pa3?.[sub]) ||
+    isAbsent(examData.pa4?.[sub]) ||
+    isAbsent(examData.final?.[sub]);
+
+  if (hasAB) return; // ❌ skip this subject completely
       // parse numeric values safely (fallback to 0)
       const pa1 = Number(examData.pa1?.[sub] || 0);
       const pa2 = Number(examData.pa2?.[sub] || 0);
@@ -412,7 +433,7 @@ th, td {
         const total = pa1 + pa2 + sa1;
         sumF += total;
         n++;
-      } else if (examType === "halfYearly") {
+      } else if (examType === "halfYear") {
         const term1 = pa1 / 2 + pa2 / 2 + sa1;
         sumT1 += term1;
         sumF += term1;
@@ -468,7 +489,7 @@ th, td {
       <h3 style={{ textAlign: "center", color: "red", padding: "2rem" }}>{error}</h3>
     );
 
-const classOptions = [...new Set(results.map(r => r.class))].sort();
+  const classOptions = [...new Set(results.map(r => r.class))].sort();
 
 
   const renderReportCard = (
@@ -481,7 +502,8 @@ const classOptions = [...new Set(results.map(r => r.class))].sort();
     position
   ) => {
     const isPrimary = isPrimaryClass(r.class);
-    const isHalfYearly = examType === "halfYearly";
+    const isHalfYearly = examType === "halfYear";
+
 
 
     const subjectRows = subjectsArray.map((sub) => {
@@ -514,13 +536,25 @@ const classOptions = [...new Set(results.map(r => r.class))].sort();
       }
 
 
-      // Numeric subject: coerce to numbers (safe fallback to 0)
-      const pa1 = Number(pa1Raw || 0);
-      const pa2 = Number(pa2Raw || 0);
-      const sa1 = Number(sa1Raw || 0);
-      const pa3 = Number(pa3Raw || 0);
-      const pa4 = Number(pa4Raw || 0);
-      const sa2 = Number(sa2Raw || 0);
+// ===== DISPLAY VALUES (AB ya number) =====
+const pa1Display = isAbsent(pa1Raw) ? "AB" : toSafeNumber(pa1Raw);
+const pa2Display = isAbsent(pa2Raw) ? "AB" : toSafeNumber(pa2Raw);
+const sa1Display = isAbsent(sa1Raw) ? "AB" : toSafeNumber(sa1Raw);
+
+const pa3Display = isAbsent(pa3Raw) ? "AB" : toSafeNumber(pa3Raw);
+const pa4Display = isAbsent(pa4Raw) ? "AB" : toSafeNumber(pa4Raw);
+const sa2Display = isAbsent(sa2Raw) ? "AB" : toSafeNumber(sa2Raw);
+
+// ===== NUMERIC VALUES (calculation ke liye) =====
+const pa1 = typeof pa1Display === "number" ? pa1Display : 0;
+const pa2 = typeof pa2Display === "number" ? pa2Display : 0;
+const sa1 = typeof sa1Display === "number" ? sa1Display : 0;
+
+const pa3 = typeof pa3Display === "number" ? pa3Display : 0;
+const pa4 = typeof pa4Display === "number" ? pa4Display : 0;
+const sa2 = typeof sa2Display === "number" ? sa2Display : 0;
+
+
 
       if (isPrimary) {
         const total = pa1 + pa2 + sa1;
@@ -529,22 +563,22 @@ const classOptions = [...new Set(results.map(r => r.class))].sort();
       }
 
       if (isHalfYearly) {
-        const term1 = pa1 / 2 + pa2 / 2 + sa1;
-        const { grade, point } = getGradePointAndGrade(term1);
-        return {
-          sub,
-          pa1: pa1 / 2,
-          pa2: pa2 / 2,
-          sa1,
-          term1,
-          term1Grade: grade,
-          term1Point: point,
-          finalTotal: term1,
-          grade,
-          point,
-          isDrawing: false,
-        };
-      }
+  const term1 = pa1 / 2 + pa2 / 2 + sa1;
+  const { grade, point } = getGradePointAndGrade(term1);
+
+  return {
+    sub,
+    pa1: pa1Display === "AB" ? "AB" : pa1 / 2,
+    pa2: pa2Display === "AB" ? "AB" : pa2 / 2,
+    sa1: sa1Display,
+    term1,
+    term1Grade: grade,
+    term1Point: point,
+    finalTotal: term1,
+    isDrawing: false,
+  };
+}
+
 
       // Final (annual)
       const term1 = pa1 / 2 + pa2 / 2 + sa1;
@@ -556,24 +590,27 @@ const classOptions = [...new Set(results.map(r => r.class))].sort();
       const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
 
       return {
-        sub,
-        pa1: term1 ? (pa1 / 2) : 0, // already used display as halves in table
-        pa2: term1 ? (pa2 / 2) : 0,
-        sa1,
-        pa3: pa3 / 2,
-        pa4: pa4 / 2,
-        sa2,
-        term1,
-        term2,
-        finalTotal,
-        term1Grade: g1,
-        term1Point: p1,
-        term2Grade: g2,
-        term2Point: p2,
-        finalGrade: gf,
-        finalPoint: pf,
-        isDrawing: false,
-      };
+  sub,
+  pa1: pa1Display === "AB" ? "AB" : pa1 / 2,
+  pa2: pa2Display === "AB" ? "AB" : pa2 / 2,
+  sa1: sa1Display,
+
+  pa3: pa3Display === "AB" ? "AB" : pa3 / 2,
+  pa4: pa4Display === "AB" ? "AB" : pa4 / 2,
+  sa2: sa2Display,
+
+  term1,
+  term2,
+  finalTotal,
+  term1Grade: g1,
+  term1Point: p1,
+  term2Grade: g2,
+  term2Point: p2,
+  finalGrade: gf,
+  finalPoint: pf,
+  isDrawing: false,
+};
+
     });
 
 
@@ -581,14 +618,16 @@ const classOptions = [...new Set(results.map(r => r.class))].sort();
     const mainRows = subjectRows.filter((r) => !r.isDrawing);
     const drawingRows = subjectRows.filter((r) => r.isDrawing);
 
-    // safe formatter: only call toFixed on numbers
-   const formatCell = (v, decimals = 1) => {
-  // 👇 0 ka matlab Absent
-  if (v === 0) return "AB";
+    const formatCell = (v, decimals = 1) => {
+  // AB ya grade string
+  if (typeof v === "string") return v;
 
-  if (v === null || v === undefined || v === "") return "";
-  return typeof v === "number" ? v.toFixed(decimals) : String(v);
+  if (v === null || v === undefined) return "";
+
+  // number
+  return typeof v === "number" ? v.toFixed(decimals) : "";
 };
+
 
 
 
@@ -611,46 +650,34 @@ const classOptions = [...new Set(results.map(r => r.class))].sort();
       totalFinal = 0;
 
     mainRows.forEach((row) => {
-      n++;
+  // ❌ AB wale subject ko count hi mat karo
+  const hasAB =
+    row.pa1 === "AB" ||
+    row.pa2 === "AB" ||
+    row.sa1 === "AB" ||
+    row.pa3 === "AB" ||
+    row.pa4 === "AB" ||
+    row.sa2 === "AB";
 
-      // PRIMARY (sirf PA1, PA2, SA1, Total)
-      if (isPrimary) {
-        totalPa1 += row.pa1 || 0;
-        totalPa2 += row.pa2 || 0;
-        totalSa1 += row.sa1 || 0;
-        totalFinal += row.total || 0;
+  if (hasAB) return; // 🔥 skip this subject completely
 
-        sumF += row.total || 0; // avg aur percentage ke liye
-      }
-      // HALF YEARLY
-      else if (isHalfYearly) {
-        totalPa1 += row.pa1 || 0;
-        totalPa2 += row.pa2 || 0;
-        totalSa1 += row.sa1 || 0;
-        totalTerm1 += row.term1 || 0;
+  n++;
 
-        sumT1 += row.term1 || 0;
-        sumF += row.term1 || 0; // yahi final माना hai half yearly me
-      }
-      // FINAL (DONO TERM)
-      else {
-        totalPa1 += row.pa1 || 0;
-        totalPa2 += row.pa2 || 0;
-        totalSa1 += row.sa1 || 0;
-        totalTerm1 += row.term1 || 0;
+  totalPa1 += typeof row.pa1 === "number" ? row.pa1 : 0;
+  totalPa2 += typeof row.pa2 === "number" ? row.pa2 : 0;
+  totalSa1 += typeof row.sa1 === "number" ? row.sa1 : 0;
 
-        totalPa3 += row.pa3 || 0;
-        totalPa4 += row.pa4 || 0;
-        totalSa2 += row.sa2 || 0;
-        totalTerm2 += row.term2 || 0;
+  totalPa3 += typeof row.pa3 === "number" ? row.pa3 : 0;
+  totalPa4 += typeof row.pa4 === "number" ? row.pa4 : 0;
+  totalSa2 += typeof row.sa2 === "number" ? row.sa2 : 0;
 
-        totalFinal += row.finalTotal || 0;
+  totalTerm1 += typeof row.term1 === "number" ? row.term1 : 0;
+  totalTerm2 += typeof row.term2 === "number" ? row.term2 : 0;
+  totalFinal += typeof row.finalTotal === "number" ? row.finalTotal : 0;
 
-        sumT1 += row.term1 || 0;
-        sumT2 += row.term2 || 0;
-        sumF += row.finalTotal || 0;
-      }
-    });
+  sumF += typeof row.finalTotal === "number" ? row.finalTotal : 0;
+});
+
 
     // (agar kahin use karna ho to rakh sakte ho)
     const avgT1 = n ? sumT1 / n : 0;
@@ -1650,12 +1677,13 @@ const classOptions = [...new Set(results.map(r => r.class))].sort();
         </select>
 
         <select
-          value={selectedExamType}
-          onChange={(e) => setSelectedExamType(e.target.value)}
-        >
-          <option value="halfYearly">Half Yearly Report</option>
-          <option value="final">Annual Report Card</option>
-        </select>
+  value={selectedExamType}
+  onChange={(e) => setSelectedExamType(e.target.value)}
+>
+  <option value="halfYear">Half Yearly Report</option>
+  <option value="final">Annual Report Card</option>
+</select>
+
       </div>
 
       {filteredResults.length === 0 ? (

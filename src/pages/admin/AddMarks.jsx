@@ -223,41 +223,56 @@ const AddMarks = ({ onBack }) => {
   ]);
 
   // handle change: drawing => letter only; others => numeric validation
-  const handleChange = (exam, subject, value) => {
-    if (isDrawing(subject)) {
-      const v = value ? String(value).toUpperCase() : "";
-      if (v && !["A", "B", "C", "D"].includes(v)) return;
-      setMarks((prev) => ({
-        ...prev,
-        [exam]: { ...prev[exam], [subject]: v },
-      }));
-      setRowStatus((prev) => ({
-        ...prev,
-        [exam]: {
-          ...(prev[exam] || {}),
-          [subject]: undefined,
-        },
-      }));
-      return;
-    }
 
-    // numeric subjects: allow empty or 0-100 (frontend check)
-    const num = Number(value);
-    if (value !== "" && (isNaN(num) || num < 0 || num > 100)) return;
+// handle change: drawing => letter only; others => number / AB / A-D
+const handleChange = (exam, subject, value) => {
+  if (isDrawing(subject)) {
+    const v = value.toUpperCase();
+    if (v && !["A", "B", "C", "D"].includes(v)) return;
 
     setMarks((prev) => ({
       ...prev,
-      [exam]: { ...prev[exam], [subject]: value },
+      [exam]: { ...prev[exam], [subject]: v },
     }));
+    return;
+  }
 
-    setRowStatus((prev) => ({
+  // ===== NUMERIC SUBJECTS =====
+  const upper = value.toUpperCase();
+
+  // allow empty
+  if (upper === "") {
+    setMarks((prev) => ({
       ...prev,
-      [exam]: {
-        ...(prev[exam] || {}),
-        [subject]: undefined,
-      },
+      [exam]: { ...prev[exam], [subject]: "" },
     }));
-  };
+    return;
+  }
+
+  // allow letters A, B, C, D, AB
+  if (/^(A|B|AB)$/.test(upper)) {
+    setMarks((prev) => ({
+      ...prev,
+      [exam]: { ...prev[exam], [subject]: upper },
+    }));
+    return;
+  }
+
+  // allow numbers 0–100
+  if (/^\d{1,3}$/.test(value)) {
+    const num = Number(value);
+    if (num >= 0 && num <= 100) {
+      setMarks((prev) => ({
+        ...prev,
+        [exam]: { ...prev[exam], [subject]: value },
+      }));
+    }
+    return;
+  }
+
+  // anything else → ignore
+};
+
 
   const saveSingle = async (exam, subject) => {
     const value = marks[exam]?.[subject];

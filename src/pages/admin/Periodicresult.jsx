@@ -19,7 +19,7 @@ const ViewPAResults = ({ onBack }) => {
   const [searchRoll, setSearchRoll] = useState("");
   const [searchName, setSearchName] = useState("");
   const [selectedPA, setSelectedPA] = useState("pa1");
- 
+
 
 
   const handleBackClick = () => {
@@ -43,7 +43,7 @@ const ViewPAResults = ({ onBack }) => {
     fetch(endpoints.auth.me, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.json())
       .then((data) => setAssignedClasses(data.assignedClasses || []))
-      .catch(() => {});
+      .catch(() => { });
 
     fetch(endpoints.marks.list, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.json())
@@ -83,147 +83,147 @@ const ViewPAResults = ({ onBack }) => {
   };
 
 
-const loadImageAsBase64 = (src) => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = src;
+  const loadImageAsBase64 = (src) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = src;
 
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-  });
-};
-
-
-const printClassPA_PDF = async (examKey, className, students, subjects) => {
-  const doc = new jsPDF("p", "mm", "a4");
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-
-  // ✅ Load logo
-  const logoBase64 = await loadImageAsBase64(Logo);
-
-  // ===== HEADER =====
-  const drawHeader = () => {
-    doc.setFontSize(9);
-doc.setFont("helvetica", "normal");
-
-doc.text("Reg. No: 21912662021926123218", 14, 8);
-doc.text("UDISE No: 10170504508", pageWidth - 14, 8, { align: "right" });
-
-    doc.addImage(logoBase64, "PNG", 14, 10, 20, 20);
-
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("AMBIKA INTERNATIONAL SCHOOL", pageWidth / 2, 15, { align: "center" });
-
-  
-   
-    doc.setFontSize(10);
-    doc.text("Based on CBSE curriculum (Play to Xth)", pageWidth / 2, 21, { align: "center" });
-    doc.text("Saidpur, Dighwara (Saran), 841207", pageWidth / 2, 26, { align: "center" });
-    doc.text("Mob. 8797118188", pageWidth / 2, 31, { align: "center" });
-
-    doc.setFontSize(9);
-
-    doc.line(14, 39, pageWidth - 14, 39);
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(
-      `${examKey.toUpperCase()} EXAMINATION RESULT  |  Class: ${className}`,
-      pageWidth / 2,
-      45,
-      { align: "center" }
-    );
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      };
+    });
   };
 
-  // ===== TABLE HEAD =====
-  const head = [[
-    "Roll",
-    "Name",
-    ...subjects,
-    "Total",
-    "%"
-  ]];
 
-  // ===== TABLE BODY =====
-  const body = students.map((r) => {
-    const student = typeof r.studentId === "object" ? r.studentId : {};
-    const examKeyDB =
-      examKey === "sa1" ? "halfYear" :
-      examKey === "sa2" ? "final" :
-      examKey;
+  const printClassPA_PDF = async (examKey, className, students, subjects) => {
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-    const exam = r.exams?.[examKeyDB] || {};
+    // ✅ Load logo
+    const logoBase64 = await loadImageAsBase64(Logo);
 
-    let total = 0;
-
-    const marks = subjects.map((sub) => {
-      const val = exam[sub];
-      if (String(sub).toLowerCase() === "drawing") return val || "";
-      const num = parseFloat(val);
-      if (!isNaN(num)) total += num;
-      return isNaN(num) ? 0 : num;
-    });
-
-    const maxMarks =
-      subjects.filter((s) => String(s).toLowerCase() !== "drawing").length *
-      (examKey === "sa1" || examKey === "sa2" ? 80 : 20);
-
-    const percent = maxMarks ? ((total / maxMarks) * 100).toFixed(2) : "0.00";
-
-    return [
-      student.rollNo || "",
-      student.name || "",
-      ...marks,
-      total,
-      `${percent}%`
-    ];
-  });
-
-  // ===== AUTOTABLE =====
-  autoTable(doc, {
-    startY: 50,
-    head,
-    body,
-    theme: "grid",
-    styles: {
-      fontSize: 9,
-      halign: "center",
-      valign: "middle",
-      textColor: [0, 0, 0], 
-      lineColor: [0, 0, 0],   // ✅ BLACK BORDER
-    lineWidth: 0.3,    
-    },
-    headStyles: {
-      fillColor: [255, 255, 255], // ✅ HEADER BACKGROUND WHITE
-    textColor: [0, 0, 0],    
-      fontStyle: "bold",
-      lineColor: [0, 0, 0], 
-    },
-    didDrawPage: () => {
-      drawHeader();
+    // ===== HEADER =====
+    const drawHeader = () => {
       doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+
+      doc.text("Reg. No: 21912662021926123218", 14, 8);
+      doc.text("UDISE No: 10170504508", pageWidth - 14, 8, { align: "right" });
+
+      doc.addImage(logoBase64, "PNG", 14, 10, 20, 20);
+
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text("AMBIKA INTERNATIONAL SCHOOL", pageWidth / 2, 15, { align: "center" });
+
+
+
+      doc.setFontSize(10);
+      doc.text("Based on CBSE curriculum (Play to Xth)", pageWidth / 2, 21, { align: "center" });
+      doc.text("Saidpur, Dighwara (Saran), 841207", pageWidth / 2, 26, { align: "center" });
+      doc.text("Mob. 8797118188", pageWidth / 2, 31, { align: "center" });
+
+      doc.setFontSize(9);
+
+      doc.line(14, 39, pageWidth - 14, 39);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       doc.text(
-        `Page ${doc.internal.getNumberOfPages()}`,
+        `${examKey.toUpperCase()} EXAMINATION RESULT  |  Class: ${className}`,
         pageWidth / 2,
-        pageHeight - 10,
+        45,
         { align: "center" }
       );
-    },
-    margin: { top: 50 },
-  });
+    };
 
-  doc.save(`${examKey.toUpperCase()}_Class_${className}.pdf`);
-};
+    // ===== TABLE HEAD =====
+    const head = [[
+      "Roll",
+      "Name",
+      ...subjects,
+      "Total",
+      "%"
+    ]];
+
+    // ===== TABLE BODY =====
+    const body = students.map((r) => {
+      const student = typeof r.studentId === "object" ? r.studentId : {};
+      const examKeyDB =
+        examKey === "sa1" ? "halfYear" :
+          examKey === "sa2" ? "final" :
+            examKey;
+
+      const exam = r.exams?.[examKeyDB] || {};
+
+      let total = 0;
+
+      const marks = subjects.map((sub) => {
+        const val = exam[sub];
+        if (String(sub).toLowerCase() === "drawing") return val || "";
+        const num = parseFloat(val);
+        if (!isNaN(num)) total += num;
+        return isNaN(num) ? 0 : num;
+      });
+
+      const maxMarks =
+        subjects.filter((s) => String(s).toLowerCase() !== "drawing").length *
+        (examKey === "sa1" || examKey === "sa2" ? 80 : 20);
+
+      const percent = maxMarks ? ((total / maxMarks) * 100).toFixed(2) : "0.00";
+
+      return [
+        student.rollNo || "",
+        student.name || "",
+        ...marks,
+        total,
+        `${percent}%`
+      ];
+    });
+
+    // ===== AUTOTABLE =====
+    autoTable(doc, {
+      startY: 50,
+      head,
+      body,
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        halign: "center",
+        valign: "middle",
+        textColor: [0, 0, 0],
+        lineColor: [0, 0, 0],   // ✅ BLACK BORDER
+        lineWidth: 0.3,
+      },
+      headStyles: {
+        fillColor: [255, 255, 255], // ✅ HEADER BACKGROUND WHITE
+        textColor: [0, 0, 0],
+        fontStyle: "bold",
+        lineColor: [0, 0, 0],
+      },
+      didDrawPage: () => {
+        drawHeader();
+        doc.setFontSize(9);
+        doc.text(
+          `Page ${doc.internal.getNumberOfPages()}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: "center" }
+        );
+      },
+      margin: { top: 50 },
+    });
+
+    doc.save(`${examKey.toUpperCase()}_Class_${className}.pdf`);
+  };
 
 
   // FILTER LOGIC
@@ -363,10 +363,16 @@ doc.text("UDISE No: 10170504508", pageWidth - 14, 8, { align: "right" });
                               // show letter grade as-is (or blank)
                               return { sub, display: raw || "", numeric: 0, isDrawing: true };
                             }
-                            // numeric subjects: try parse float, fallback 0
+
+                            // AB handling
+                            if (typeof raw === "string" && raw.toUpperCase() === "AB") {
+                              return { sub, display: "AB", numeric: 0, isDrawing: false };
+                            }
+
                             const num = parseFloat(raw);
                             const numeric = Number.isFinite(num) ? num : 0;
                             return { sub, display: numeric, numeric, isDrawing: false };
+
                           });
 
                           const total = marksInfo.reduce((acc, mi) => acc + (mi.isDrawing ? 0 : mi.numeric), 0);
@@ -395,14 +401,14 @@ doc.text("UDISE No: 10170504508", pageWidth - 14, 8, { align: "right" });
                   </div>
 
                   <div style={{ textAlign: "center", marginTop: "10px" }}>
-<button
-  onClick={() =>
-    printClassPA_PDF(selectedPA, cls, students, subjects)
-  }
-  style={styles.printBtn}
->
-  📄 Download PDF – Class {cls}
-</button>
+                    <button
+                      onClick={() =>
+                        printClassPA_PDF(selectedPA, cls, students, subjects)
+                      }
+                      style={styles.printBtn}
+                    >
+                      📄 Download PDF – Class {cls}
+                    </button>
 
 
                   </div>
