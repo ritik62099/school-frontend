@@ -22,6 +22,8 @@ const ViewResult = ({ onBack }) => {
   const [searchRoll, setSearchRoll] = useState("");
   const [searchMobile, setSearchMobile] = useState("");
   const [session, setSession] = useState("");
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
 
   // helper: detect drawing subject
   const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
@@ -47,6 +49,24 @@ const isAbsent = (v) =>
       window.history.back();
     }
   };
+
+  const toggleSelect = (id) => {
+  setSelectedIds((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+};
+
+const isSelected = (id) => selectedIds.has(id);
+
+const selectAllVisible = () => {
+  const ids = filteredResults.map((r) => r._id).filter(Boolean);
+  setSelectedIds(new Set(ids));
+};
+
+const clearSelection = () => setSelectedIds(new Set());
 
 
   const saveSession = async () => {
@@ -225,6 +245,86 @@ const isAbsent = (v) =>
     html2pdf().from(element).set(opt).save();
   };
 
+  const PRINT_STYLES = `
+@page { size: A4 portrait; margin: 0; }
+html, body { height:100%; width:100%; margin:0; padding:0; }
+
+body, table { font-size: 14px !important; }
+
+/* subject row spacing */
+.marks-table th, .marks-table td {
+  padding: 6px 5px;
+  font-size: 14px !important;
+}
+
+h3,h4 { font-size: 26px !important; }
+
+.school-name {
+  font-family: Algerian, "Times New Roman", serif !important;
+  font-size: 30px !important;
+  letter-spacing: 2.5px !important;
+  font-weight: 550 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.1 !important;
+}
+
+strong { font-size: 15px !important; }
+
+.print-page{
+  height: 297mm;
+  width: 210mm;
+  padding: 3mm 3mm 5mm 5mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  page-break-after: always;
+}
+.print-page:last-child{ page-break-after: auto; }
+
+.report-border-wrapper {
+  border: 5px double #000 !important;
+  padding: 12px !important;
+  border-radius: 6px !important;
+}
+
+/* tables */
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { border: 1px solid #000; line-height: 1.1; font-size: 13px; }
+
+.marks-table th, .marks-table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.marks-table th:first-child,
+.marks-table td:first-child {
+  width: 75px;
+  font-weight: bold;
+  text-align: left !important;
+  padding-left: 6px;
+}
+
+/* ✅ IMPORTANT: vertical headers (Image1 jaisa) */
+.vertical-header{
+  display: inline-block;
+  transform: rotate(-90deg);
+  transform-origin: center center;
+  white-space: nowrap;
+  padding: 6px 3px;
+  min-width: 26px;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.grade-scale-table th,
+.grade-scale-table td {
+  padding: 1px 2px;
+  line-height: 1.1;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+`;
+
   const printReportCard = (studentId, examType) => {
     const element = document.getElementById(`report-card-${studentId}-${examType}`);
     if (!element) return;
@@ -386,6 +486,46 @@ th, td {
     printWin.document.close();
   };
 
+const printSelectedOrAll = () => {
+  const idsToPrint =
+    selectedIds.size > 0
+      ? Array.from(selectedIds)
+      : filteredResults.map((r) => r._id).filter(Boolean);
+
+  if (!idsToPrint.length) return;
+
+  const htmlPages = idsToPrint.map((id) => {
+    const el = document.getElementById(`report-card-${id}-${selectedExamType}`);
+    if (!el) return "";
+
+    const clone = el.cloneNode(true);
+    const logo = clone.querySelector("img");
+    if (logo) { logo.style.width = "100px"; logo.style.height = "auto"; }
+
+    return `<div class="print-page">${clone.outerHTML}</div>`;
+  }).join("");
+
+  const printWin = window.open("", "_blank");
+  printWin.document.write(`
+    <html>
+      <head>
+        <title>Report Cards</title>
+        <style>${PRINT_STYLES}</style>
+      </head>
+      <body>
+        ${htmlPages}
+        <script>
+          window.onload = function(){ window.focus(); window.print(); };
+        </script>
+      </body>
+    </html>
+  `);
+  printWin.document.close();
+};
+
+
+
+
   const getStudentFromRecord = (record) => {
     if (!record.studentId) return null;
     if (typeof record.studentId === "object" && record.studentId !== null) {
@@ -420,7 +560,7 @@ th, td {
     isAbsent(examData.pa4?.[sub]) ||
     isAbsent(examData.final?.[sub]);
 
-  if (hasAB) return; // ❌ skip this subject completely
+  // if (hasAB) return; // ❌ skip this subject completely
       // parse numeric values safely (fallback to 0)
       const pa1 = Number(examData.pa1?.[sub] || 0);
       const pa2 = Number(examData.pa2?.[sub] || 0);
@@ -536,80 +676,128 @@ th, td {
       }
 
 
-// ===== DISPLAY VALUES (AB ya number) =====
-const pa1Display = isAbsent(pa1Raw) ? "AB" : toSafeNumber(pa1Raw);
-const pa2Display = isAbsent(pa2Raw) ? "AB" : toSafeNumber(pa2Raw);
-const sa1Display = isAbsent(sa1Raw) ? "AB" : toSafeNumber(sa1Raw);
-
-const pa3Display = isAbsent(pa3Raw) ? "AB" : toSafeNumber(pa3Raw);
-const pa4Display = isAbsent(pa4Raw) ? "AB" : toSafeNumber(pa4Raw);
-const sa2Display = isAbsent(sa2Raw) ? "AB" : toSafeNumber(sa2Raw);
-
-// ===== NUMERIC VALUES (calculation ke liye) =====
-const pa1 = typeof pa1Display === "number" ? pa1Display : 0;
-const pa2 = typeof pa2Display === "number" ? pa2Display : 0;
-const sa1 = typeof sa1Display === "number" ? sa1Display : 0;
-
-const pa3 = typeof pa3Display === "number" ? pa3Display : 0;
-const pa4 = typeof pa4Display === "number" ? pa4Display : 0;
-const sa2 = typeof sa2Display === "number" ? sa2Display : 0;
 
 
+
+// ✅ detect AB (raw values se)
+const hasAB =
+  isAbsent(pa1Raw) || isAbsent(pa2Raw) || isAbsent(sa1Raw) ||
+  isAbsent(pa3Raw) || isAbsent(pa4Raw) || isAbsent(sa2Raw);
+
+// ✅ display values
+const pa1Disp = isAbsent(pa1Raw) ? "AB" : toSafeNumber(pa1Raw);
+const pa2Disp = isAbsent(pa2Raw) ? "AB" : toSafeNumber(pa2Raw);
+const sa1Disp = isAbsent(sa1Raw) ? "AB" : toSafeNumber(sa1Raw);
+
+const pa3Disp = isAbsent(pa3Raw) ? "AB" : toSafeNumber(pa3Raw);
+const pa4Disp = isAbsent(pa4Raw) ? "AB" : toSafeNumber(pa4Raw);
+const sa2Disp = isAbsent(sa2Raw) ? "AB" : toSafeNumber(sa2Raw);
+
+// ✅ numeric values (AB => 0 only for calculation)
+const pa1Num = typeof pa1Disp === "number" ? pa1Disp : 0;
+const pa2Num = typeof pa2Disp === "number" ? pa2Disp : 0;
+const sa1Num = typeof sa1Disp === "number" ? sa1Disp : 0;
+
+const pa3Num = typeof pa3Disp === "number" ? pa3Disp : 0;
+const pa4Num = typeof pa4Disp === "number" ? pa4Disp : 0;
+const sa2Num = typeof sa2Disp === "number" ? sa2Disp : 0;
+
+
+     
 
       if (isPrimary) {
-        const total = pa1 + pa2 + sa1;
-        const { grade, point } = getGradePointAndGrade(total);
-        return { sub, pa1, pa2, sa1, total, grade, point, isDrawing: false };
-      }
-
-      if (isHalfYearly) {
-  const term1 = pa1 / 2 + pa2 / 2 + sa1;
-  const { grade, point } = getGradePointAndGrade(term1);
+  const total = pa1Num + pa2Num + sa1Num;
+  const { grade, point } = getGradePointAndGrade(total);
 
   return {
     sub,
-    pa1: pa1Display === "AB" ? "AB" : pa1 / 2,
-    pa2: pa2Display === "AB" ? "AB" : pa2 / 2,
-    sa1: sa1Display,
-    term1,
-    term1Grade: grade,
-    term1Point: point,
-    finalTotal: term1,
+    pa1: pa1Disp, pa2: pa2Disp, sa1: sa1Disp, // ✅ AB AB rahega
+    pa1Num, pa2Num, sa1Num,                   // ✅ totals ke liye
+    total,
+    grade,
+    point,
     isDrawing: false,
+    hasAB,
   };
 }
 
 
-      // Final (annual)
-      const term1 = pa1 / 2 + pa2 / 2 + sa1;
-      const term2 = pa3 / 2 + pa4 / 2 + sa2;
-      const finalTotal = (term1 + term2) / 2;
+//       if (isHalfYearly) {
+//   const term1 = pa1 / 2 + pa2 / 2 + sa1;
+//   const { grade, point } = getGradePointAndGrade(term1);
 
-      const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
-      const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
-      const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
+//   return {
+//     sub,
+//     pa1: pa1Display === "AB" ? "AB" : pa1 / 2,
+//     pa2: pa2Display === "AB" ? "AB" : pa2 / 2,
+//     sa1: sa1Display,
+//     term1,
+//     term1Grade: grade,
+//     term1Point: point,
+//     finalTotal: term1,
+//     isDrawing: false,
+//   };
+// }
 
-      return {
+if (isHalfYearly) {
+  const term1 = pa1Num + pa2Num + sa1Num;   // ✅ no /2
+  const { grade, point } = getGradePointAndGrade(term1);
+
+  return {
+    sub,
+    pa1: pa1Disp,
+    pa2: pa2Disp,
+    sa1: sa1Disp,
+
+    pa1Num, pa2Num, sa1Num,
+
+    term1,
+    finalTotal: term1,
+    term1Grade: grade,
+    term1Point: point,
+    isDrawing: false,
+    hasAB,
+  };
+}
+
+
+
+// Final (annual)
+const term1 = pa1Num + pa2Num + sa1Num;       // ✅ no /2
+const term2 = pa3Num + pa4Num + sa2Num;       // ✅ no /2
+const finalTotal = (term1 + term2) / 2;       // ✅ only here /2
+
+const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
+const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
+const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
+
+return {
   sub,
-  pa1: pa1Display === "AB" ? "AB" : pa1 / 2,
-  pa2: pa2Display === "AB" ? "AB" : pa2 / 2,
-  sa1: sa1Display,
 
-  pa3: pa3Display === "AB" ? "AB" : pa3 / 2,
-  pa4: pa4Display === "AB" ? "AB" : pa4 / 2,
-  sa2: sa2Display,
+  pa1: pa1Disp,
+  pa2: pa2Disp,
+  sa1: sa1Disp,
+  pa3: pa3Disp,
+  pa4: pa4Disp,
+  sa2: sa2Disp,
+
+  pa1Num, pa2Num, sa1Num, pa3Num, pa4Num, sa2Num,
 
   term1,
   term2,
   finalTotal,
+
   term1Grade: g1,
   term1Point: p1,
   term2Grade: g2,
   term2Point: p2,
   finalGrade: gf,
   finalPoint: pf,
+
   isDrawing: false,
+  hasAB,
 };
+
 
     });
 
@@ -649,27 +837,20 @@ const sa2 = typeof sa2Display === "number" ? sa2Display : 0;
       totalTerm2 = 0,
       totalFinal = 0;
 
-    mainRows.forEach((row) => {
-  // ❌ AB wale subject ko count hi mat karo
-  const hasAB =
-    row.pa1 === "AB" ||
-    row.pa2 === "AB" ||
-    row.sa1 === "AB" ||
-    row.pa3 === "AB" ||
-    row.pa4 === "AB" ||
-    row.sa2 === "AB";
 
-  if (hasAB) return; // 🔥 skip this subject completely
+
+mainRows.forEach((row) => {
+  // if (row.hasAB) return; // ✅ AB subject fully skip
 
   n++;
 
-  totalPa1 += typeof row.pa1 === "number" ? row.pa1 : 0;
-  totalPa2 += typeof row.pa2 === "number" ? row.pa2 : 0;
-  totalSa1 += typeof row.sa1 === "number" ? row.sa1 : 0;
+  totalPa1 += row.pa1Num || 0;
+  totalPa2 += row.pa2Num || 0;
+  totalSa1 += row.sa1Num || 0;
 
-  totalPa3 += typeof row.pa3 === "number" ? row.pa3 : 0;
-  totalPa4 += typeof row.pa4 === "number" ? row.pa4 : 0;
-  totalSa2 += typeof row.sa2 === "number" ? row.sa2 : 0;
+  totalPa3 += row.pa3Num || 0;
+  totalPa4 += row.pa4Num || 0;
+  totalSa2 += row.sa2Num || 0;
 
   totalTerm1 += typeof row.term1 === "number" ? row.term1 : 0;
   totalTerm2 += typeof row.term2 === "number" ? row.term2 : 0;
@@ -1602,6 +1783,28 @@ const sa2 = typeof sa2Display === "number" ? sa2Display : 0;
         <h2>Student Marks Record</h2>
       </div>
 
+<div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "10px", flexWrap: "wrap" }}>
+  <button
+    onClick={printSelectedOrAll}
+    style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+  >
+    🖨️ Print All / Selected
+  </button>
+
+  <button
+    onClick={selectAllVisible}
+    style={{ padding: "8px 14px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+  >
+    ✅ Select All
+  </button>
+
+  <button
+    onClick={clearSelection}
+    style={{ padding: "8px 14px", background: "#ef4444", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+  >
+    ❌ Clear
+  </button>
+</div>
 
       <div
         style={{
@@ -1719,6 +1922,22 @@ const sa2 = typeof sa2Display === "number" ? sa2Display : 0;
                 key={`${r._id}-${selectedExamType}`}
                 className="report-card"
               >
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
+    <input
+      type="checkbox"
+      checked={isSelected(r._id)}
+      onChange={() => toggleSelect(r._id)}
+    />
+    Select
+  </label>
+
+  <span style={{ fontSize: "12px", color: "#6b7280" }}>
+    {selectedExamType === "halfYear" ? "Half Yearly" : "Annual"}
+  </span>
+</div>
+
+
                 <div
                   id={`report-card-${r._id}-${selectedExamType}`}
                   className="report-border-wrapper"
