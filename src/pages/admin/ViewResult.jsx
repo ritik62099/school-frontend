@@ -740,16 +740,22 @@ const sa2Num = typeof sa2Disp === "number" ? sa2Disp : 0;
 // }
 
 if (isHalfYearly) {
-  const term1 = pa1Num + pa2Num + sa1Num;   // ✅ no /2
+  const pa1Half = pa1Num / 2;
+  const pa2Half = pa2Num / 2;
+
+  const term1 = pa1Half + pa2Half + sa1Num;
+
   const { grade, point } = getGradePointAndGrade(term1);
 
   return {
     sub,
-    pa1: pa1Disp,
-    pa2: pa2Disp,
+    pa1: isAbsent(pa1Raw) ? "AB" : pa1Half.toFixed(1),
+    pa2: isAbsent(pa2Raw) ? "AB" : pa2Half.toFixed(1),
     sa1: sa1Disp,
 
-    pa1Num, pa2Num, sa1Num,
+    pa1Num: pa1Half,
+    pa2Num: pa2Half,
+    sa1Num,
 
     term1,
     finalTotal: term1,
@@ -762,10 +768,15 @@ if (isHalfYearly) {
 
 
 
-// Final (annual)
-const term1 = pa1Num + pa2Num + sa1Num;       // ✅ no /2
-const term2 = pa3Num + pa4Num + sa2Num;       // ✅ no /2
-const finalTotal = (term1 + term2) / 2;       // ✅ only here /2
+
+const pa1Half = pa1Num / 2;
+const pa2Half = pa2Num / 2;
+const pa3Half = pa3Num / 2;
+const pa4Half = pa4Num / 2;
+
+const term1 = pa1Half + pa2Half + sa1Num;
+const term2 = pa3Half + pa4Half + sa2Num;
+const finalTotal = (term1 + term2) / 2;
 
 const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
 const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
@@ -774,14 +785,19 @@ const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
 return {
   sub,
 
-  pa1: pa1Disp,
-  pa2: pa2Disp,
+  pa1: isAbsent(pa1Raw) ? "AB" : pa1Half.toFixed(1),
+  pa2: isAbsent(pa2Raw) ? "AB" : pa2Half.toFixed(1),
   sa1: sa1Disp,
-  pa3: pa3Disp,
-  pa4: pa4Disp,
+  pa3: isAbsent(pa3Raw) ? "AB" : pa3Half.toFixed(1),
+  pa4: isAbsent(pa4Raw) ? "AB" : pa4Half.toFixed(1),
   sa2: sa2Disp,
 
-  pa1Num, pa2Num, sa1Num, pa3Num, pa4Num, sa2Num,
+  pa1Num: pa1Half,
+  pa2Num: pa2Half,
+  pa3Num: pa3Half,
+  pa4Num: pa4Half,
+  sa1Num,
+  sa2Num,
 
   term1,
   term2,
@@ -797,6 +813,7 @@ return {
   isDrawing: false,
   hasAB,
 };
+
 
 
     });
