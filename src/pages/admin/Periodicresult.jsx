@@ -167,12 +167,21 @@ const ViewPAResults = ({ onBack }) => {
       let total = 0;
 
       const marks = subjects.map((sub) => {
-        const val = exam[sub];
-        if (String(sub).toLowerCase() === "drawing") return val || "";
-        const num = parseFloat(val);
-        if (!isNaN(num)) total += num;
-        return isNaN(num) ? 0 : num;
-      });
+  const val = exam[sub];
+
+  // Drawing => show grade
+  if (String(sub).toLowerCase() === "drawing") return val || "";
+
+  // ✅ Any grade/absent => show text, count 0
+  if (typeof val === "string" && /^(AB|A|B|C|D)$/i.test(val.trim())) {
+    return val.trim().toUpperCase();
+  }
+
+  const num = parseFloat(val);
+  if (!isNaN(num)) total += num;
+  return isNaN(num) ? 0 : num;
+});
+
 
       const maxMarks =
         subjects.filter((s) => String(s).toLowerCase() !== "drawing").length *
@@ -357,23 +366,42 @@ const ViewPAResults = ({ onBack }) => {
                           const exam = r.exams?.[storageKey] || {};
 
                           // Build marks info per subject: if drawing -> keep string, else numeric
+                          // const marksInfo = subjects.map((sub) => {
+                          //   const raw = exam[sub];
+                          //   if (isDrawing(sub)) {
+                          //     // show letter grade as-is (or blank)
+                          //     return { sub, display: raw || "", numeric: 0, isDrawing: true };
+                          //   }
+
+                          //   // AB handling
+                          //   if (typeof raw === "string" && raw.toUpperCase() === "AB") {
+                          //     return { sub, display: "AB", numeric: 0, isDrawing: false };
+                          //   }
+
+                          //   const num = parseFloat(raw);
+                          //   const numeric = Number.isFinite(num) ? num : 0;
+                          //   return { sub, display: numeric, numeric, isDrawing: false };
+
+                          // });
+
                           const marksInfo = subjects.map((sub) => {
-                            const raw = exam[sub];
-                            if (isDrawing(sub)) {
-                              // show letter grade as-is (or blank)
-                              return { sub, display: raw || "", numeric: 0, isDrawing: true };
-                            }
+  const raw = exam[sub];
 
-                            // AB handling
-                            if (typeof raw === "string" && raw.toUpperCase() === "AB") {
-                              return { sub, display: "AB", numeric: 0, isDrawing: false };
-                            }
+  if (isDrawing(sub)) {
+    return { sub, display: raw || "", numeric: 0, isDrawing: true };
+  }
 
-                            const num = parseFloat(raw);
-                            const numeric = Number.isFinite(num) ? num : 0;
-                            return { sub, display: numeric, numeric, isDrawing: false };
+  // ✅ If raw is grade/absent string like AB/A/B/C/D
+  if (typeof raw === "string" && /^(AB|A|B|C|D)$/i.test(raw.trim())) {
+    const val = raw.trim().toUpperCase();
+    return { sub, display: val, numeric: 0, isDrawing: false, isGrade: true };
+  }
 
-                          });
+  const num = parseFloat(raw);
+  const numeric = Number.isFinite(num) ? num : 0;
+  return { sub, display: numeric, numeric, isDrawing: false, isGrade: false };
+});
+
 
                           const total = marksInfo.reduce((acc, mi) => acc + (mi.isDrawing ? 0 : mi.numeric), 0);
                           const percent = maxMarks ? ((total / maxMarks) * 100).toFixed(2) : "0.00";
@@ -382,11 +410,18 @@ const ViewPAResults = ({ onBack }) => {
                             <tr key={r._id}>
                               <td>{student.rollNo}</td>
                               <td style={{ textAlign: "left", paddingLeft: 8 }}>{student.name}</td>
-                              {marksInfo.map((m) => (
+                              {/* {marksInfo.map((m) => (
                                 <td key={m.sub}>
                                   {m.isDrawing ? String(m.display || "") : formatCell(m.display, 0)}
                                 </td>
-                              ))}
+                              ))} */}
+
+                              {marksInfo.map((m) => (
+  <td key={m.sub}>
+    {m.isDrawing || m.isGrade ? String(m.display || "") : formatCell(m.display, 0)}
+  </td>
+))}
+
                               <td>
                                 <b>{formatCell(total, 0)}</b>
                               </td>

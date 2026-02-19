@@ -228,7 +228,7 @@ const AddMarks = ({ onBack }) => {
 const handleChange = (exam, subject, value) => {
   if (isDrawing(subject)) {
     const v = value.toUpperCase();
-    if (v && !["A", "B", "C", "D"].includes(v)) return;
+    if (v && !["A", "B", "C", "D","AB"].includes(v)) return;
 
     setMarks((prev) => ({
       ...prev,
@@ -425,6 +425,7 @@ const handleChange = (exam, subject, value) => {
                         <option value="B">B</option>
                         <option value="C">C</option>
                         <option value="D">D</option>
+                        <option value="AB">AB</option>
                       </select>
                     ) : (
                       <input
