@@ -174,6 +174,22 @@ const clearSelection = () => setSelectedIds(new Set());
   }, [filteredResults]);
 
 
+  // 🔥 rank base list (search filters excluded)
+const rankBaseResults = useMemo(() => {
+  let base = results;
+
+  if (assignedClasses.length > 0) {
+    base = base.filter((r) => assignedClasses.includes(r.class));
+  }
+
+  if (selectedClass) {
+    base = base.filter((r) => r.class === selectedClass);
+  }
+
+  return base;
+}, [results, assignedClasses, selectedClass]);
+
+
   useEffect(() => {
     let filtered = results;
 
@@ -595,30 +611,35 @@ const printSelectedOrAll = () => {
   };
 
   const positionMap = useMemo(() => {
-    const map = {};
-    if (!filteredResults.length) return map;
+  const map = {};
+  if (!rankBaseResults.length) return map;
 
-    const byClass = {};
+  const byClass = {};
 
-    filteredResults.forEach((r) => {
-      if (!r.class) return;
-      const avg = computeAverageForRecord(r, selectedExamType);
-      if (!byClass[r.class]) byClass[r.class] = [];
-      byClass[r.class].push({ recordId: r._id, avg });
+  rankBaseResults.forEach((r) => {
+    if (!r.class) return;
+    const avg = computeAverageForRecord(r, selectedExamType);
+    if (!byClass[r.class]) byClass[r.class] = [];
+    byClass[r.class].push({ recordId: r._id, avg });
+  });
+
+  Object.keys(byClass).forEach((cls) => {
+    const arr = byClass[cls]
+      .filter((x) => x.avg > 0)
+      .sort((a, b) => b.avg - a.avg);
+
+    // ✅ If you want ONLY top 3 positions:
+    // arr.slice(0, 3).forEach((item, index) => { map[item.recordId] = index + 1; });
+
+    // ✅ If you want rank for EVERYONE:
+    arr.forEach((item, index) => {
+      map[item.recordId] = index + 1;
     });
+  });
 
-    Object.keys(byClass).forEach((cls) => {
-      const arr = byClass[cls]
-        .filter((x) => x.avg > 0)
-        .sort((a, b) => b.avg - a.avg);
+  return map;
+}, [rankBaseResults, selectedExamType, classSubjectMap]);
 
-      arr.slice(0, 3).forEach((item, index) => {
-        map[item.recordId] = index + 1; // 1,2,3
-      });
-    });
-
-    return map;
-  }, [filteredResults, selectedExamType, classSubjectMap]);
 
   // ---------- AB HOOKS KE BAAD LOADING/ERROR RETURN KAR SAKTE HAIN ----------
 
