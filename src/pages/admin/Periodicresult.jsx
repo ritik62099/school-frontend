@@ -200,36 +200,46 @@ const ViewPAResults = ({ onBack }) => {
 
     // ===== AUTOTABLE =====
     autoTable(doc, {
-      startY: 50,
-      head,
-      body,
-      theme: "grid",
-      styles: {
-        fontSize: 9,
-        halign: "center",
-        valign: "middle",
-        textColor: [0, 0, 0],
-        lineColor: [0, 0, 0],   // ✅ BLACK BORDER
-        lineWidth: 0.3,
-      },
-      headStyles: {
-        fillColor: [255, 255, 255], // ✅ HEADER BACKGROUND WHITE
-        textColor: [0, 0, 0],
-        fontStyle: "bold",
-        lineColor: [0, 0, 0],
-      },
-      didDrawPage: () => {
-        drawHeader();
-        doc.setFontSize(9);
-        doc.text(
-          `Page ${doc.internal.getNumberOfPages()}`,
-          pageWidth / 2,
-          pageHeight - 10,
-          { align: "center" }
-        );
-      },
-      margin: { top: 50 },
-    });
+  startY: 50,
+  head,
+  body,
+  theme: "grid",
+
+  // ✅ row height thodi kam (optional but helpful)
+  styles: {
+    fontSize: 8.5,
+    cellPadding: 1.5,
+    halign: "center",
+    valign: "middle",
+    textColor: [0, 0, 0],
+    lineColor: [0, 0, 0],
+    lineWidth: 0.3,
+  },
+  headStyles: {
+    fillColor: [255, 255, 255],
+    textColor: [0, 0, 0],
+    fontStyle: "bold",
+    lineColor: [0, 0, 0],
+  },
+
+  // ✅ MAIN FIX: footer ke liye safe space
+  margin: { top: 50, bottom: 22, left: 14, right: 14 },
+
+  // ✅ force page break properly
+  pageBreak: "auto",
+  rowPageBreak: "avoid",
+
+  didDrawPage: () => {
+    drawHeader();
+    doc.setFontSize(9);
+    doc.text(
+      `Page ${doc.internal.getNumberOfPages()}`,
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: "center" }
+    );
+  },
+});
 
     doc.save(`${examKey.toUpperCase()}_Class_${className}.pdf`);
   };
