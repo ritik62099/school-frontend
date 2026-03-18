@@ -269,8 +269,9 @@ body, table { font-size: 14px !important; }
 
 /* subject row spacing */
 .marks-table th, .marks-table td {
-  padding: 6px 5px;
+  padding: 5px 4px;
   font-size: 14px !important;
+  line-height: 1;
 }
 
 h3,h4 { font-size: 26px !important; }
@@ -316,7 +317,7 @@ th, td { border: 1px solid #000; line-height: 1.1; font-size: 13px; }
 .marks-table td:first-child {
   width: 75px;
   font-weight: bold;
-  text-align: left !important;
+  text-align: center !important;
   padding-left: 6px;
 }
 
@@ -370,8 +371,9 @@ th, td { border: 1px solid #000; line-height: 1.1; font-size: 13px; }
 
 /* subject row spacing */
 .marks-table th, .marks-table td {
-  padding: 6px 5px;          /* space bhi badha diya */
+  padding: 5px 4px;          /* space bhi badha diya */
   font-size: 14px !important;
+  line-height: 1;
 }
 
 /* headings bigger */
@@ -428,12 +430,35 @@ table td:first-child {
 }
 
 
-        .report-border-wrapper {
-          border: 5px double #000 !important;
-          padding: 12px !important;
-          border-radius: 6px !important;
-        }
+ .report-border-wrapper {
+  border: 2px solid #000;
+  padding: 22px;          /* content ko extra space */
+  background: #fff;
+  position: relative;
+  box-sizing: border-box;
+}
 
+.report-border-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  border: 4px solid #000;
+  pointer-events: none;
+}
+
+.report-border-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  right: 13px;
+  bottom: 13px;
+  border: 2px solid #000;
+  pointer-events: none;
+}
         table {
   width: 100%;
   border-collapse: collapse;
@@ -456,7 +481,7 @@ th, td {
 
 .marks-table th:first-child,
 .marks-table td:first-child {
-  text-align: left !important;
+  text-align: center !important;
   padding-left: 6px;
 }
 
@@ -652,6 +677,34 @@ const printSelectedOrAll = () => {
 
   const classOptions = [...new Set(results.map(r => r.class))].sort();
 
+const getNextClass = (currentClass) => {
+  if (!currentClass) return "";
+
+  const num = parseInt(String(currentClass).replace(/\D/g, ""));
+
+  // 🔥 suffix function
+  const getSuffix = (n) => {
+    if (n % 100 >= 11 && n % 100 <= 13) return "th";
+    if (n % 10 === 1) return "st";
+    if (n % 10 === 2) return "nd";
+    if (n % 10 === 3) return "rd";
+    return "th";
+  };
+
+  if (!isNaN(num)) {
+    const next = num + 1;
+    return `${next}${getSuffix(next)}`;
+  }
+
+  // lower classes
+  const lower = String(currentClass).toLowerCase().trim();
+
+  if (lower === "nursery") return "LKG";
+  if (lower === "lkg") return "UKG";
+  if (lower === "ukg") return "1st";
+
+  return currentClass;
+};
 
   const renderReportCard = (
     r,
@@ -743,22 +796,7 @@ const sa2Num = typeof sa2Disp === "number" ? sa2Disp : 0;
 }
 
 
-//       if (isHalfYearly) {
-//   const term1 = pa1 / 2 + pa2 / 2 + sa1;
-//   const { grade, point } = getGradePointAndGrade(term1);
 
-//   return {
-//     sub,
-//     pa1: pa1Display === "AB" ? "AB" : pa1 / 2,
-//     pa2: pa2Display === "AB" ? "AB" : pa2 / 2,
-//     sa1: sa1Display,
-//     term1,
-//     term1Grade: grade,
-//     term1Point: point,
-//     finalTotal: term1,
-//     isDrawing: false,
-//   };
-// }
 
 if (isHalfYearly) {
   const pa1Half = pa1Num / 2;
@@ -1166,28 +1204,49 @@ mainRows.forEach((row) => {
             Academic Performance : Scholastic Area (9 Point Scale)
           </h4>
 
-          <div className="table-container" style={{ marginTop: "10px", }}>
+          <div
+  className="table-container"
+  style={{
+    marginTop: "10px",
+    position: "relative"
+  }}
+>
+  {/* 🔥 LOGO inside marks box */}
+  <img
+    src={Logo}
+    alt="logo"
+    style={{
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      opacity: 0.20,        // 🔥 light watermark
+      width: "300px",
+      height: "auto",
+      pointerEvents: "none"
+    }}
+  />
             <table className="marks-table">
               <thead>
                 {isPrimary ? (
                   <tr>
-                    <th>SUBJECT</th>
-                    <th>PA I</th>
-                    <th>PA II</th>
-                    <th>SA I</th>
-                    <th>TOTAL</th>
-                    <th>GRADE POINT</th>
-                    <th>GRADE</th>
+                    <th><center>SUBJECT</center></th>
+                    <th><center>PA I</center></th>
+                    <th><center>PA II</center></th>
+                    <th><center>SA I</center></th>
+                    <th><center>TOTAL</center></th>
+                    <th><center>GRADE POINT</center></th>
+                    <th><center>GRADE</center></th>
                   </tr>
                 ) : isHalfYearly ? (
                   <tr>
-                    <th>SUBJECT</th>
-                    <th>PA I</th>
-                    <th>PA II</th>
-                    <th>SA I</th>
-                    <th>TOTAL</th>
-                    <th>GRADE POINT</th>
-                    <th>GRADE</th>
+                    <th><center>SUBJECT</center></th>
+                    <th><center>PA I</center></th>
+                    <th><center>PA II</center></th>
+                    <th><center>SA I</center></th>
+                    <th><center>TOTAL</center></th>
+                    <th><center>GRADE POINT</center></th>
+                    <th><center>GRADE</center></th>
                   </tr>
                 ) : (
                   <>
@@ -1203,10 +1262,10 @@ mainRows.forEach((row) => {
                       <th>PA II</th>
                       <th>SA I</th>
                       <th>
-                        <div className="vertical-header">TOTAL</div>
+                        <div className="vertical-header"><center>TOTAL</center></div>
                       </th>
                       <th>
-                        <div className="vertical-header">GRADE</div>
+                        <div className="vertical-header"><center>GRADE</center></div>
                       </th>
 
                       {/* Second Term */}
@@ -1214,10 +1273,10 @@ mainRows.forEach((row) => {
                       <th>PA IV</th>
                       <th>SA II</th>
                       <th>
-                        <div className="vertical-header">TOTAL</div>
+                        <div className="vertical-header"><center>TOTAL</center></div>
                       </th>
                       <th>
-                        <div className="vertical-header">GRADE</div>
+                        <div className="vertical-header"><center>GRADE</center></div>
                       </th>
 
                       {/* Final Block */}
@@ -1298,7 +1357,7 @@ mainRows.forEach((row) => {
 
                 {/* Total Row – sirf main subjects ka */}
                 <tr style={{ fontWeight: "bold", background: "#f0f0f0" }}>
-                  <td>TOTAL</td>
+                  <td><center>TOTAL</center></td>
 
                   {isPrimary ? (
                     <>
@@ -1433,54 +1492,54 @@ mainRows.forEach((row) => {
                   </th>
                 </tr>
                 <tr>
-                  <th>MARKS RANGE</th>
+                  <th><center>MARKS RANGE</center></th>
                   <th>GRADE</th>
                   <th>GRADE POINT</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>91-100</td>
+                  <td><center>91-100</center></td>
                   <td>A1</td>
                   <td>10.0</td>
                 </tr>
                 <tr>
-                  <td>81-90</td>
+                  <td><center>81-90</center></td>
                   <td>A2</td>
                   <td>09.0</td>
                 </tr>
                 <tr>
-                  <td>71-80</td>
+                  <td><center>71-80</center></td>
                   <td>B1</td>
                   <td>08.0</td>
                 </tr>
                 <tr>
-                  <td>61-70</td>
+                  <td><center>61-70</center></td>
                   <td>B2</td>
                   <td>07.0</td>
                 </tr>
                 <tr>
-                  <td>51-60</td>
+                  <td><center>51-60</center></td>
                   <td>C1</td>
                   <td>06.0</td>
                 </tr>
                 <tr>
-                  <td>41-50</td>
+                  <td><center>41-50</center></td>
                   <td>C2</td>
                   <td>05.0</td>
                 </tr>
                 <tr>
-                  <td>33-40</td>
+                  <td><center>33-40</center></td>
                   <td>D</td>
                   <td>04.0</td>
                 </tr>
                 <tr>
-                  <td>21-32</td>
+                  <td><center>21-32</center></td>
                   <td>E1</td>
                   <td></td>
                 </tr>
                 <tr>
-                  <td>00-20</td>
+                  <td><center>00-20</center></td>
                   <td>E2</td>
                   <td></td>
                 </tr>
@@ -1490,7 +1549,7 @@ mainRows.forEach((row) => {
             {/* 👇 yaha signature niche add kiya */}
             <div
               style={{
-                marginTop: "10px",
+                marginTop: "5px",
                 textAlign: "center",
                 fontSize: "10pt",
                 fontWeight: 500,
@@ -1525,11 +1584,11 @@ mainRows.forEach((row) => {
               </div>
 
 
-              First Term &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :-PA I (10%) + PA II (10%) + SA I (80%) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
+              First Term &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :-  PA I (10%) + PA II (10%) + SA I (80%) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
               <br />
-              Second Term &nbsp;&nbsp; :-PA III (10%) + PA IV (10%) +SA II (80%) = 100%
+              Second Term &nbsp;&nbsp; :-  PA III (10%) + PA IV (10%) +SA II (80%) = 100%
               <br />
-              Final Result &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:-50% of 1st Term + 50% of 2nd Term &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
+              Final Result &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:-  50% of 1st Term + 50% of 2nd Term &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 100%
 
             </div>
 
@@ -1548,7 +1607,7 @@ mainRows.forEach((row) => {
                   display: "flex",
                   alignItems: "flex-end",
                   gap: "12px",
-                  marginTop: "50px",
+                  marginTop: "5px",
                   fontSize: "10pt",
                 }}
               >
@@ -1579,7 +1638,12 @@ mainRows.forEach((row) => {
                     }}
                   ></div>
                 </div>
+                
+
+                
               </div>
+
+              
 
 
               <div
@@ -1589,7 +1653,7 @@ mainRows.forEach((row) => {
                   width: "140px",
                   fontSize: "10pt",
                   marginRight: "15px",
-                  marginTop: "30px",
+                  marginTop: "5px",
                 }}
               >
                 <table
@@ -1609,8 +1673,9 @@ mainRows.forEach((row) => {
                           fontWeight: "bold",
                           textAlign: "left",
                         }}
-                      >
+                      ><center>
                         Total obtain marks
+                        </center>
                       </td>
                       <td
                         style={{
@@ -1634,7 +1699,9 @@ mainRows.forEach((row) => {
                           textAlign: "left",
                         }}
                       >
+                        <center>
                         Percentage
+                        </center>
                       </td>
                       <td
                         style={{
@@ -1654,7 +1721,21 @@ mainRows.forEach((row) => {
               </div>
 
             </div>
+                        <div
+  style={{
+    marginTop: "10px",
+    textAlign: "center",
+    fontSize: "12pt",
+    fontWeight: "bold",
+    color: Number(percentage) >= 33 ? "green" : "red"
+  }}
+>
+  {Number(percentage) >= 33
+    ? `Congratulations! Promoted to Class ${getNextClass(r.class)}`
+    : "FAILED"}
+</div>
           </div>
+          
         </div>
       </>
     );
@@ -1677,7 +1758,7 @@ mainRows.forEach((row) => {
     /* SUBJECT column left */
 .marks-table th:first-child,
 .marks-table td:first-child {
-  text-align: left !important;
+  text-align: center !important;
   padding-left: 6px;
 }
 
@@ -1732,7 +1813,7 @@ mainRows.forEach((row) => {
 }
 .marks-table th,
 .marks-table td {
-  padding: 3px 2px;        /* kam padding */
+  padding: 1px 2px;        /* kam padding */
   border: 1px solid #000;
   text-align: center !important;
   word-wrap: break-word;
@@ -1781,12 +1862,34 @@ mainRows.forEach((row) => {
         .action-buttons button:hover {
           background: #2980b9;
         }
-        .report-border-wrapper {
-          border: 5px double #000;
-          padding: 12px;
-          border-radius: 6px;
-          background: #fff;
-        }
+       .report-border-wrapper {
+  border: 2px solid #000 !important;
+  padding: 22px !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+}
+
+.report-border-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  border: 4px solid #000;
+  pointer-events: none;
+}
+
+.report-border-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  right: 13px;
+  bottom: 13px;
+  border: 2px solid #000;
+  pointer-events: none;
+}
                   .vr-top-bar {
           display: flex;
           align-items: center;
