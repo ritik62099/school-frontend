@@ -294,7 +294,9 @@ const handleChange = (exam, subject, value) => {
       const body = {
   exams: {
     [exam]: {
-      [subject]: isDrawing(subject) ? value : Number(value),
+      [subject]: /^(A|B|C|D|AB)$/i.test(String(value))
+  ? String(value).toUpperCase()
+  : Number(value),
     },
   },
 };
