@@ -250,7 +250,7 @@ const handleChange = (exam, subject, value) => {
   }
 
   // allow letters A, B, C, D, AB
-  if (/^(A|B|AB)$/.test(upper)) {
+  if (/^(A|B|C|D|AB)$/.test(upper)) {
     setMarks((prev) => ({
       ...prev,
       [exam]: { ...prev[exam], [subject]: upper },
@@ -291,7 +291,13 @@ const handleChange = (exam, subject, value) => {
 
     try {
       // For drawing, send the letter; for numeric, send number string (backend sanitizes)
-      const body = { exams: { [exam]: { [subject]: value } } };
+      const body = {
+  exams: {
+    [exam]: {
+      [subject]: isDrawing(subject) ? value : Number(value),
+    },
+  },
+};
 
       const res = await fetch(endpoints.marks.save(selectedStudent), {
         method: "POST",
