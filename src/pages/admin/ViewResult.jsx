@@ -174,6 +174,53 @@ const clearSelection = () => setSelectedIds(new Set());
   }, [filteredResults]);
 
 
+
+const computePercentageForRecord = (r, examType) => {
+  const subjectsArray = classSubjectMap[r.class] || [];
+  if (!subjectsArray.length) return 0;
+
+  const isPrimary = isPrimaryClass(r.class);
+  const examData = r.exams || {};
+
+  let totalMarks = 0;
+  let n = 0;
+
+  subjectsArray.forEach((sub) => {
+    if (isDrawing(sub)) return;
+
+    const pa1Raw = examData.pa1?.[sub];
+    const pa2Raw = examData.pa2?.[sub];
+    const sa1Raw = examData.halfYear?.[sub];
+    const pa3Raw = examData.pa3?.[sub];
+    const pa4Raw = examData.pa4?.[sub];
+    const sa2Raw = examData.final?.[sub];
+
+    const pa1 = toSafeNumber(pa1Raw);
+    const pa2 = toSafeNumber(pa2Raw);
+    const sa1 = toSafeNumber(sa1Raw);
+    const pa3 = toSafeNumber(pa3Raw);
+    const pa4 = toSafeNumber(pa4Raw);
+    const sa2 = toSafeNumber(sa2Raw);
+
+    let final = 0;
+
+    if (isPrimary) {
+      final = pa1 + pa2 + sa1;
+    } else if (examType === "halfYear") {
+      final = pa1 / 2 + pa2 / 2 + sa1;
+    } else {
+      const term1 = pa1 / 2 + pa2 / 2 + sa1;
+      const term2 = pa3 / 2 + pa4 / 2 + sa2;
+      final = (term1 + term2) / 2;
+    }
+
+    totalMarks += final;
+    n++;
+  });
+
+  const maxMarks = n * 100;
+  return maxMarks ? (totalMarks / maxMarks) * 100 : 0;
+};
   // 🔥 rank base list (search filters excluded)
 const rankBaseResults = useMemo(() => {
   let base = results;
@@ -291,7 +338,7 @@ strong { font-size: 15px !important; }
 .print-page{
   height: 297mm;
   width: 210mm;
-  padding: 3mm 3mm 5mm 5mm;
+  padding: 1.5mm 1.5mm 2mm 2mm;
   box-sizing: border-box;
   overflow: hidden;
   page-break-after: always;
@@ -416,7 +463,7 @@ table td:first-child {
         .print-page {
   height: 297mm;
   width: 210mm;
-  padding: 3mm 3mm 5mm 5mm; /* ⬅ Top padding kam kar diya */
+  padding: 1.5mm 1.5mm 2mm 2mm; /* ⬅ Top padding kam kar diya */
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -635,7 +682,37 @@ const printSelectedOrAll = () => {
     return avgF;
   };
 
-  const positionMap = useMemo(() => {
+//   const positionMap = useMemo(() => {
+//   const map = {};
+//   if (!rankBaseResults.length) return map;
+
+//   const byClass = {};
+
+//   rankBaseResults.forEach((r) => {
+//     if (!r.class) return;
+//     const percent = computePercentageForRecord(r, selectedExamType);
+//     if (!byClass[r.class]) byClass[r.class] = [];
+//     byClass[r.class].push({ recordId: r._id, avg });
+//   });
+
+//   Object.keys(byClass).forEach((cls) => {
+//     const arr = byClass[cls]
+//       .filter((x) => x.avg > 0)
+//       .sort((a, b) => b.avg - a.avg);
+
+//     // ✅ If you want ONLY top 3 positions:
+//     // arr.slice(0, 3).forEach((item, index) => { map[item.recordId] = index + 1; });
+
+//     // ✅ If you want rank for EVERYONE:
+//     arr.forEach((item, index) => {
+//       map[item.recordId] = index + 1;
+//     });
+//   });
+
+//   return map;
+// }, [rankBaseResults, selectedExamType, classSubjectMap]);
+
+const positionMap = useMemo(() => {
   const map = {};
   if (!rankBaseResults.length) return map;
 
@@ -643,20 +720,21 @@ const printSelectedOrAll = () => {
 
   rankBaseResults.forEach((r) => {
     if (!r.class) return;
-    const avg = computeAverageForRecord(r, selectedExamType);
+
+    const percent = computePercentageForRecord(r, selectedExamType);
+
     if (!byClass[r.class]) byClass[r.class] = [];
-    byClass[r.class].push({ recordId: r._id, avg });
+    byClass[r.class].push({
+      recordId: r._id,
+      percent,
+    });
   });
 
   Object.keys(byClass).forEach((cls) => {
     const arr = byClass[cls]
-      .filter((x) => x.avg > 0)
-      .sort((a, b) => b.avg - a.avg);
+      .filter((x) => x.percent > 0)
+      .sort((a, b) => b.percent - a.percent);
 
-    // ✅ If you want ONLY top 3 positions:
-    // arr.slice(0, 3).forEach((item, index) => { map[item.recordId] = index + 1; });
-
-    // ✅ If you want rank for EVERYONE:
     arr.forEach((item, index) => {
       map[item.recordId] = index + 1;
     });
@@ -664,7 +742,6 @@ const printSelectedOrAll = () => {
 
   return map;
 }, [rankBaseResults, selectedExamType, classSubjectMap]);
-
 
   // ---------- AB HOOKS KE BAAD LOADING/ERROR RETURN KAR SAKTE HAIN ----------
 
