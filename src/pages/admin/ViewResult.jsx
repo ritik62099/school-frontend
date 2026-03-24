@@ -477,35 +477,34 @@ table td:first-child {
 }
 
 
- .report-border-wrapper {
-  border: 2px solid #000;
-  padding: 22px;          /* content ko extra space */
+.report-border-wrapper {
+  border: 5px double #000;
+  padding: 20px;
   background: #fff;
-  position: relative;
   box-sizing: border-box;
 }
 
-.report-border-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  right: 5px;
-  bottom: 5px;
-  border: 4px solid #000;
-  pointer-events: none;
-}
+// .report-border-wrapper::before {
+//   content: "";
+//   position: absolute;
+//   top: 5px;
+//   left: 5px;
+//   right: 5px;
+//   bottom: 5px;
+//   border: 4px solid #000;
+//   pointer-events: none;
+// }
 
-.report-border-wrapper::after {
-  content: "";
-  position: absolute;
-  top: 13px;
-  left: 13px;
-  right: 13px;
-  bottom: 13px;
-  border: 2px solid #000;
-  pointer-events: none;
-}
+// .report-border-wrapper::after {
+//   content: "";
+//   position: absolute;
+//   top: 13px;
+//   left: 13px;
+//   right: 13px;
+//   bottom: 13px;
+//   border: 2px solid #000;
+//   pointer-events: none;
+// }
         table {
   width: 100%;
   border-collapse: collapse;
@@ -1939,34 +1938,35 @@ mainRows.forEach((row) => {
         .action-buttons button:hover {
           background: #2980b9;
         }
-       .report-border-wrapper {
-  border: 2px solid #000 !important;
-  padding: 22px !important;
-  position: relative !important;
+
+
+.report-border-wrapper {
+  border: 5px double #000 !important;
+  padding: 20px !important;
   box-sizing: border-box !important;
 }
 
-.report-border-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  right: 5px;
-  bottom: 5px;
-  border: 4px solid #000;
-  pointer-events: none;
-}
+// .report-border-wrapper::before {
+//   content: "";
+//   position: absolute;
+//   top: 5px;
+//   left: 5px;
+//   right: 5px;
+//   bottom: 5px;
+//   border: 4px solid #000;
+//   pointer-events: none;
+// }
 
-.report-border-wrapper::after {
-  content: "";
-  position: absolute;
-  top: 13px;
-  left: 13px;
-  right: 13px;
-  bottom: 13px;
-  border: 2px solid #000;
-  pointer-events: none;
-}
+// .report-border-wrapper::after {
+//   content: "";
+//   position: absolute;
+//   top: 13px;
+//   left: 13px;
+//   right: 13px;
+//   bottom: 13px;
+//   border: 2px solid #000;
+//   pointer-events: none;
+// }
                   .vr-top-bar {
           display: flex;
           align-items: center;
