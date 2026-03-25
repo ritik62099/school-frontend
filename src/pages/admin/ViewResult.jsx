@@ -309,10 +309,7 @@ const rankBaseResults = useMemo(() => {
   };
 
   const PRINT_STYLES = `
-@page { 
-  size: A4 portrait; 
-  margin: 8mm;   /* 🔥 yahi main fix hai */
-}
+@page { size: A4 portrait; margin: 0; }
 html, body { height:100%; width:100%; margin:0; padding:0; }
 
 body, table { font-size: 14px !important; }
@@ -349,23 +346,9 @@ strong { font-size: 15px !important; }
 .print-page:last-child{ page-break-after: auto; }
 
 .report-border-wrapper {
-  border: 2px solid #000 !important;
-  padding: 18px !important;
-  position: relative !important;
-  box-sizing: border-box !important;
+  border: 5px double #000 !important;
+  padding: 12px !important;
   border-radius: 6px !important;
-  background: #fff !important;
-}
-
-.report-border-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  right: 6px;
-  bottom: 6px;
-  border: 3px solid #000;
-  pointer-events: none;
 }
 
 /* tables */
@@ -424,10 +407,11 @@ th, td { border: 1px solid #000; line-height: 1.1; font-size: 13px; }
     <head>
       <title>Report Card</title>
       <style>
-       @page {
-  size: A4 portrait;
-  margin: 8mm;
-}
+        @page {
+          size: A4 portrait;
+          margin: 0;
+        }
+
         body, table {
   font-size: 14px !important; /* default 11–12 hota hai, ye bada karega */
 }
@@ -479,7 +463,7 @@ table td:first-child {
         .print-page {
   height: 297mm;
   width: 210mm;
-  padding: 1.5mm 1.5mm 2mm 2mm;
+  padding: 1.5mm 1.5mm 2mm 2mm; /* ⬅ Top padding kam kar diya */
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -493,35 +477,13 @@ table td:first-child {
 }
 
 
- .report-border-wrapper {
-  border: 2px solid #000;
-  padding: 22px;          /* content ko extra space */
+.report-border-wrapper {
+  border: 5px double #000;
+  padding: 20px;
   background: #fff;
-  position: relative;
   box-sizing: border-box;
 }
 
-.report-border-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  right: 5px;
-  bottom: 5px;
-  border: 4px solid #000;
-  pointer-events: none;
-}
-
-// .report-border-wrapper::after {
-//   content: "";
-//   position: absolute;
-//   top: 13px;
-//   left: 13px;
-//   right: 13px;
-//   bottom: 13px;
-//   border: 2px solid #000;
-//   pointer-events: none;
-// }
         table {
   width: 100%;
   border-collapse: collapse;
@@ -1955,34 +1917,13 @@ mainRows.forEach((row) => {
         .action-buttons button:hover {
           background: #2980b9;
         }
-       .report-border-wrapper {
-  border: 2px solid #000 !important;
-  padding: 22px !important;
-  position: relative !important;
+.report-border-wrapper {
+  border: 5px double #000 !important;
+  padding: 20px !important;
   box-sizing: border-box !important;
 }
 
-.report-border-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  right: 5px;
-  bottom: 5px;
-  border: 4px solid #000;
-  pointer-events: none;
-}
 
-// .report-border-wrapper::after {
-//   content: "";
-//   position: absolute;
-//   top: 13px;
-//   left: 13px;
-//   right: 13px;
-//   bottom: 13px;
-//   border: 2px solid #000;
-//   pointer-events: none;
-// }
                   .vr-top-bar {
           display: flex;
           align-items: center;
