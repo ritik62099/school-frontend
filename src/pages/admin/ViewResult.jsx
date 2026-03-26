@@ -155,23 +155,54 @@ const clearSelection = () => setSelectedIds(new Set());
 
   }, []);
 
-  useEffect(() => {
-    if (!filteredResults.length) return;
+//   useEffect(() => {
+//     if (!filteredResults.length) return;
 
-    const token = localStorage.getItem("token");
+//     const token = localStorage.getItem("token");
 
-    const ids = filteredResults
-      .map(r => r.studentId?._id || r.studentId)
-      .filter(Boolean);
+//     const ids = filteredResults
+//       .map(r => r.studentId?._id || r.studentId)
+//       .filter(Boolean);
 
-    fetch(endpoints.attendance.studentBulk(ids.join(",")), {
+//    fetch(
+//   `${endpoints.attendance.studentBulk(ids.join(","))}&session=${encodeURIComponent(session)}`,
+//   {
+//     headers: { Authorization: `Bearer ${token}` }
+//   }
+// )
+//       .then(res => res.json())
+//       .then(data => setAttendanceData(data))
+//       .catch(err => console.error("Attendance bulk error", err));
+
+//   }, [filteredResults]);
+
+useEffect(() => {
+  if (!filteredResults.length || !session) return;
+
+  const token = localStorage.getItem("token");
+
+  const ids = filteredResults
+    .map((r) => r.studentId?._id || r.studentId)
+    .filter(Boolean);
+
+  fetch(
+    `${endpoints.attendance.studentBulk(ids.join(","))}&session=${encodeURIComponent(session)}`,
+    {
       headers: { Authorization: `Bearer ${token}` }
+    }
+  )
+    .then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("Attendance bulk API error:", data);
+        return;
+      }
+      console.log("attendance bulk response:", data);
+      setAttendanceData(data);
     })
-      .then(res => res.json())
-      .then(data => setAttendanceData(data))
-      .catch(err => console.error("Attendance bulk error", err));
+    .catch((err) => console.error("Attendance bulk error", err));
 
-  }, [filteredResults]);
+}, [filteredResults, session]);
 
 
 
@@ -2084,11 +2115,15 @@ mainRows.forEach((row) => {
             const examData = r.exams || {};
             const subjectsArray = classSubjectMap[r.class] || [];
             const att = attendanceData[studentId];
-            const attendanceDisplay = att
-              ? `${att.present} / ${att.total} (${att.percentage}%)`
-              : student.attendance
-                ? `${student.attendance} / 115`
-                : "—";
+            // const attendanceDisplay = att
+            //   ? `${att.present} / ${att.total} (${att.percentage}%)`
+            //   : student.attendance
+            //     ? `${student.attendance} / 115`
+            //     : "—";
+
+       const attendanceDisplay = att
+  ? `${att.present || 0} / ${att.total || 0} (${att.percentage || 0}%)`
+  : "—";
 
             const position = positionMap[r._id];
 
