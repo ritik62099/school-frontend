@@ -1,4 +1,6 @@
-// src/pages/admin/AttendanceOverview.jsx
+
+
+
 import React, { useState, useEffect } from "react";
 import { endpoints } from "../../config/api";
 
@@ -22,11 +24,11 @@ const AttendanceOverview = ({ onBack }) => {
   // Detail view
   const [selectedStudentId, setSelectedStudentId] = useState(null);
 
-
   const handleBackClick = () => {
-  if (typeof onBack === "function") onBack();
-  else window.history.back();
-};
+    if (typeof onBack === "function") onBack();
+    else window.history.back();
+  };
+
   // Load all classes
   useEffect(() => {
     const loadClasses = async () => {
@@ -93,6 +95,21 @@ const AttendanceOverview = ({ onBack }) => {
     }));
   };
 
+  // Sort students by roll number
+  const sortedStudents = [...students].sort((a, b) => {
+    const rollA = parseInt(a.rollNo, 10);
+    const rollB = parseInt(b.rollNo, 10);
+
+    const isRollAValid = !isNaN(rollA);
+    const isRollBValid = !isNaN(rollB);
+
+    if (isRollAValid && isRollBValid) {
+      return rollA - rollB;
+    }
+
+    return String(a.rollNo || "").localeCompare(String(b.rollNo || ""));
+  });
+
   // Search / Generate Excel-style report
   const searchAttendance = async () => {
     if (!formData.class) {
@@ -120,7 +137,7 @@ const AttendanceOverview = ({ onBack }) => {
 
     try {
       await Promise.all(
-        students.map(async (stu) => {
+        sortedStudents.map(async (stu) => {
           try {
             const res = await fetch(
               endpoints.attendance.studentMonthly(stu._id, year, month),
@@ -188,7 +205,7 @@ const AttendanceOverview = ({ onBack }) => {
   ).toLocaleString("default", { month: "long" });
 
   const selectedStudent =
-    selectedStudentId && students.find((s) => s._id === selectedStudentId);
+    selectedStudentId && sortedStudents.find((s) => s._id === selectedStudentId);
 
   const selectedDetails =
     selectedStudentId &&
@@ -209,15 +226,13 @@ const AttendanceOverview = ({ onBack }) => {
   return (
     <div style={styles.container}>
       <div style={styles.topBar}>
-  <button style={styles.backBtn} onClick={handleBackClick}>
-    ← Back
-  </button>
+        <button style={styles.backBtn} onClick={handleBackClick}>
+          ← Back
+        </button>
 
-  <h2 style={styles.heading}>Class Attendance Overview (Excel Style)</h2>
-</div>
+        <h2 style={styles.heading}>Class Attendance Overview (Excel Style)</h2>
+      </div>
 
-
-      {/* CLASS + YEAR + MONTH + SEARCH BUTTON */}
       <div style={styles.form}>
         <select
           name="class"
@@ -275,7 +290,6 @@ const AttendanceOverview = ({ onBack }) => {
         </div>
       )}
 
-      {/* EXCEL STYLE TABLE */}
       {students.length > 0 && Object.keys(studentMonthlyData).length > 0 && (
         <>
           <div
@@ -310,7 +324,6 @@ const AttendanceOverview = ({ onBack }) => {
                   <th style={headerCellStyle}>P</th>
                   <th style={headerCellStyle}>W</th>
                   <th style={headerCellStyle}>%</th>
-                  {/* Days columns */}
                   {Array.from({ length: daysInMonth }, (_, i) => (
                     <th key={i + 1} style={headerCellStyle}>
                       {i + 1}
@@ -320,7 +333,7 @@ const AttendanceOverview = ({ onBack }) => {
                 </tr>
               </thead>
               <tbody>
-                {students.map((stu) => {
+                {sortedStudents.map((stu) => {
                   const stuData = studentMonthlyData[stu._id];
                   const byDay = stuData ? stuData.byDay : {};
                   const presentDays = stuData ? stuData.presentDays : 0;
@@ -340,7 +353,6 @@ const AttendanceOverview = ({ onBack }) => {
                         {stu.name}
                       </td>
 
-                      {/* TOTALS */}
                       <td
                         style={{
                           ...bodyCellStyle,
@@ -370,7 +382,6 @@ const AttendanceOverview = ({ onBack }) => {
                         {percentage}%
                       </td>
 
-                      {/* Per-day cells */}
                       {Array.from({ length: daysInMonth }, (_, i) => {
                         const day = i + 1;
                         const val = byDay ? byDay[day] : "-";
@@ -396,7 +407,6 @@ const AttendanceOverview = ({ onBack }) => {
                         );
                       })}
 
-                      {/* DETAILS BUTTON */}
                       <td style={{ ...bodyCellStyle, textAlign: "center" }}>
                         <button
                           onClick={() =>
@@ -429,7 +439,6 @@ const AttendanceOverview = ({ onBack }) => {
             </table>
           </div>
 
-          {/* Legend */}
           <div
             style={{
               fontSize: "0.85rem",
@@ -464,10 +473,8 @@ const AttendanceOverview = ({ onBack }) => {
         </>
       )}
 
-      {/* DAILY DETAIL + STUDENT INFO */}
       {selectedStudent && selectedDetails && (
         <div style={styles.detailsWrapper}>
-          {/* 🧑‍🎓 Student Details Card */}
           <div style={styles.detailsCard}>
             <h3 style={{ marginTop: 0, marginBottom: "0.5rem" }}>
               Student Details
@@ -520,7 +527,6 @@ const AttendanceOverview = ({ onBack }) => {
             )}
           </div>
 
-          {/* 📅 Daily Attendance Table */}
           <div style={styles.dailyTableWrapper}>
             <h3
               style={{
@@ -621,22 +627,22 @@ const styles = {
   container: { padding: "20px", maxWidth: "1200px", margin: "0 auto" },
   heading: { textAlign: "center", marginBottom: "20px" },
   topBar: {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  marginBottom: "15px",
-  flexWrap: "wrap",
-},
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "15px",
+    flexWrap: "wrap",
+  },
 
-backBtn: {
-  padding: "6px 14px",
-  borderRadius: "20px",
-  border: "1px solid #d1d5db",
-  background: "#2563eb",
-  cursor: "pointer",
-  fontSize: "14px",
-  color: "white",
-},
+  backBtn: {
+    padding: "6px 14px",
+    borderRadius: "20px",
+    border: "1px solid #d1d5db",
+    background: "#2563eb",
+    cursor: "pointer",
+    fontSize: "14px",
+    color: "white",
+  },
 
   form: {
     display: "flex",
@@ -657,7 +663,6 @@ backBtn: {
     minWidth: "120px",
   },
 
-  // Details section styles
   detailsWrapper: {
     marginTop: "1rem",
     display: "grid",

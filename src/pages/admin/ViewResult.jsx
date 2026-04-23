@@ -29,16 +29,16 @@ const ViewResult = ({ onBack }) => {
   const isDrawing = (sub) => String(sub || "").trim().toLowerCase() === "drawing";
 
   const toSafeNumber = (v) => {
-  if (v === undefined || v === null) return 0;
-  if (typeof v === "number") return v;
-  if (typeof v === "string" && /^\d+(\.\d+)?$/.test(v)) {
-    return Number(v);
-  }
-  return 0; // AB, A, B, C, D
-};
+    if (v === undefined || v === null) return 0;
+    if (typeof v === "number") return v;
+    if (typeof v === "string" && /^\d+(\.\d+)?$/.test(v)) {
+      return Number(v);
+    }
+    return 0; // AB, A, B, C, D
+  };
 
-const isAbsent = (v) =>
-  typeof v === "string" && v.toUpperCase() === "AB";
+  const isAbsent = (v) =>
+    typeof v === "string" && v.toUpperCase() === "AB";
 
 
 
@@ -51,22 +51,22 @@ const isAbsent = (v) =>
   };
 
   const toggleSelect = (id) => {
-  setSelectedIds((prev) => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    return next;
-  });
-};
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
-const isSelected = (id) => selectedIds.has(id);
+  const isSelected = (id) => selectedIds.has(id);
 
-const selectAllVisible = () => {
-  const ids = filteredResults.map((r) => r._id).filter(Boolean);
-  setSelectedIds(new Set(ids));
-};
+  const selectAllVisible = () => {
+    const ids = filteredResults.map((r) => r._id).filter(Boolean);
+    setSelectedIds(new Set(ids));
+  };
 
-const clearSelection = () => setSelectedIds(new Set());
+  const clearSelection = () => setSelectedIds(new Set());
 
 
   const saveSession = async () => {
@@ -155,117 +155,97 @@ const clearSelection = () => setSelectedIds(new Set());
 
   }, []);
 
-//   useEffect(() => {
-//     if (!filteredResults.length) return;
 
-//     const token = localStorage.getItem("token");
+  useEffect(() => {
+    if (!filteredResults.length || !session) return;
 
-//     const ids = filteredResults
-//       .map(r => r.studentId?._id || r.studentId)
-//       .filter(Boolean);
+    const token = localStorage.getItem("token");
 
-//    fetch(
-//   `${endpoints.attendance.studentBulk(ids.join(","))}&session=${encodeURIComponent(session)}`,
-//   {
-//     headers: { Authorization: `Bearer ${token}` }
-//   }
-// )
-//       .then(res => res.json())
-//       .then(data => setAttendanceData(data))
-//       .catch(err => console.error("Attendance bulk error", err));
+    const ids = filteredResults
+      .map((r) => r.studentId?._id || r.studentId)
+      .filter(Boolean);
 
-//   }, [filteredResults]);
-
-useEffect(() => {
-  if (!filteredResults.length || !session) return;
-
-  const token = localStorage.getItem("token");
-
-  const ids = filteredResults
-    .map((r) => r.studentId?._id || r.studentId)
-    .filter(Boolean);
-
-  fetch(
-    `${endpoints.attendance.studentBulk(ids.join(","))}&session=${encodeURIComponent(session)}`,
-    {
-      headers: { Authorization: `Bearer ${token}` }
-    }
-  )
-    .then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) {
-        console.error("Attendance bulk API error:", data);
-        return;
+    fetch(
+      `${endpoints.attendance.studentBulk(ids.join(","))}&session=${encodeURIComponent(session)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
       }
-      console.log("attendance bulk response:", data);
-      setAttendanceData(data);
-    })
-    .catch((err) => console.error("Attendance bulk error", err));
+    )
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          console.error("Attendance bulk API error:", data);
+          return;
+        }
+        console.log("attendance bulk response:", data);
+        setAttendanceData(data);
+      })
+      .catch((err) => console.error("Attendance bulk error", err));
 
-}, [filteredResults, session]);
+  }, [filteredResults, session]);
 
 
 
-const computePercentageForRecord = (r, examType) => {
-  const subjectsArray = classSubjectMap[r.class] || [];
-  if (!subjectsArray.length) return 0;
+  const computePercentageForRecord = (r, examType) => {
+    const subjectsArray = classSubjectMap[r.class] || [];
+    if (!subjectsArray.length) return 0;
 
-  const isPrimary = isPrimaryClass(r.class);
-  const examData = r.exams || {};
+    const isPrimary = isPrimaryClass(r.class);
+    const examData = r.exams || {};
 
-  let totalMarks = 0;
-  let n = 0;
+    let totalMarks = 0;
+    let n = 0;
 
-  subjectsArray.forEach((sub) => {
-    if (isDrawing(sub)) return;
+    subjectsArray.forEach((sub) => {
+      if (isDrawing(sub)) return;
 
-    const pa1Raw = examData.pa1?.[sub];
-    const pa2Raw = examData.pa2?.[sub];
-    const sa1Raw = examData.halfYear?.[sub];
-    const pa3Raw = examData.pa3?.[sub];
-    const pa4Raw = examData.pa4?.[sub];
-    const sa2Raw = examData.final?.[sub];
+      const pa1Raw = examData.pa1?.[sub];
+      const pa2Raw = examData.pa2?.[sub];
+      const sa1Raw = examData.halfYear?.[sub];
+      const pa3Raw = examData.pa3?.[sub];
+      const pa4Raw = examData.pa4?.[sub];
+      const sa2Raw = examData.final?.[sub];
 
-    const pa1 = toSafeNumber(pa1Raw);
-    const pa2 = toSafeNumber(pa2Raw);
-    const sa1 = toSafeNumber(sa1Raw);
-    const pa3 = toSafeNumber(pa3Raw);
-    const pa4 = toSafeNumber(pa4Raw);
-    const sa2 = toSafeNumber(sa2Raw);
+      const pa1 = toSafeNumber(pa1Raw);
+      const pa2 = toSafeNumber(pa2Raw);
+      const sa1 = toSafeNumber(sa1Raw);
+      const pa3 = toSafeNumber(pa3Raw);
+      const pa4 = toSafeNumber(pa4Raw);
+      const sa2 = toSafeNumber(sa2Raw);
 
-    let final = 0;
+      let final = 0;
 
-    if (isPrimary) {
-      final = pa1 + pa2 + sa1;
-    } else if (examType === "halfYear") {
-      final = pa1 / 2 + pa2 / 2 + sa1;
-    } else {
-      const term1 = pa1 / 2 + pa2 / 2 + sa1;
-      const term2 = pa3 / 2 + pa4 / 2 + sa2;
-      final = (term1 + term2) / 2;
+      if (isPrimary) {
+        final = pa1 + pa2 + sa1;
+      } else if (examType === "halfYear") {
+        final = pa1 / 2 + pa2 / 2 + sa1;
+      } else {
+        const term1 = pa1 / 2 + pa2 / 2 + sa1;
+        const term2 = pa3 / 2 + pa4 / 2 + sa2;
+        final = (term1 + term2) / 2;
+      }
+
+      totalMarks += final;
+      n++;
+    });
+
+    const maxMarks = n * 100;
+    return maxMarks ? (totalMarks / maxMarks) * 100 : 0;
+  };
+  // 🔥 rank base list (search filters excluded)
+  const rankBaseResults = useMemo(() => {
+    let base = results;
+
+    if (assignedClasses.length > 0) {
+      base = base.filter((r) => assignedClasses.includes(r.class));
     }
 
-    totalMarks += final;
-    n++;
-  });
+    if (selectedClass) {
+      base = base.filter((r) => r.class === selectedClass);
+    }
 
-  const maxMarks = n * 100;
-  return maxMarks ? (totalMarks / maxMarks) * 100 : 0;
-};
-  // 🔥 rank base list (search filters excluded)
-const rankBaseResults = useMemo(() => {
-  let base = results;
-
-  if (assignedClasses.length > 0) {
-    base = base.filter((r) => assignedClasses.includes(r.class));
-  }
-
-  if (selectedClass) {
-    base = base.filter((r) => r.class === selectedClass);
-  }
-
-  return base;
-}, [results, assignedClasses, selectedClass]);
+    return base;
+  }, [results, assignedClasses, selectedClass]);
 
 
   useEffect(() => {
@@ -583,27 +563,27 @@ th, td {
     printWin.document.close();
   };
 
-const printSelectedOrAll = () => {
-  const idsToPrint =
-    selectedIds.size > 0
-      ? Array.from(selectedIds)
-      : filteredResults.map((r) => r._id).filter(Boolean);
+  const printSelectedOrAll = () => {
+    const idsToPrint =
+      selectedIds.size > 0
+        ? Array.from(selectedIds)
+        : filteredResults.map((r) => r._id).filter(Boolean);
 
-  if (!idsToPrint.length) return;
+    if (!idsToPrint.length) return;
 
-  const htmlPages = idsToPrint.map((id) => {
-    const el = document.getElementById(`report-card-${id}-${selectedExamType}`);
-    if (!el) return "";
+    const htmlPages = idsToPrint.map((id) => {
+      const el = document.getElementById(`report-card-${id}-${selectedExamType}`);
+      if (!el) return "";
 
-    const clone = el.cloneNode(true);
-    const logo = clone.querySelector("img");
-    if (logo) { logo.style.width = "100px"; logo.style.height = "auto"; }
+      const clone = el.cloneNode(true);
+      const logo = clone.querySelector("img");
+      if (logo) { logo.style.width = "100px"; logo.style.height = "auto"; }
 
-    return `<div class="print-page">${clone.outerHTML}</div>`;
-  }).join("");
+      return `<div class="print-page">${clone.outerHTML}</div>`;
+    }).join("");
 
-  const printWin = window.open("", "_blank");
-  printWin.document.write(`
+    const printWin = window.open("", "_blank");
+    printWin.document.write(`
     <html>
       <head>
         <title>Report Cards</title>
@@ -617,8 +597,8 @@ const printSelectedOrAll = () => {
       </body>
     </html>
   `);
-  printWin.document.close();
-};
+    printWin.document.close();
+  };
 
 
 
@@ -646,18 +626,18 @@ const printSelectedOrAll = () => {
       n = 0;
 
     subjectsArray.forEach((sub) => {
-  if (isDrawing(sub)) return;
+      if (isDrawing(sub)) return;
 
-  // 🔥 AB subject ko average / rank se hata do
-  const hasAB =
-    isAbsent(examData.pa1?.[sub]) ||
-    isAbsent(examData.pa2?.[sub]) ||
-    isAbsent(examData.halfYear?.[sub]) ||
-    isAbsent(examData.pa3?.[sub]) ||
-    isAbsent(examData.pa4?.[sub]) ||
-    isAbsent(examData.final?.[sub]);
+      // 🔥 AB subject ko average / rank se hata do
+      const hasAB =
+        isAbsent(examData.pa1?.[sub]) ||
+        isAbsent(examData.pa2?.[sub]) ||
+        isAbsent(examData.halfYear?.[sub]) ||
+        isAbsent(examData.pa3?.[sub]) ||
+        isAbsent(examData.pa4?.[sub]) ||
+        isAbsent(examData.final?.[sub]);
 
-  // if (hasAB) return; // ❌ skip this subject completely
+      // if (hasAB) return; // ❌ skip this subject completely
       // parse numeric values safely (fallback to 0)
       const pa1 = Number(examData.pa1?.[sub] || 0);
       const pa2 = Number(examData.pa2?.[sub] || 0);
@@ -691,66 +671,66 @@ const printSelectedOrAll = () => {
     return avgF;
   };
 
-//   const positionMap = useMemo(() => {
-//   const map = {};
-//   if (!rankBaseResults.length) return map;
+  //   const positionMap = useMemo(() => {
+  //   const map = {};
+  //   if (!rankBaseResults.length) return map;
 
-//   const byClass = {};
+  //   const byClass = {};
 
-//   rankBaseResults.forEach((r) => {
-//     if (!r.class) return;
-//     const percent = computePercentageForRecord(r, selectedExamType);
-//     if (!byClass[r.class]) byClass[r.class] = [];
-//     byClass[r.class].push({ recordId: r._id, avg });
-//   });
+  //   rankBaseResults.forEach((r) => {
+  //     if (!r.class) return;
+  //     const percent = computePercentageForRecord(r, selectedExamType);
+  //     if (!byClass[r.class]) byClass[r.class] = [];
+  //     byClass[r.class].push({ recordId: r._id, avg });
+  //   });
 
-//   Object.keys(byClass).forEach((cls) => {
-//     const arr = byClass[cls]
-//       .filter((x) => x.avg > 0)
-//       .sort((a, b) => b.avg - a.avg);
+  //   Object.keys(byClass).forEach((cls) => {
+  //     const arr = byClass[cls]
+  //       .filter((x) => x.avg > 0)
+  //       .sort((a, b) => b.avg - a.avg);
 
-//     // ✅ If you want ONLY top 3 positions:
-//     // arr.slice(0, 3).forEach((item, index) => { map[item.recordId] = index + 1; });
+  //     // ✅ If you want ONLY top 3 positions:
+  //     // arr.slice(0, 3).forEach((item, index) => { map[item.recordId] = index + 1; });
 
-//     // ✅ If you want rank for EVERYONE:
-//     arr.forEach((item, index) => {
-//       map[item.recordId] = index + 1;
-//     });
-//   });
+  //     // ✅ If you want rank for EVERYONE:
+  //     arr.forEach((item, index) => {
+  //       map[item.recordId] = index + 1;
+  //     });
+  //   });
 
-//   return map;
-// }, [rankBaseResults, selectedExamType, classSubjectMap]);
+  //   return map;
+  // }, [rankBaseResults, selectedExamType, classSubjectMap]);
 
-const positionMap = useMemo(() => {
-  const map = {};
-  if (!rankBaseResults.length) return map;
+  const positionMap = useMemo(() => {
+    const map = {};
+    if (!rankBaseResults.length) return map;
 
-  const byClass = {};
+    const byClass = {};
 
-  rankBaseResults.forEach((r) => {
-    if (!r.class) return;
+    rankBaseResults.forEach((r) => {
+      if (!r.class) return;
 
-    const percent = computePercentageForRecord(r, selectedExamType);
+      const percent = computePercentageForRecord(r, selectedExamType);
 
-    if (!byClass[r.class]) byClass[r.class] = [];
-    byClass[r.class].push({
-      recordId: r._id,
-      percent,
+      if (!byClass[r.class]) byClass[r.class] = [];
+      byClass[r.class].push({
+        recordId: r._id,
+        percent,
+      });
     });
-  });
 
-  Object.keys(byClass).forEach((cls) => {
-    const arr = byClass[cls]
-      .filter((x) => x.percent > 0)
-      .sort((a, b) => b.percent - a.percent);
+    Object.keys(byClass).forEach((cls) => {
+      const arr = byClass[cls]
+        .filter((x) => x.percent > 0)
+        .sort((a, b) => b.percent - a.percent);
 
-    arr.forEach((item, index) => {
-      map[item.recordId] = index + 1;
+      arr.forEach((item, index) => {
+        map[item.recordId] = index + 1;
+      });
     });
-  });
 
-  return map;
-}, [rankBaseResults, selectedExamType, classSubjectMap]);
+    return map;
+  }, [rankBaseResults, selectedExamType, classSubjectMap]);
 
   // ---------- AB HOOKS KE BAAD LOADING/ERROR RETURN KAR SAKTE HAIN ----------
 
@@ -763,34 +743,34 @@ const positionMap = useMemo(() => {
 
   const classOptions = [...new Set(results.map(r => r.class))].sort();
 
-const getNextClass = (currentClass) => {
-  if (!currentClass) return "";
+  const getNextClass = (currentClass) => {
+    if (!currentClass) return "";
 
-  const num = parseInt(String(currentClass).replace(/\D/g, ""));
+    const num = parseInt(String(currentClass).replace(/\D/g, ""));
 
-  // 🔥 suffix function
-  const getSuffix = (n) => {
-    if (n % 100 >= 11 && n % 100 <= 13) return "th";
-    if (n % 10 === 1) return "st";
-    if (n % 10 === 2) return "nd";
-    if (n % 10 === 3) return "rd";
-    return "th";
+    // 🔥 suffix function
+    const getSuffix = (n) => {
+      if (n % 100 >= 11 && n % 100 <= 13) return "th";
+      if (n % 10 === 1) return "st";
+      if (n % 10 === 2) return "nd";
+      if (n % 10 === 3) return "rd";
+      return "th";
+    };
+
+    if (!isNaN(num)) {
+      const next = num + 1;
+      return `${next}${getSuffix(next)}`;
+    }
+
+    // lower classes
+    const lower = String(currentClass).toLowerCase().trim();
+
+    if (lower === "nursery") return "LKG";
+    if (lower === "lkg") return "UKG";
+    if (lower === "ukg") return "1st";
+
+    return currentClass;
   };
-
-  if (!isNaN(num)) {
-    const next = num + 1;
-    return `${next}${getSuffix(next)}`;
-  }
-
-  // lower classes
-  const lower = String(currentClass).toLowerCase().trim();
-
-  if (lower === "nursery") return "LKG";
-  if (lower === "lkg") return "UKG";
-  if (lower === "ukg") return "1st";
-
-  return currentClass;
-};
 
   const renderReportCard = (
     r,
@@ -839,125 +819,125 @@ const getNextClass = (currentClass) => {
 
 
 
-// ✅ detect AB (raw values se)
-const hasAB =
-  isAbsent(pa1Raw) || isAbsent(pa2Raw) || isAbsent(sa1Raw) ||
-  isAbsent(pa3Raw) || isAbsent(pa4Raw) || isAbsent(sa2Raw);
+      // ✅ detect AB (raw values se)
+      const hasAB =
+        isAbsent(pa1Raw) || isAbsent(pa2Raw) || isAbsent(sa1Raw) ||
+        isAbsent(pa3Raw) || isAbsent(pa4Raw) || isAbsent(sa2Raw);
 
-// ✅ display values
-const pa1Disp = isAbsent(pa1Raw) ? "AB" : toSafeNumber(pa1Raw);
-const pa2Disp = isAbsent(pa2Raw) ? "AB" : toSafeNumber(pa2Raw);
-const sa1Disp = isAbsent(sa1Raw) ? "AB" : toSafeNumber(sa1Raw);
+      // ✅ display values
+      const pa1Disp = isAbsent(pa1Raw) ? "AB" : toSafeNumber(pa1Raw);
+      const pa2Disp = isAbsent(pa2Raw) ? "AB" : toSafeNumber(pa2Raw);
+      const sa1Disp = isAbsent(sa1Raw) ? "AB" : toSafeNumber(sa1Raw);
 
-const pa3Disp = isAbsent(pa3Raw) ? "AB" : toSafeNumber(pa3Raw);
-const pa4Disp = isAbsent(pa4Raw) ? "AB" : toSafeNumber(pa4Raw);
-const sa2Disp = isAbsent(sa2Raw) ? "AB" : toSafeNumber(sa2Raw);
+      const pa3Disp = isAbsent(pa3Raw) ? "AB" : toSafeNumber(pa3Raw);
+      const pa4Disp = isAbsent(pa4Raw) ? "AB" : toSafeNumber(pa4Raw);
+      const sa2Disp = isAbsent(sa2Raw) ? "AB" : toSafeNumber(sa2Raw);
 
-// ✅ numeric values (AB => 0 only for calculation)
-const pa1Num = typeof pa1Disp === "number" ? pa1Disp : 0;
-const pa2Num = typeof pa2Disp === "number" ? pa2Disp : 0;
-const sa1Num = typeof sa1Disp === "number" ? sa1Disp : 0;
+      // ✅ numeric values (AB => 0 only for calculation)
+      const pa1Num = typeof pa1Disp === "number" ? pa1Disp : 0;
+      const pa2Num = typeof pa2Disp === "number" ? pa2Disp : 0;
+      const sa1Num = typeof sa1Disp === "number" ? sa1Disp : 0;
 
-const pa3Num = typeof pa3Disp === "number" ? pa3Disp : 0;
-const pa4Num = typeof pa4Disp === "number" ? pa4Disp : 0;
-const sa2Num = typeof sa2Disp === "number" ? sa2Disp : 0;
+      const pa3Num = typeof pa3Disp === "number" ? pa3Disp : 0;
+      const pa4Num = typeof pa4Disp === "number" ? pa4Disp : 0;
+      const sa2Num = typeof sa2Disp === "number" ? sa2Disp : 0;
 
 
-     
+
 
       if (isPrimary) {
-  const total = pa1Num + pa2Num + sa1Num;
-  const { grade, point } = getGradePointAndGrade(total);
+        const total = pa1Num + pa2Num + sa1Num;
+        const { grade, point } = getGradePointAndGrade(total);
 
-  return {
-    sub,
-    pa1: pa1Disp, pa2: pa2Disp, sa1: sa1Disp, // ✅ AB AB rahega
-    pa1Num, pa2Num, sa1Num,                   // ✅ totals ke liye
-    total,
-    grade,
-    point,
-    isDrawing: false,
-    hasAB,
-  };
-}
-
-
-
-
-if (isHalfYearly) {
-  const pa1Half = pa1Num / 2;
-  const pa2Half = pa2Num / 2;
-
-  const term1 = pa1Half + pa2Half + sa1Num;
-
-  const { grade, point } = getGradePointAndGrade(term1);
-
-  return {
-    sub,
-    pa1: isAbsent(pa1Raw) ? "AB" : pa1Half.toFixed(1),
-    pa2: isAbsent(pa2Raw) ? "AB" : pa2Half.toFixed(1),
-    sa1: sa1Disp,
-
-    pa1Num: pa1Half,
-    pa2Num: pa2Half,
-    sa1Num,
-
-    term1,
-    finalTotal: term1,
-    term1Grade: grade,
-    term1Point: point,
-    isDrawing: false,
-    hasAB,
-  };
-}
+        return {
+          sub,
+          pa1: pa1Disp, pa2: pa2Disp, sa1: sa1Disp, // ✅ AB AB rahega
+          pa1Num, pa2Num, sa1Num,                   // ✅ totals ke liye
+          total,
+          grade,
+          point,
+          isDrawing: false,
+          hasAB,
+        };
+      }
 
 
 
 
-const pa1Half = pa1Num / 2;
-const pa2Half = pa2Num / 2;
-const pa3Half = pa3Num / 2;
-const pa4Half = pa4Num / 2;
+      if (isHalfYearly) {
+        const pa1Half = pa1Num / 2;
+        const pa2Half = pa2Num / 2;
 
-const term1 = pa1Half + pa2Half + sa1Num;
-const term2 = pa3Half + pa4Half + sa2Num;
-const finalTotal = (term1 + term2) / 2;
+        const term1 = pa1Half + pa2Half + sa1Num;
 
-const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
-const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
-const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
+        const { grade, point } = getGradePointAndGrade(term1);
 
-return {
-  sub,
+        return {
+          sub,
+          pa1: isAbsent(pa1Raw) ? "AB" : pa1Half.toFixed(1),
+          pa2: isAbsent(pa2Raw) ? "AB" : pa2Half.toFixed(1),
+          sa1: sa1Disp,
 
-  pa1: isAbsent(pa1Raw) ? "AB" : pa1Half.toFixed(1),
-  pa2: isAbsent(pa2Raw) ? "AB" : pa2Half.toFixed(1),
-  sa1: sa1Disp,
-  pa3: isAbsent(pa3Raw) ? "AB" : pa3Half.toFixed(1),
-  pa4: isAbsent(pa4Raw) ? "AB" : pa4Half.toFixed(1),
-  sa2: sa2Disp,
+          pa1Num: pa1Half,
+          pa2Num: pa2Half,
+          sa1Num,
 
-  pa1Num: pa1Half,
-  pa2Num: pa2Half,
-  pa3Num: pa3Half,
-  pa4Num: pa4Half,
-  sa1Num,
-  sa2Num,
+          term1,
+          finalTotal: term1,
+          term1Grade: grade,
+          term1Point: point,
+          isDrawing: false,
+          hasAB,
+        };
+      }
 
-  term1,
-  term2,
-  finalTotal,
 
-  term1Grade: g1,
-  term1Point: p1,
-  term2Grade: g2,
-  term2Point: p2,
-  finalGrade: gf,
-  finalPoint: pf,
 
-  isDrawing: false,
-  hasAB,
-};
+
+      const pa1Half = pa1Num / 2;
+      const pa2Half = pa2Num / 2;
+      const pa3Half = pa3Num / 2;
+      const pa4Half = pa4Num / 2;
+
+      const term1 = pa1Half + pa2Half + sa1Num;
+      const term2 = pa3Half + pa4Half + sa2Num;
+      const finalTotal = (term1 + term2) / 2;
+
+      const { grade: g1, point: p1 } = getGradePointAndGrade(term1);
+      const { grade: g2, point: p2 } = getGradePointAndGrade(term2);
+      const { grade: gf, point: pf } = getGradePointAndGrade(finalTotal);
+
+      return {
+        sub,
+
+        pa1: isAbsent(pa1Raw) ? "AB" : pa1Half.toFixed(1),
+        pa2: isAbsent(pa2Raw) ? "AB" : pa2Half.toFixed(1),
+        sa1: sa1Disp,
+        pa3: isAbsent(pa3Raw) ? "AB" : pa3Half.toFixed(1),
+        pa4: isAbsent(pa4Raw) ? "AB" : pa4Half.toFixed(1),
+        sa2: sa2Disp,
+
+        pa1Num: pa1Half,
+        pa2Num: pa2Half,
+        pa3Num: pa3Half,
+        pa4Num: pa4Half,
+        sa1Num,
+        sa2Num,
+
+        term1,
+        term2,
+        finalTotal,
+
+        term1Grade: g1,
+        term1Point: p1,
+        term2Grade: g2,
+        term2Point: p2,
+        finalGrade: gf,
+        finalPoint: pf,
+
+        isDrawing: false,
+        hasAB,
+      };
 
 
 
@@ -969,14 +949,14 @@ return {
     const drawingRows = subjectRows.filter((r) => r.isDrawing);
 
     const formatCell = (v, decimals = 1) => {
-  // AB ya grade string
-  if (typeof v === "string") return v;
+      // AB ya grade string
+      if (typeof v === "string") return v;
 
-  if (v === null || v === undefined) return "";
+      if (v === null || v === undefined) return "";
 
-  // number
-  return typeof v === "number" ? v.toFixed(decimals) : "";
-};
+      // number
+      return typeof v === "number" ? v.toFixed(decimals) : "";
+    };
 
 
 
@@ -1001,25 +981,25 @@ return {
 
 
 
-mainRows.forEach((row) => {
-  // if (row.hasAB) return; // ✅ AB subject fully skip
+    mainRows.forEach((row) => {
+      // if (row.hasAB) return; // ✅ AB subject fully skip
 
-  n++;
+      n++;
 
-  totalPa1 += row.pa1Num || 0;
-  totalPa2 += row.pa2Num || 0;
-  totalSa1 += row.sa1Num || 0;
+      totalPa1 += row.pa1Num || 0;
+      totalPa2 += row.pa2Num || 0;
+      totalSa1 += row.sa1Num || 0;
 
-  totalPa3 += row.pa3Num || 0;
-  totalPa4 += row.pa4Num || 0;
-  totalSa2 += row.sa2Num || 0;
+      totalPa3 += row.pa3Num || 0;
+      totalPa4 += row.pa4Num || 0;
+      totalSa2 += row.sa2Num || 0;
 
-  totalTerm1 += typeof row.term1 === "number" ? row.term1 : 0;
-  totalTerm2 += typeof row.term2 === "number" ? row.term2 : 0;
-  totalFinal += typeof row.finalTotal === "number" ? row.finalTotal : 0;
+      totalTerm1 += typeof row.term1 === "number" ? row.term1 : 0;
+      totalTerm2 += typeof row.term2 === "number" ? row.term2 : 0;
+      totalFinal += typeof row.finalTotal === "number" ? row.finalTotal : 0;
 
-  sumF += typeof row.finalTotal === "number" ? row.finalTotal : 0;
-});
+      sumF += typeof row.finalTotal === "number" ? row.finalTotal : 0;
+    });
 
 
     // (agar kahin use karna ho to rakh sakte ho)
@@ -1291,27 +1271,27 @@ mainRows.forEach((row) => {
           </h4>
 
           <div
-  className="table-container"
-  style={{
-    marginTop: "10px",
-    position: "relative"
-  }}
->
-  {/* 🔥 LOGO inside marks box */}
-  <img
-    src={Logo}
-    alt="logo"
-    style={{
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      opacity: 0.20,        // 🔥 light watermark
-      width: "300px",
-      height: "auto",
-      pointerEvents: "none"
-    }}
-  />
+            className="table-container"
+            style={{
+              marginTop: "10px",
+              position: "relative"
+            }}
+          >
+            {/* 🔥 LOGO inside marks box */}
+            <img
+              src={Logo}
+              alt="logo"
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                opacity: 0.20,        // 🔥 light watermark
+                width: "300px",
+                height: "auto",
+                pointerEvents: "none"
+              }}
+            />
             <table className="marks-table">
               <thead>
                 {isPrimary ? (
@@ -1724,12 +1704,12 @@ mainRows.forEach((row) => {
                     }}
                   ></div>
                 </div>
-                
 
-                
+
+
               </div>
 
-              
+
 
 
               <div
@@ -1760,7 +1740,7 @@ mainRows.forEach((row) => {
                           textAlign: "left",
                         }}
                       ><center>
-                        Total obtain marks
+                          Total obtain marks
                         </center>
                       </td>
                       <td
@@ -1786,7 +1766,7 @@ mainRows.forEach((row) => {
                         }}
                       >
                         <center>
-                        Percentage
+                          Percentage
                         </center>
                       </td>
                       <td
@@ -1807,21 +1787,23 @@ mainRows.forEach((row) => {
               </div>
 
             </div>
-                        <div
-  style={{
-    marginTop: "10px",
-    textAlign: "center",
-    fontSize: "12pt",
-    fontWeight: "bold",
-    color: Number(percentage) >= 33 ? "green" : "red"
-  }}
->
-  {Number(percentage) >= 33
-    ? `Congratulations! Promoted to Class ${getNextClass(r.class)}`
-    : "FAILED"}
-</div>
+           {!isHalfYearly && (
+  <div
+    style={{
+      marginTop: "10px",
+      textAlign: "center",
+      fontSize: "12pt",
+      fontWeight: "bold",
+      color: Number(percentage) >= 33 ? "green" : "red"
+    }}
+  >
+    {Number(percentage) >= 33
+      ? `Congratulations! Promoted to Class ${getNextClass(r.class)}`
+      : "FAILED"}
+  </div>
+)}
           </div>
-          
+
         </div>
       </>
     );
@@ -1989,28 +1971,28 @@ mainRows.forEach((row) => {
         <h2>Student Marks Record</h2>
       </div>
 
-<div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "10px", flexWrap: "wrap" }}>
-  <button
-    onClick={printSelectedOrAll}
-    style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
-  >
-    🖨️ Print All / Selected
-  </button>
+      <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "10px", flexWrap: "wrap" }}>
+        <button
+          onClick={printSelectedOrAll}
+          style={{ padding: "8px 14px", background: "#111827", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+        >
+          🖨️ Print All / Selected
+        </button>
 
-  <button
-    onClick={selectAllVisible}
-    style={{ padding: "8px 14px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
-  >
-    ✅ Select All
-  </button>
+        <button
+          onClick={selectAllVisible}
+          style={{ padding: "8px 14px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+        >
+          ✅ Select All
+        </button>
 
-  <button
-    onClick={clearSelection}
-    style={{ padding: "8px 14px", background: "#ef4444", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
-  >
-    ❌ Clear
-  </button>
-</div>
+        <button
+          onClick={clearSelection}
+          style={{ padding: "8px 14px", background: "#ef4444", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+        >
+          ❌ Clear
+        </button>
+      </div>
 
       <div
         style={{
@@ -2086,12 +2068,12 @@ mainRows.forEach((row) => {
         </select>
 
         <select
-  value={selectedExamType}
-  onChange={(e) => setSelectedExamType(e.target.value)}
->
-  <option value="halfYear">Half Yearly Report</option>
-  <option value="final">Annual Report Card</option>
-</select>
+          value={selectedExamType}
+          onChange={(e) => setSelectedExamType(e.target.value)}
+        >
+          <option value="halfYear">Half Yearly Report</option>
+          <option value="final">Annual Report Card</option>
+        </select>
 
       </div>
 
@@ -2121,9 +2103,9 @@ mainRows.forEach((row) => {
             //     ? `${student.attendance} / 115`
             //     : "—";
 
-       const attendanceDisplay = att
-  ? `${att.present || 0} / ${att.total || 0} (${att.percentage || 0}%)`
-  : "—";
+            const attendanceDisplay = att
+              ? `${att.present || 0} / ${att.total || 0} (${att.percentage || 0}%)`
+              : "—";
 
             const position = positionMap[r._id];
 
@@ -2132,20 +2114,20 @@ mainRows.forEach((row) => {
                 key={`${r._id}-${selectedExamType}`}
                 className="report-card"
               >
-<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
-    <input
-      type="checkbox"
-      checked={isSelected(r._id)}
-      onChange={() => toggleSelect(r._id)}
-    />
-    Select
-  </label>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected(r._id)}
+                      onChange={() => toggleSelect(r._id)}
+                    />
+                    Select
+                  </label>
 
-  <span style={{ fontSize: "12px", color: "#6b7280" }}>
-    {selectedExamType === "halfYear" ? "Half Yearly" : "Annual"}
-  </span>
-</div>
+                  <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                    {selectedExamType === "halfYear" ? "Half Yearly" : "Annual"}
+                  </span>
+                </div>
 
 
                 <div
