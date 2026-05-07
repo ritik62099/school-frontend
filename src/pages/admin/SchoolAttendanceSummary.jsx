@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { endpoints } from "../../config/api";
 
 const SchoolAttendanceSummary = ({ onBack }) => {
@@ -58,7 +58,15 @@ const SchoolAttendanceSummary = ({ onBack }) => {
     return dt.toLocaleDateString();
   };
 
-  const classesForTable = summary?.classes || [];
+ const classesForTable = useMemo(() => {
+  return [...(summary?.classes || [])].sort((a, b) =>
+    String(a.class || "").localeCompare(
+      String(b.class || ""),
+      undefined,
+      { numeric: true, sensitivity: "base" }
+    )
+  );
+}, [summary]);
 
   const handleBackClick = () => {
     if (typeof onBack === "function") {

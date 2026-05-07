@@ -23,58 +23,7 @@ const Attendance = () => {
     return today.toISOString().split('T')[0];
   }
 
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //     const currentUser = JSON.parse(localStorage.getItem('user'));
-  //     if (!currentUser) {
-  //       setError('User not found. Please log in again.');
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     if (currentUser.role === 'teacher') {
-  //       // ✅ Filter only classes where canMarkAttendance is true
-  //       const attendanceClasses = (currentUser.teachingAssignments || [])
-  //         .filter(assignment => assignment.canMarkAttendance)
-  //         .map(assignment => assignment.class);
-
-  //       if (attendanceClasses.length === 0) {
-  //         setError('You are not authorized to mark attendance for any class.');
-  //         setLoading(false);
-  //         return;
-  //       }
-
-  //       setAssignedClasses(attendanceClasses);
-  //       setSelectedClass(attendanceClasses[0]);
-  //     } else if (currentUser.role === 'admin') {
-  //       // Admin can mark attendance for any class → fetch all classes
-  //       try {
-  //         const token = localStorage.getItem('token');
-  //         const classesRes = await fetch(endpoints.classes.list, {
-  //           headers: { Authorization: `Bearer ${token}` }
-  //         });
-  //         if (!classesRes.ok) throw new Error('Failed to load classes');
-  //         const allClasses = await classesRes.json();
-  //         if (allClasses.length === 0) {
-  //           setError('No classes found.');
-  //           setLoading(false);
-  //           return;
-  //         }
-  //         setAssignedClasses(allClasses);
-  //         setSelectedClass(allClasses[0]);
-  //       } catch (err) {
-  //         setError('Failed to load class list: ' + (err.message || 'Unknown error'));
-  //         setLoading(false);
-  //         return;
-  //       }
-  //     }
-
-  //     setLoading(false);
-  //   };
-
-  //   fetchUserData();
-  // }, []);
-
+ 
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -172,12 +121,35 @@ const Attendance = () => {
 
         // Agar school closed hai, phir bhi students la rahe hain,
         // future me use ho sakte hain (but list show nahi karenge).
-        const studentsWithStatus = studentsData.map(student => {
-          const record = existingRecords.find(
-            r => r.studentId.toString() === student._id.toString()
-          );
-          return { ...student, present: record ? record.present : true };
-        });
+        const sortedStudentsData = [...studentsData].sort((a, b) => {
+  const rollA = Number(a.rollNo);
+  const rollB = Number(b.rollNo);
+
+  // Agar rollNo number hai: 1, 2, 3...
+  if (!isNaN(rollA) && !isNaN(rollB)) {
+    return rollA - rollB;
+  }
+
+  // Agar rollNo text/alpha-numeric hai: A1, A2, B1...
+  return String(a.rollNo || '').localeCompare(
+    String(b.rollNo || ''),
+    undefined,
+    { numeric: true, sensitivity: 'base' }
+  );
+});
+
+const studentsWithStatus = sortedStudentsData.map(student => {
+  const record = existingRecords.find(
+    r => r.studentId.toString() === student._id.toString()
+  );
+
+  return {
+    ...student,
+    present: record ? record.present : true,
+  };
+});
+
+setStudents(studentsWithStatus);
 
         setStudents(studentsWithStatus);
         setError('');

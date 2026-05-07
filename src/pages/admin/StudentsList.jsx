@@ -34,27 +34,51 @@ const StudentsList = () => {
   }, [students]);
 
   // Get roll numbers based on selected class
-  const rolls = useMemo(() => {
-    let filtered = students;
-    if (selectedClass !== "all") {
-      filtered = students.filter((s) => s.class === selectedClass);
-    }
-    const rollSet = new Set(filtered.map((s) => s.rollNo).filter(Boolean));
-    return Array.from(rollSet).sort(
-      (a, b) => parseInt(a, 10) - parseInt(b, 10)
-    );
-  }, [students, selectedClass]);
+const rolls = useMemo(() => {
+  let filtered = students;
+
+  if (selectedClass !== "all") {
+    filtered = students.filter((s) => s.class === selectedClass);
+  }
+
+  const rollSet = new Set(filtered.map((s) => s.rollNo).filter(Boolean));
+
+  return Array.from(rollSet).sort((a, b) =>
+    String(a).localeCompare(String(b), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    })
+  );
+}, [students, selectedClass]);
 
   // Apply both filters
-  const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
+const filteredStudents = useMemo(() => {
+  return students
+    .filter((student) => {
       const matchesClass =
         selectedClass === "all" || student.class === selectedClass;
+
       const matchesRoll =
-        selectedRoll === "all" || student.rollNo === selectedRoll;
+        selectedRoll === "all" || String(student.rollNo) === String(selectedRoll);
+
       return matchesClass && matchesRoll;
+    })
+    .sort((a, b) => {
+      const classCompare = String(a.class || "").localeCompare(
+        String(b.class || ""),
+        undefined,
+        { numeric: true, sensitivity: "base" }
+      );
+
+      if (classCompare !== 0) return classCompare;
+
+      return String(a.rollNo || "").localeCompare(
+        String(b.rollNo || ""),
+        undefined,
+        { numeric: true, sensitivity: "base" }
+      );
     });
-  }, [students, selectedClass, selectedRoll]);
+}, [students, selectedClass, selectedRoll]);
 
   // ✅ Promote handler – ab naya /students/:id/promote route hit karega
   const handlePromote = async (studentId) => {

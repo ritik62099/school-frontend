@@ -72,15 +72,29 @@ const IDCardsStudent = ({ onBack }) => {
   }, [students, backendClasses]);
 
   // ✅ Filter by class
-  useEffect(() => {
-    if (!selectedClass) {
-      // ❌ No class selected → show nothing
-      setFilteredStudents([]);
-    } else {
-      // ✅ Class selected → show only that class
-      setFilteredStudents(students.filter(s => s.class === selectedClass));
-    }
-  }, [selectedClass, students]);
+useEffect(() => {
+  const sortStudentsByRoll = (list) => {
+    return [...list].sort((a, b) =>
+      String(a.rollNo || "").localeCompare(
+        String(b.rollNo || ""),
+        undefined,
+        { numeric: true, sensitivity: "base" }
+      )
+    );
+  };
+
+  if (!selectedClass) {
+    // ❌ No class selected → show nothing
+    setFilteredStudents([]);
+  } else {
+    // ✅ Class selected → show only that class in roll number sequence
+    const classStudents = students.filter((s) => s.class === selectedClass);
+    setFilteredStudents(sortStudentsByRoll(classStudents));
+  }
+
+  // Class change hone par selected checkbox clear
+  setSelectedStudents([]);
+}, [selectedClass, students]);
 
 
   // ✅ Fetch classes

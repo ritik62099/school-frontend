@@ -37,15 +37,34 @@ const AdmitCards = () => {
   }, [students, backendClasses]);
 
   // 🔹 Filter students by class
-  useEffect(() => {
-    if (!selectedClass) {
-      setFilteredStudents(students);
-    } else {
-      setFilteredStudents(students.filter(s => s.class === selectedClass));
-    }
+useEffect(() => {
+  const sortStudentsByClassAndRoll = (list) => {
+    return [...list].sort((a, b) => {
+      const classCompare = String(a.class || "").localeCompare(
+        String(b.class || ""),
+        undefined,
+        { numeric: true, sensitivity: "base" }
+      );
 
-     setSelectedIds([]);
-  }, [selectedClass, students]);
+      if (classCompare !== 0) return classCompare;
+
+      return String(a.rollNo || "").localeCompare(
+        String(b.rollNo || ""),
+        undefined,
+        { numeric: true, sensitivity: "base" }
+      );
+    });
+  };
+
+  if (!selectedClass) {
+    setFilteredStudents(sortStudentsByClassAndRoll(students));
+  } else {
+    const classStudents = students.filter((s) => s.class === selectedClass);
+    setFilteredStudents(sortStudentsByClassAndRoll(classStudents));
+  }
+
+  setSelectedIds([]);
+}, [selectedClass, students]);
 
   // 🔹 Convert logo to base64 (for printing)
   useEffect(() => {
