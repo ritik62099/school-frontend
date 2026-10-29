@@ -134,6 +134,21 @@ const AddMarks = ({ onBack }) => {
     : [];
 
   // when class changes (admin) set subjects
+  // useEffect(() => {
+  //   if (!selectedClass) {
+  //     setSubjects([]);
+  //     return;
+  //   }
+
+  //   if (userRole === "admin") {
+  //     const subs = classSubjectsMap[selectedClass] || [];
+  //     setSubjects(subs);
+  //   }
+  //   // teacher subjects will be loaded when student selected
+  // }, [selectedClass, userRole, classSubjectsMap]);
+
+
+    // when class changes (admin) set subjects
   useEffect(() => {
     if (!selectedClass) {
       setSubjects([]);
@@ -141,10 +156,15 @@ const AddMarks = ({ onBack }) => {
     }
 
     if (userRole === "admin") {
-      const subs = classSubjectsMap[selectedClass] || [];
+      // ✅ Case-insensitive matching for admin
+      const targetClass = String(selectedClass).trim().toLowerCase();
+      const matchingKey = Object.keys(classSubjectsMap).find(
+        key => String(key).trim().toLowerCase() === targetClass || String(key).trim().toLowerCase().includes(targetClass)
+      );
+      
+      const subs = matchingKey ? classSubjectsMap[matchingKey] : [];
       setSubjects(subs);
     }
-    // teacher subjects will be loaded when student selected
   }, [selectedClass, userRole, classSubjectsMap]);
 
   // load marks + subjects when student changes
@@ -162,14 +182,25 @@ const AddMarks = ({ onBack }) => {
 
       let allowedSubjects = [];
 
-      if (userRole === "teacher") {
-        // subjects from teacher assignments
+      // if (userRole === "teacher") {
+      //   // subjects from teacher assignments
+      //   const assignment = teacherAssignments.find(
+      //     (a) => a.class === student.class
+      //   );
+      //   allowedSubjects = assignment ? assignment.subjects || [] : [];
+      //   setSubjects(allowedSubjects);
+      // } 
+
+            if (userRole === "teacher") {
+        // ✅ Case-insensitive matching for teacher assignments
         const assignment = teacherAssignments.find(
-          (a) => a.class === student.class
+          (a) => String(a.class).trim().toLowerCase() === String(student.class).trim().toLowerCase() || 
+                 String(student.class).trim().toLowerCase().includes(String(a.class).trim().toLowerCase())
         );
         allowedSubjects = assignment ? assignment.subjects || [] : [];
         setSubjects(allowedSubjects);
-      } else if (userRole === "admin") {
+      }
+      else if (userRole === "admin") {
         // admin: subjects already obtained by selectedClass effect
         allowedSubjects = subjects;
       }
