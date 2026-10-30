@@ -2342,7 +2342,7 @@ const ViewResult = ({ onBack }) => {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) {
-          console.error("Attendance bulk API error:", data);
+          // console.error("Attendance bulk API error:", data);
           return;
         }
         setAttendanceData(data);
@@ -3162,7 +3162,7 @@ th, td { border: 1px solid #000; line-height: 1.1; font-size: 13px; }
         <p style={{ textAlign: "center", color: "#7f8c8d", padding: "1.5rem" }}>No matching results found.</p>
       ) : (
         <div className="report-cards-grid">
-          {filteredResults.map((r) => {
+                    {filteredResults.map((r) => {
             const student = getStudentFromRecord(r);
             if (!student || !r.class) return null;
 
@@ -3170,11 +3170,34 @@ th, td { border: 1px solid #000; line-height: 1.1; font-size: 13px; }
             const examData = r.exams || {};
             const subjectsArray = classSubjectMap[r.class] || [];
             const att = attendanceData[studentId];
-            const attendanceDisplay = att ? `${att.present || 0} / ${att.total || 0} (${att.percentage || 0}%)` : "—";
+            
+            // 🔥 DEBUG: Browser console mein dekhne ke liye
+            // console.log("👉 STUDENT NAME:", student.name);
+            // console.log("👉 SESSION INPUT:", session);
+            // console.log("👉 SESSION ATTENDANCE FROM BACKEND:", student.sessionAttendance);
+
+            // 🔥 FIX: Trim laga diya hai taaki space ka issue na ho
+            const manualAtt = student.sessionAttendance?.find(a => 
+              String(a.session).trim() === String(session).trim()
+            );
+
+            let attendanceDisplay = "—";
+            
+            // Priority 1: Manual Session Attendance
+            if (manualAtt && manualAtt.totalDays > 0) {
+              const pct = ((manualAtt.presentDays / manualAtt.totalDays) * 100).toFixed(2);
+              attendanceDisplay = `${manualAtt.presentDays} / ${manualAtt.totalDays} (${pct}%)`;
+            } 
+            // Priority 2: Daily Attendance (fallback)
+            else if (att) {
+              attendanceDisplay = `${att.present || 0} / ${att.total || 0} (${att.percentage || 0}%)`;
+            }
+            
             const position = positionMap[r._id];
 
             return (
               <div key={`${r._id}-${selectedExamType}`} className="report-card">
+                {/* ... aapka baaki ka JSX code wahi rahega ... */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                   <label style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
                     <input type="checkbox" checked={isSelected(r._id)} onChange={() => toggleSelect(r._id)} />

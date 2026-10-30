@@ -36,6 +36,7 @@ import ExamControls from '../pages/admin/ExamVisibility';
 import AttendanceOverview from '../pages/admin/AttendanceOverview';
 import SchoolAttendanceSummary from '../pages/admin/SchoolAttendanceSummary';
 import StudentPayment from '../pages/admin/StudentPayments';
+import ManualAttendance from '../pages/admin/ManualAttendance';
 
 const AppRouter = () => {
   return (
@@ -86,6 +87,7 @@ const AppRouter = () => {
         />
         <Route path="/admin/school-attendance-summary" element={<SchoolAttendanceSummary />} />
 
+<Route path="/manual-attendance" element={<ManualAttendance />} />
         {/* Exams & Results */}
         <Route path="/add-marks" element={<AddMarks />} />
         <Route path="/view-result" element={<ViewResult />} />

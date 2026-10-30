@@ -41,6 +41,7 @@ export const endpoints = {
   myStudents: api('/api/students/my-students'),
   create: api('/api/students'),
   promote: (id) => api(`/api/students/${id}/promote`),
+  manualAttendance: api('/api/students/manual-attendance'),
 },
   attendance: {
     get: (date, className) =>
